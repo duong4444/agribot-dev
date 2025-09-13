@@ -2,41 +2,34 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const { email } = await request.json();
+    const { token, newPassword } = await request.json();
 
-    if (!email) {
+    if (!token || !newPassword) {
       return NextResponse.json(
-        { success: false, message: 'Email là bắt buộc' },
+        { success: false, message: 'Token và mật khẩu mới là bắt buộc' },
         { status: 400 }
       );
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (newPassword.length < 6) {
       return NextResponse.json(
-        { success: false, message: 'Email không hợp lệ' },
+        { success: false, message: 'Mật khẩu phải có ít nhất 6 ký tự' },
         { status: 400 }
       );
     }
 
-    // Call backend API
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/forgot-password`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/reset-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ token, newPassword }),
     });
 
     const data = await response.json();
 
     if (response.ok && data.success) {
-      return NextResponse.json({
-        success: true,
-        message: data.message || 'Link đặt lại mật khẩu đã được gửi đến email của bạn',
-        ...(data.debug && { debug: data.debug }),
-      });
+      return NextResponse.json({ success: true, message: data.message });
     } else {
       return NextResponse.json(
         { success: false, message: data.message || 'Đã xảy ra lỗi' },
@@ -44,7 +37,7 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error('Forgot password error:', error);
+    console.error('Reset password error:', error);
     return NextResponse.json(
       { success: false, message: 'Đã xảy ra lỗi server' },
       { status: 500 }

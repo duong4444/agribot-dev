@@ -7,6 +7,8 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import type { Response } from 'express';
 
 @Controller('auth')
@@ -31,6 +33,35 @@ export class AuthController {
       data: user,
       message: 'Đăng ký thành công',
     };
+  }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    const result = await this.authService.forgotPassword(forgotPasswordDto.email);
+    return {
+      success: true,
+      message: result.message,
+      ...(result.debug && { debug: result.debug }),
+    };
+  }
+
+  @Post('reset-password')
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    try {
+      const result = await this.authService.resetPassword(
+        resetPasswordDto.token,
+        resetPasswordDto.newPassword
+      );
+      return {
+        success: true,
+        message: result.message,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.message,
+      };
+    }
   }
 
   @UseGuards(JwtAuthGuard)

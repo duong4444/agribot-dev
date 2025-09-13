@@ -15,6 +15,7 @@ export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [debugInfo, setDebugInfo] = useState('');
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -23,7 +24,7 @@ export default function ForgotPasswordPage() {
     setError('');
 
     try {
-      const response = await fetch('/api/backend/auth/forgot-password', {
+      const response = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -35,6 +36,9 @@ export default function ForgotPasswordPage() {
 
       if (data.success) {
         setSuccess(true);
+        if (data.debug) {
+          setDebugInfo(data.debug);
+        }
       } else {
         setError(data.message || 'Đã xảy ra lỗi. Vui lòng thử lại.');
       }

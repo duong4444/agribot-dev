@@ -11,6 +11,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { getJwtConfig } from '../../common/config/jwt.config';
+import { EmailService } from '../../common/services/email.service';
 
 @Module({
   imports: [
@@ -24,7 +25,7 @@ import { getJwtConfig } from '../../common/config/jwt.config';
     UsersModule, // import để sử dụng UsersService, để có thể inject UsersService vào JwtStrategy
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, LocalStrategy, GoogleStrategy], // 
+  providers: [AuthService, JwtStrategy, LocalStrategy, GoogleStrategy, EmailService], // 
   exports: [AuthService], // export để module khác có thể sử dụng AuthService
 })
 export class AuthModule {}
