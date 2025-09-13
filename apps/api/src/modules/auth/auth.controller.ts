@@ -1,11 +1,13 @@
-import { Controller, Post, Body, Get, UseGuards, Request, Put } from '@nestjs/common';
+import { Controller, Post, Body, Get, UseGuards, Request, Put, Res, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import type { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -73,5 +75,23 @@ export class AuthController {
       success: true,
       data: tokens,
     };
+  }
+
+  @Get('google')
+  @UseGuards(GoogleAuthGuard)
+  async googleAuth(@Req() req) {
+    // Guard sẽ redirect đến Google OAuth
+  }
+
+  @Get('google/callback')
+  @UseGuards(GoogleAuthGuard)
+  async googleAuthRedirect(@Req() req, @Res() res: Response) {
+    const result = await this.authService.googleLogin(req.user);
+    
+    // Redirect về frontend với token
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    const redirectUrl = `${frontendUrl}/callback?token=${result.accessToken}&refresh=${result.refreshToken}`;
+    
+    res.redirect(redirectUrl);
   }
 }

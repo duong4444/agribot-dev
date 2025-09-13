@@ -42,6 +42,8 @@ export default function LoginPage() {
       } else {
         // Get the session to check user role
         const session = await getSession();
+        console.log("session_user: ",session?.user);
+        
         if (session?.user?.role === "ADMIN") {
           router.push("/admin");
         } else {
@@ -60,10 +62,9 @@ export default function LoginPage() {
     setError("");
 
     try {
-      await signIn("google", {
-        callbackUrl: "/dashboard",
-        redirect: true,
-      });
+      // Redirect trực tiếp đến backend OAuth
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+      window.location.href = `${apiUrl}/auth/google`;
     } catch (error) {
       setError("Đã xảy ra lỗi khi đăng nhập với Google.");
       setIsLoading(false);

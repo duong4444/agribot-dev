@@ -9,6 +9,7 @@ import { UsersModule } from '../users/users.module';
 import { User } from '../users/entities/user.entity';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
+import { GoogleStrategy } from './strategies/google.strategy';
 import { getJwtConfig } from '../../common/config/jwt.config';
 
 @Module({
@@ -23,7 +24,7 @@ import { getJwtConfig } from '../../common/config/jwt.config';
     UsersModule, // import để sử dụng UsersService, để có thể inject UsersService vào JwtStrategy
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, LocalStrategy], // 
+  providers: [AuthService, JwtStrategy, LocalStrategy, GoogleStrategy], // 
   exports: [AuthService], // export để module khác có thể sử dụng AuthService
 })
 export class AuthModule {}

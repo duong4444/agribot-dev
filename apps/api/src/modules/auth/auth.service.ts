@@ -117,4 +117,46 @@ export class AuthService {
 
     return result;
   }
+
+  async validateGoogleUser(googleUser: any) {
+    const { googleId, email, fullName, avatar } = googleUser;
+    
+    // Tìm user theo Google ID hoặc email
+    let user = await this.userRepository.findOne({
+      where: [
+        { googleId },
+        { email }
+      ]
+    });
+
+    if (user) {
+      // Cập nhật thông tin nếu user đã tồn tại
+      if (!user.googleId) {
+        user.googleId = googleId;
+      }
+      if (!user.avatar) {
+        user.avatar = avatar;
+      }
+      user = await this.userRepository.save(user);
+    } else {
+      // Tạo user mới
+      user = this.userRepository.create({
+        googleId,
+        email,
+        fullName,
+        avatar,
+        role: UserRole.FARMER,
+        isActive: true,
+      });
+      user = await this.userRepository.save(user);
+    }
+
+    const { password: _, ...result } = user;
+    return result;
+  }
+
+  async googleLogin(googleUser: any) {
+    const user = await this.validateGoogleUser(googleUser);
+    return this.login(user);
+  }
 }
