@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
 import { JwtModule } from '@nestjs/jwt';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { getDatabaseConfig } from './common/config/database.config';
@@ -13,6 +14,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { FarmModule } from './modules/farm/farm.module';
+import { IotModule } from './modules/iot/iot.module';
 // import { KnowledgeModule } from './modules/knowledge/knowledge.module';
 
 @Module({
@@ -43,11 +45,15 @@ import { FarmModule } from './modules/farm/farm.module';
       inject: [ConfigService],
     }),
 
+    // Event Emitter
+    EventEmitterModule.forRoot(),
+
     // Feature Modules
     AuthModule,
     UsersModule,
     ChatModule,
     FarmModule,
+    IotModule,
     // KnowledgeModule,
   ],
   controllers: [AppController],

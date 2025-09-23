@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { GeminiService } from './gemini.service';
 import { ActionRouterService } from './action-router.service';
 import { KnowledgeBaseService } from './knowledge-base.service';
+import { IotService } from '../iot/iot.service';
 
 export interface AIResponse {
   content: string;
@@ -33,6 +34,7 @@ export class AIService {
     private geminiService: GeminiService,
     private actionRouterService: ActionRouterService,
     private knowledgeBaseService: KnowledgeBaseService,
+    private iotService: IotService,
   ) {}
 
   /**
@@ -98,14 +100,16 @@ export class AIService {
         'quản lý nông trại', 'farm management', 'farm data'
       ],
 
-      // IoT Intents (for future)
+      // IoT Intents
       sensor_query: [
         'độ ẩm', 'nhiệt độ', 'ánh sáng', 'cảm biến', 'sensor',
-        'humidity', 'temperature', 'light', 'moisture', 'soil moisture'
+        'humidity', 'temperature', 'light', 'moisture', 'soil moisture',
+        'độ ẩm đất', 'nhiệt độ hiện tại', 'cảm biến độ ẩm', 'dữ liệu cảm biến'
       ],
       device_control: [
         'bật', 'tắt', 'điều khiển', 'tự động', 'manual',
-        'turn on', 'turn off', 'control', 'automate', 'irrigation'
+        'turn on', 'turn off', 'control', 'automate', 'irrigation',
+        'bật bơm', 'tắt bơm', 'tưới nước', 'điều khiển thiết bị'
       ],
 
       // Action Intents
@@ -185,6 +189,170 @@ export class AIService {
     }
 
     return entities;
+  }
+
+  /**
+   * Xử lý sensor queries
+   */
+  async handleSensorQuery(userMessage: string, user: any, intentAnalysis: IntentAnalysis): Promise<AIResponse> {
+    try {
+      // Get user's farms
+      const farms = await this.iotService.getSensorsByFarm('', user); // This needs to be updated
+      
+      if (farms.length === 0) {
+        return {
+          content: 'Bạn chưa có cảm biến nào được kết nối. Hãy thêm cảm biến để theo dõi dữ liệu nông trại.',
+          intent: intentAnalysis.intent,
+          confidence: intentAnalysis.confidence,
+          metadata: {
+            model: 'iot-service',
+            processingTime: 0,
+            actionType: 'sensor_query'
+          }
+        };
+      }
+
+      // Get latest sensor readings
+      const latestReadings = await this.iotService.getLatestSensorReadings('', user);
+      
+      let response = '**Dữ liệu cảm biến hiện tại:**\n\n';
+      
+      latestReadings.forEach(({ sensor, latestReading }) => {
+        if (latestReading) {
+          response += `• **${sensor.name}** (${sensor.type}): ${latestReading.value}${latestReading.unit}\n`;
+          response += `  Thời gian: ${new Date(latestReading.timestamp).toLocaleString('vi-VN')}\n\n`;
+        }
+      });
+
+      if (latestReadings.length === 0) {
+        response = 'Chưa có dữ liệu cảm biến nào. Vui lòng kiểm tra kết nối thiết bị.';
+      }
+
+      return {
+        content: response,
+        intent: intentAnalysis.intent,
+        confidence: intentAnalysis.confidence,
+        metadata: {
+          model: 'iot-service',
+          processingTime: 0,
+          actionType: 'sensor_query'
+        }
+      };
+
+    } catch (error) {
+      this.logger.error('Error handling sensor query:', error);
+      return {
+        content: 'Xin lỗi, tôi không thể lấy dữ liệu cảm biến. Vui lòng thử lại sau.',
+        intent: intentAnalysis.intent,
+        confidence: intentAnalysis.confidence,
+        metadata: {
+          model: 'error-handler',
+          processingTime: 0
+        }
+      };
+    }
+  }
+
+  /**
+   * Xử lý device control commands
+   */
+  async handleDeviceControl(userMessage: string, user: any, intentAnalysis: IntentAnalysis): Promise<AIResponse> {
+    try {
+      // Parse command from user message
+      const message = userMessage.toLowerCase();
+      
+      let command = '';
+      let deviceType = '';
+      let parameters: any = {};
+
+      if (message.includes('bật bơm') || message.includes('turn on pump')) {
+        command = 'pump_on';
+        deviceType = 'pump';
+        
+        // Extract duration if mentioned
+        const durationMatch = message.match(/(\d+)\s*(phút|minute|min)/);
+        if (durationMatch) {
+          parameters = { duration: parseInt(durationMatch[1]) * 60 }; // Convert to seconds
+        }
+      } else if (message.includes('tắt bơm') || message.includes('turn off pump')) {
+        command = 'pump_off';
+        deviceType = 'pump';
+      } else if (message.includes('tưới nước') || message.includes('irrigation')) {
+        command = 'irrigation_start';
+        deviceType = 'pump';
+        parameters = { mode: 'auto' };
+      }
+
+      if (!command) {
+        return {
+          content: 'Tôi không hiểu lệnh điều khiển. Vui lòng thử: "bật bơm 10 phút", "tắt bơm", hoặc "tưới nước".',
+          intent: intentAnalysis.intent,
+          confidence: intentAnalysis.confidence,
+          metadata: {
+            model: 'iot-service',
+            processingTime: 0,
+            actionType: 'device_control'
+          }
+        };
+      }
+
+      // Get user's devices
+      const devices = await this.iotService.getDevicesByFarm('', user);
+      const targetDevice = devices.find(d => d.type === deviceType && d.isControllable);
+
+      if (!targetDevice) {
+        return {
+          content: `Không tìm thấy thiết bị ${deviceType} có thể điều khiển. Vui lòng kiểm tra cài đặt thiết bị.`,
+          intent: intentAnalysis.intent,
+          confidence: intentAnalysis.confidence,
+          metadata: {
+            model: 'iot-service',
+            processingTime: 0,
+            actionType: 'device_control'
+          }
+        };
+      }
+
+      // Send command
+      const deviceCommand = await this.iotService.sendDeviceCommand(
+        targetDevice.id,
+        command,
+        parameters,
+        user
+      );
+
+      let response = `Đã gửi lệnh **${command}** đến thiết bị **${targetDevice.name}**.\n\n`;
+      
+      if (parameters.duration) {
+        response += `Thời gian: ${parameters.duration / 60} phút\n`;
+      }
+      
+      response += `Trạng thái: ${deviceCommand.status}\n`;
+      response += `Thời gian: ${new Date(deviceCommand.createdAt).toLocaleString('vi-VN')}`;
+
+      return {
+        content: response,
+        intent: intentAnalysis.intent,
+        confidence: intentAnalysis.confidence,
+        metadata: {
+          model: 'iot-service',
+          processingTime: 0,
+          actionType: 'device_control'
+        }
+      };
+
+    } catch (error) {
+      this.logger.error('Error handling device control:', error);
+      return {
+        content: 'Xin lỗi, tôi không thể thực hiện lệnh điều khiển. Vui lòng thử lại sau.',
+        intent: intentAnalysis.intent,
+        confidence: intentAnalysis.confidence,
+        metadata: {
+          model: 'error-handler',
+          processingTime: 0
+        }
+      };
+    }
   }
 
   /**
@@ -293,6 +461,16 @@ export class AIService {
       ];
 
       if (dataQueryIntents.includes(intentAnalysis.intent)) {
+        // Handle IoT-specific intents
+        if (intentAnalysis.intent === 'sensor_query') {
+          return await this.handleSensorQuery(userMessage, user, intentAnalysis);
+        }
+        
+        if (intentAnalysis.intent === 'device_control') {
+          return await this.handleDeviceControl(userMessage, user, intentAnalysis);
+        }
+
+        // Handle other data queries via Action Router
         const actionResponse = await this.actionRouterService.routeAction({
           user,
           intent: intentAnalysis.intent,

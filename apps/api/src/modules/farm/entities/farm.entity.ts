@@ -104,6 +104,16 @@ export class Farm {
   })
   activities: any[];
 
+  @OneToMany('Sensor', 'farm', {
+    cascade: true,
+  })
+  sensors: any[];
+
+  @OneToMany('Device', 'farm', {
+    cascade: true,
+  })
+  devices: any[];
+
   @CreateDateColumn()
   createdAt: Date;
 
