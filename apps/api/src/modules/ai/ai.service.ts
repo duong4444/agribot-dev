@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GeminiService } from './gemini.service';
+import { ActionRouterService } from './action-router.service';
+import { KnowledgeBaseService } from './knowledge-base.service';
 
 export interface AIResponse {
   content: string;
@@ -11,6 +13,8 @@ export interface AIResponse {
     tokens?: number;
     processingTime?: number;
     safetyRatings?: any[];
+    actionType?: string;
+    knowledgeSources?: number;
   };
 }
 
@@ -27,6 +31,8 @@ export class AIService {
   constructor(
     private configService: ConfigService,
     private geminiService: GeminiService,
+    private actionRouterService: ActionRouterService,
+    private knowledgeBaseService: KnowledgeBaseService,
   ) {}
 
   /**
@@ -64,6 +70,57 @@ export class AIService {
       general: [
         'là gì', 'tại sao', 'như thế nào', 'có thể', 'có nên',
         'what is', 'why', 'how', 'can', 'should'
+      ],
+
+      // New Data Query Intents
+      financial_query: [
+        'doanh thu', 'lợi nhuận', 'chi phí', 'thu nhập', 'lãi lỗ',
+        'revenue', 'profit', 'expense', 'income', 'profit loss',
+        'tài chính', 'tài khoản', 'ngân sách', 'budget', 'finance'
+      ],
+      crop_query: [
+        'cây trồng', 'năng suất', 'sản lượng', 'diện tích', 'giống',
+        'crops', 'yield', 'production', 'area', 'variety',
+        'thu hoạch', 'trồng trọt', 'harvest', 'cultivation'
+      ],
+      activity_query: [
+        'hoạt động', 'công việc', 'nhiệm vụ', 'kế hoạch', 'tiến độ',
+        'activities', 'tasks', 'work', 'plan', 'progress',
+        'lịch trình', 'schedule', 'deadline', 'status'
+      ],
+      analytics_query: [
+        'thống kê', 'báo cáo', 'phân tích', 'biểu đồ', 'xu hướng',
+        'statistics', 'report', 'analysis', 'chart', 'trend',
+        'dữ liệu', 'metrics', 'kpi', 'dashboard'
+      ],
+      farm_query: [
+        'nông trại', 'trang trại', 'farm', 'farmland', 'agriculture',
+        'quản lý nông trại', 'farm management', 'farm data'
+      ],
+
+      // IoT Intents (for future)
+      sensor_query: [
+        'độ ẩm', 'nhiệt độ', 'ánh sáng', 'cảm biến', 'sensor',
+        'humidity', 'temperature', 'light', 'moisture', 'soil moisture'
+      ],
+      device_control: [
+        'bật', 'tắt', 'điều khiển', 'tự động', 'manual',
+        'turn on', 'turn off', 'control', 'automate', 'irrigation'
+      ],
+
+      // Action Intents
+      create_record: [
+        'tạo', 'thêm', 'ghi nhận', 'lưu', 'nhập',
+        'create', 'add', 'record', 'save', 'input',
+        'đăng ký', 'register', 'log'
+      ],
+      update_record: [
+        'cập nhật', 'sửa', 'thay đổi', 'chỉnh sửa',
+        'update', 'edit', 'modify', 'change'
+      ],
+      delete_record: [
+        'xóa', 'xóa bỏ', 'hủy', 'loại bỏ',
+        'delete', 'remove', 'cancel', 'eliminate'
       ]
     };
 
@@ -131,6 +188,48 @@ export class AIService {
   }
 
   /**
+   * Tạo phản hồi AI với RAG (Retrieval-Augmented Generation)
+   */
+  async generateResponseWithRAG(
+    userMessage: string,
+    intentAnalysis: IntentAnalysis
+  ): Promise<AIResponse> {
+    const startTime = Date.now();
+
+    try {
+      // Search knowledge base for relevant information
+      const knowledgeResults = await this.knowledgeBaseService.searchKnowledge(userMessage, 3);
+      
+      let context = '';
+      if (knowledgeResults.length > 0) {
+        context = knowledgeResults.map(result => result.content).join('\n\n');
+      }
+
+      // Generate response using RAG
+      const ragResponse = await this.knowledgeBaseService.generateRAGResponse(userMessage, context);
+      
+      const processingTime = Date.now() - startTime;
+
+      return {
+        content: ragResponse,
+        intent: intentAnalysis.intent,
+        confidence: intentAnalysis.confidence,
+        metadata: {
+          model: 'rag-knowledge-base',
+          processingTime,
+          knowledgeSources: knowledgeResults.length,
+        }
+      };
+
+    } catch (error) {
+      this.logger.error('Error generating RAG response:', error);
+      
+      // Fallback to original Gemini response
+      return await this.generateResponse(userMessage, intentAnalysis);
+    }
+  }
+
+  /**
    * Tạo phản hồi AI dựa trên intent và entities
    */
   async generateResponse(
@@ -174,6 +273,57 @@ export class AIService {
         metadata: {
           model: 'fallback-mock',
           processingTime: Date.now() - startTime
+        }
+      };
+    }
+  }
+
+  /**
+   * Xử lý data queries với Action Router
+   */
+  async handleDataQuery(userMessage: string, user: any): Promise<AIResponse> {
+    try {
+      const intentAnalysis = await this.analyzeIntent(userMessage);
+      
+      // Check if this is a data query intent
+      const dataQueryIntents = [
+        'financial_query', 'crop_query', 'activity_query', 
+        'analytics_query', 'farm_query', 'sensor_query',
+        'device_control', 'create_record', 'update_record', 'delete_record'
+      ];
+
+      if (dataQueryIntents.includes(intentAnalysis.intent)) {
+        const actionResponse = await this.actionRouterService.routeAction({
+          user,
+          intent: intentAnalysis.intent,
+          entities: intentAnalysis.entities,
+          message: userMessage
+        });
+
+        return {
+          content: actionResponse.message,
+          intent: intentAnalysis.intent,
+          confidence: intentAnalysis.confidence,
+          metadata: {
+            model: 'action-router',
+            processingTime: 0,
+            actionType: actionResponse.actionType
+          }
+        };
+      }
+
+      // Fallback to knowledge-based response with RAG
+      return await this.generateResponseWithRAG(userMessage, intentAnalysis);
+      
+    } catch (error) {
+      this.logger.error('Error handling data query:', error);
+      return {
+        content: 'Xin lỗi, tôi gặp lỗi khi xử lý yêu cầu của bạn. Vui lòng thử lại.',
+        intent: 'error',
+        confidence: 0,
+        metadata: {
+          model: 'error-handler',
+          processingTime: 0
         }
       };
     }

@@ -157,10 +157,20 @@ export class ChatService {
     conversation: Conversation,
   ): Promise<{ content: string; intent: string; confidence: number }> {
     try {
-      // Phân tích intent của câu hỏi
-      const intentAnalysis = await this.aiService.analyzeIntent(userMessage);
+      // Try data query first (for intelligent assistant features)
+      const dataQueryResponse = await this.aiService.handleDataQuery(userMessage, conversation.user);
       
-      // Tạo phản hồi AI dựa trên intent
+      // If it's a data query, return the response
+      if (dataQueryResponse.metadata?.actionType) {
+        return {
+          content: dataQueryResponse.content,
+          intent: dataQueryResponse.intent,
+          confidence: dataQueryResponse.confidence,
+        };
+      }
+      
+      // Fallback to knowledge-based response
+      const intentAnalysis = await this.aiService.analyzeIntent(userMessage);
       const aiResponse = await this.aiService.generateResponse(userMessage, intentAnalysis);
       
       return {
