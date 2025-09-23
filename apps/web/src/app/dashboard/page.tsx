@@ -16,7 +16,8 @@ import {
   Leaf,
   LogOut,
   Settings,
-  BarChart3
+  BarChart3,
+  Home
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import Link from 'next/link';
@@ -137,6 +138,14 @@ const Dashboard = () => {
               </div>
               
               <div className="flex items-center space-x-4">
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => window.location.href = '/farm'}
+                >
+                  <Home className="h-4 w-4 mr-2" />
+                  Farm Management
+                </Button>
                 <Button variant="ghost" size="sm">
                   <BarChart3 className="h-4 w-4 mr-2" />
                   Analytics
@@ -159,21 +168,21 @@ const Dashboard = () => {
         </header>
 
         {/* Main Content */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6">
             {/* Chat Interface */}
             <div className="lg:col-span-3">
-              <Card className="h-[600px] flex flex-col">
-                <CardHeader className="border-b">
+              <Card className="h-[600px] sm:h-[700px] flex flex-col overflow-hidden">
+                <CardHeader className="border-b flex-shrink-0">
                   <CardTitle className="flex items-center space-x-2">
                     <MessageSquare className="h-5 w-5" />
                     <span>Chat với AgriBot</span>
                   </CardTitle>
                 </CardHeader>
                 
-                <CardContent className="flex-1 flex flex-col p-0">
+                <CardContent className="flex-1 flex flex-col p-0 min-h-0">
                   {/* Messages */}
-                  <div className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth">
+                  <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 scroll-smooth min-h-0">
                     {messages.length === 0 ? (
                       <div className="text-center text-gray-500 mt-8">
                         <Bot className="h-12 w-12 mx-auto mb-4 text-gray-400" />
@@ -187,7 +196,7 @@ const Dashboard = () => {
                           className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
                           <div
-                            className={`max-w-xs lg:max-w-2xl px-4 py-3 rounded-lg ${
+                            className={`max-w-xs lg:max-w-2xl px-4 py-3 rounded-lg break-words ${
                               message.type === 'user'
                                 ? 'bg-agri-green-600 text-white'
                                 : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white'
@@ -224,7 +233,7 @@ const Dashboard = () => {
                   </div>
 
                   {/* Input */}
-                  <div className="border-t bg-gray-50 dark:bg-gray-800 p-4">
+                  <div className="border-t bg-gray-50 dark:bg-gray-800 p-3 sm:p-4 flex-shrink-0">
                     <div className="flex space-x-2">
                       <Input
                         value={inputMessage}

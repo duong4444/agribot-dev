@@ -12,6 +12,7 @@ import { getJwtConfig } from './common/config/jwt.config';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ChatModule } from './modules/chat/chat.module';
+import { FarmModule } from './modules/farm/farm.module';
 // import { KnowledgeModule } from './modules/knowledge/knowledge.module';
 
 @Module({
@@ -46,6 +47,7 @@ import { ChatModule } from './modules/chat/chat.module';
     AuthModule,
     UsersModule,
     ChatModule,
+    FarmModule,
     // KnowledgeModule,
   ],
   controllers: [AppController],
