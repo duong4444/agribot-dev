@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { GeminiService } from './gemini.service';
 
 export interface AIResponse {
   content: string;
@@ -9,6 +10,7 @@ export interface AIResponse {
     model?: string;
     tokens?: number;
     processingTime?: number;
+    safetyRatings?: any[];
   };
 }
 
@@ -22,7 +24,10 @@ export interface IntentAnalysis {
 export class AIService {
   private readonly logger = new Logger(AIService.name);
 
-  constructor(private configService: ConfigService) {}
+  constructor(
+    private configService: ConfigService,
+    private geminiService: GeminiService,
+  ) {}
 
   /**
    * Phân tích intent của câu hỏi nông nghiệp
@@ -135,33 +140,39 @@ export class AIService {
     const startTime = Date.now();
 
     try {
-      // Tạo prompt dựa trên intent
-      const prompt = this.createPrompt(userMessage, intentAnalysis);
-      
-      // TODO: Thay thế bằng OpenAI API thực tế
-      const response = await this.generateMockResponse(prompt, intentAnalysis);
-      
+      // Sử dụng Gemini Service để tạo phản hồi
+      const geminiResponse = await this.geminiService.generateAgriculturalResponse(
+        userMessage,
+        intentAnalysis.intent,
+        intentAnalysis.entities
+      );
+
       const processingTime = Date.now() - startTime;
 
       return {
-        content: response,
+        content: geminiResponse.content,
         intent: intentAnalysis.intent,
         confidence: intentAnalysis.confidence,
         metadata: {
-          model: 'mock-agricultural-ai',
-          processingTime
+          model: geminiResponse.model,
+          tokens: geminiResponse.usage?.totalTokens,
+          processingTime,
+          safetyRatings: geminiResponse.safetyRatings
         }
       };
 
     } catch (error) {
       this.logger.error('Error generating AI response:', error);
       
+      // Fallback to mock response if Gemini fails
+      const mockResponse = await this.generateMockResponse('', intentAnalysis);
+      
       return {
-        content: 'Xin lỗi, tôi gặp sự cố khi xử lý câu hỏi của bạn. Vui lòng thử lại sau.',
-        intent: 'error',
-        confidence: 0.1,
+        content: mockResponse,
+        intent: intentAnalysis.intent,
+        confidence: intentAnalysis.confidence * 0.5, // Reduce confidence for fallback
         metadata: {
-          model: 'error-fallback',
+          model: 'fallback-mock',
           processingTime: Date.now() - startTime
         }
       };
@@ -175,36 +186,42 @@ export class AIService {
     const { intent, entities } = intentAnalysis;
     
     const basePrompt = `Bạn là một chuyên gia nông nghiệp AI, chuyên tư vấn về kỹ thuật trồng trọt và chăm sóc cây trồng. 
-Hãy trả lời câu hỏi của người nông dân một cách chính xác, dễ hiểu và thực tế.
+
+QUAN TRỌNG: Trả lời NGẮN GỌN, SÚC TÍCH trong vòng 150-200 từ. Tập trung vào thông tin thiết yếu nhất.
 
 Câu hỏi: "${userMessage}"
 Intent: ${intent}
 Entities: ${JSON.stringify(entities)}
 
-Hãy trả lời bằng tiếng Việt, ngắn gọn nhưng đầy đủ thông tin.`;
+Yêu cầu:
+- Trả lời bằng tiếng Việt
+- Tối đa 200 từ
+- Chia thành 2-3 đoạn ngắn
+- Sử dụng bullet points khi cần
+- Tập trung vào thông tin thực tế, có thể áp dụng ngay`;
 
     // Customize prompt based on intent
     switch (intent) {
       case 'planting':
-        return basePrompt + '\n\nTập trung vào: kỹ thuật trồng, thời vụ, chuẩn bị đất, mật độ trồng.';
+        return basePrompt + '\n\nTập trung vào: thời vụ, chuẩn bị đất, mật độ trồng. Chỉ nêu 3-4 điểm quan trọng nhất.';
       
       case 'care':
-        return basePrompt + '\n\nTập trung vào: chăm sóc hàng ngày, tưới nước, bón phân, phòng bệnh.';
+        return basePrompt + '\n\nTập trung vào: tưới nước, bón phân, phòng bệnh. Nêu 3-4 biện pháp chính.';
       
       case 'harvest':
-        return basePrompt + '\n\nTập trung vào: thời điểm thu hoạch, cách thu hoạch, bảo quản sau thu hoạch.';
+        return basePrompt + '\n\nTập trung vào: thời điểm thu hoạch, cách thu hoạch. Nêu 2-3 điểm quan trọng.';
       
       case 'soil':
-        return basePrompt + '\n\nTập trung vào: loại đất phù hợp, cải thiện đất, độ pH, dinh dưỡng.';
+        return basePrompt + '\n\nTập trung vào: loại đất phù hợp, độ pH, cải thiện đất. Nêu 3 điểm chính.';
       
       case 'weather':
-        return basePrompt + '\n\nTập trung vào: ảnh hưởng của thời tiết, biện pháp bảo vệ, thời vụ phù hợp.';
+        return basePrompt + '\n\nTập trung vào: ảnh hưởng thời tiết, biện pháp bảo vệ. Nêu 2-3 điểm quan trọng.';
       
       case 'pest':
-        return basePrompt + '\n\nTập trung vào: nhận biết sâu bệnh, biện pháp phòng trừ, thuốc bảo vệ thực vật.';
+        return basePrompt + '\n\nTập trung vào: nhận biết sâu bệnh, biện pháp phòng trừ. Nêu 3-4 điểm chính.';
       
       default:
-        return basePrompt + '\n\nTrả lời tổng quát về nông nghiệp, cung cấp thông tin hữu ích.';
+        return basePrompt + '\n\nTrả lời tổng quát, nêu 3-4 điểm quan trọng nhất.';
     }
   }
 
@@ -234,23 +251,23 @@ Hãy trả lời bằng tiếng Việt, ngắn gọn nhưng đầy đủ thông 
     switch (intent) {
       case 'planting':
         return [
-          `Để trồng ${crop} hiệu quả, bạn cần chuẩn bị đất kỹ lưỡng, chọn giống tốt và trồng đúng thời vụ. Đất cần được làm tơi xốp, bón lót phân hữu cơ và đảm bảo thoát nước tốt.`,
-          `Kỹ thuật trồng ${crop} bao gồm: chuẩn bị đất, gieo hạt hoặc trồng cây con, tưới nước đều đặn và theo dõi sự phát triển. Nên trồng vào mùa mưa hoặc có hệ thống tưới tiêu.`,
-          `Trồng ${crop} cần chú ý đến mật độ trồng phù hợp, khoảng cách giữa các cây để đảm bảo ánh sáng và không khí lưu thông tốt.`
+          `**Thời vụ:** Trồng ${crop} vào mùa mưa (tháng 5-10).\n**Chuẩn bị đất:** Làm tơi xốp, bón lót phân hữu cơ.\n**Mật độ:** Khoảng cách 30-40cm giữa các cây.\n**Lưu ý:** Đảm bảo thoát nước tốt.`,
+          `**Kỹ thuật trồng ${crop}:**\n• Chuẩn bị đất tơi xốp\n• Gieo hạt sâu 2-3cm\n• Tưới nước đều đặn\n• Theo dõi sự phát triển`,
+          `**Trồng ${crop} hiệu quả:**\n• Chọn giống chất lượng\n• Đất thoát nước tốt\n• Mật độ trồng phù hợp\n• Chăm sóc đúng cách`
         ];
       
       case 'care':
         return [
-          `Chăm sóc ${crop} cần tưới nước đều đặn, bón phân định kỳ và theo dõi sâu bệnh. Tưới nước vào sáng sớm hoặc chiều mát, tránh tưới vào giữa trưa.`,
-          `Để ${crop} phát triển tốt, cần bón phân NPK cân đối, làm cỏ thường xuyên và phòng trừ sâu bệnh kịp thời. Kiểm tra lá và thân cây hàng ngày.`,
-          `Chăm sóc ${crop} bao gồm: tưới nước, bón phân, cắt tỉa lá già, làm cỏ và phun thuốc phòng bệnh khi cần thiết.`
+          `**Chăm sóc ${crop}:**\n• Tưới nước sáng sớm/chiều mát\n• Bón phân NPK định kỳ\n• Làm cỏ thường xuyên\n• Theo dõi sâu bệnh`,
+          `**Chế độ chăm sóc:**\n• Tưới nước đều đặn\n• Bón phân cân đối\n• Cắt tỉa lá già\n• Phòng trừ sâu bệnh`,
+          `**Lưu ý chăm sóc:**\n• Kiểm tra cây hàng ngày\n• Tưới nước đúng cách\n• Bón phân đúng liều\n• Xử lý sâu bệnh kịp thời`
         ];
       
       case 'harvest':
         return [
-          `Thu hoạch ${crop} nên thực hiện vào sáng sớm khi trời mát. Quan sát màu sắc và kích thước để xác định thời điểm thu hoạch phù hợp.`,
-          `Thời điểm thu hoạch ${crop} phụ thuộc vào giống và điều kiện thời tiết. Thường từ 60-90 ngày sau khi trồng, tùy loại cây.`,
-          `Khi thu hoạch ${crop}, cần cẩn thận để không làm tổn thương cây. Sử dụng dụng cụ sạch và bảo quản nơi thoáng mát.`
+          `**Thu hoạch ${crop}:**\n• Thời điểm: 60-90 ngày sau trồng\n• Thời gian: Sáng sớm khi trời mát\n• Cách nhận biết: Màu sắc, kích thước\n• Bảo quản: Nơi khô ráo, thoáng mát`,
+          `**Thời điểm thu hoạch:**\n• Quan sát màu sắc cây\n• Kiểm tra kích thước\n• Thu hoạch vào sáng sớm\n• Bảo quản đúng cách`,
+          `**Kỹ thuật thu hoạch:**\n• Cẩn thận không làm hỏng\n• Thu hoạch đúng thời điểm\n• Bảo quản khô ráo\n• Tránh ánh nắng trực tiếp`
         ];
       
       case 'soil':

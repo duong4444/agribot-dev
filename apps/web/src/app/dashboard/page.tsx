@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AuthGuard } from '@/components/auth/auth-guard';
+import { MessageContent } from '@/components/ui/message-content';
+import { TypingIndicator } from '@/components/ui/typing-indicator';
 import { 
   Send, 
   Bot, 
@@ -24,6 +26,9 @@ interface Message {
   content: string;
   type: 'user' | 'assistant';
   timestamp: Date;
+  intent?: string;
+  confidence?: number;
+  responseTime?: number;
 }
 
 const Dashboard = () => {
@@ -80,6 +85,9 @@ const Dashboard = () => {
         content: data.response.content,
         type: 'assistant',
         timestamp: new Date(data.response.createdAt),
+        intent: data.response.intent,
+        confidence: data.response.confidence,
+        responseTime: data.response.responseTime,
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -165,7 +173,7 @@ const Dashboard = () => {
                 
                 <CardContent className="flex-1 flex flex-col p-0">
                   {/* Messages */}
-                  <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth">
                     {messages.length === 0 ? (
                       <div className="text-center text-gray-500 mt-8">
                         <Bot className="h-12 w-12 mx-auto mb-4 text-gray-400" />
@@ -179,7 +187,7 @@ const Dashboard = () => {
                           className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
                           <div
-                            className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                            className={`max-w-xs lg:max-w-2xl px-4 py-3 rounded-lg ${
                               message.type === 'user'
                                 ? 'bg-agri-green-600 text-white'
                                 : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white'
@@ -192,9 +200,15 @@ const Dashboard = () => {
                               {message.type === 'user' && (
                                 <User className="h-4 w-4 mt-1 flex-shrink-0" />
                               )}
-                              <div>
-                                <p className="text-sm">{message.content}</p>
-                                <p className="text-xs opacity-70 mt-1">
+                              <div className="flex-1">
+                                <MessageContent 
+                                  content={message.content} 
+                                  type={message.type}
+                                  intent={message.intent}
+                                  confidence={message.confidence}
+                                  responseTime={message.responseTime}
+                                />
+                                <p className="text-xs opacity-70 mt-2">
                                   {message.timestamp.toLocaleTimeString()}
                                 </p>
                               </div>
@@ -204,26 +218,13 @@ const Dashboard = () => {
                       ))
                     )}
                     
-                    {isLoading && (
-                      <div className="flex justify-start">
-                        <div className="bg-gray-200 dark:bg-gray-700 px-4 py-2 rounded-lg">
-                          <div className="flex items-center space-x-2">
-                            <Bot className="h-4 w-4" />
-                            <div className="flex space-x-1">
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    {isLoading && <TypingIndicator />}
                     
                     <div ref={messagesEndRef} />
                   </div>
 
                   {/* Input */}
-                  <div className="border-t p-4">
+                  <div className="border-t bg-gray-50 dark:bg-gray-800 p-4">
                     <div className="flex space-x-2">
                       <Input
                         value={inputMessage}
@@ -231,14 +232,18 @@ const Dashboard = () => {
                         onKeyPress={handleKeyPress}
                         placeholder="Nhập câu hỏi về nông nghiệp..."
                         disabled={isLoading}
-                        className="flex-1"
+                        className="flex-1 border-gray-300 dark:border-gray-600 focus:border-agri-green-500 focus:ring-agri-green-500"
                       />
                       <Button
                         onClick={handleSendMessage}
                         disabled={!inputMessage.trim() || isLoading}
-                        className="bg-agri-green-600 hover:bg-agri-green-700"
+                        className="bg-agri-green-600 hover:bg-agri-green-700 px-4"
                       >
-                        <Send className="h-4 w-4" />
+                        {isLoading ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        ) : (
+                          <Send className="h-4 w-4" />
+                        )}
                       </Button>
                     </div>
                   </div>
