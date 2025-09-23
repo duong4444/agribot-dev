@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -19,7 +19,8 @@ export async function PUT(
     const body = await request.json();
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     
-    const response = await fetch(`${apiUrl}/farms/activities/${params.id}`, {
+    const { id } = await params;
+    const response = await fetch(`${apiUrl}/farms/activities/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -50,7 +51,7 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -64,7 +65,8 @@ export async function DELETE(
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     
-    const response = await fetch(`${apiUrl}/farms/activities/${params.id}`, {
+    const { id } = await params;
+    const response = await fetch(`${apiUrl}/farms/activities/${id}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${session.accessToken}`,

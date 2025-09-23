@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -18,7 +18,8 @@ export async function GET(
 
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     
-    const response = await fetch(`${apiUrl}/farms/${params.id}/analytics`, {
+    const { id } = await params;
+    const response = await fetch(`${apiUrl}/farms/${id}/analytics`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

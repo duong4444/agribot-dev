@@ -3,6 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+
+// Analytics Components
+import ExpenseAnalytics from '@/components/analytics/expense-analytics';
+import ActivityAnalytics from '@/components/analytics/activity-analytics';
+import CropAnalytics from '@/components/analytics/crop-analytics';
+import FinancialAnalytics from '@/components/analytics/financial-analytics';
 import {
   Card,
   CardContent,
@@ -660,12 +666,13 @@ export default function FarmDashboard() {
         {/* Farm Details */}
         {selectedFarm && (
           <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="overview">Tổng Quan</TabsTrigger>
               <TabsTrigger value="crops">Cây Trồng</TabsTrigger>
               <TabsTrigger value="activities">Hoạt Động</TabsTrigger>
               <TabsTrigger value="expenses">Chi Phí</TabsTrigger>
               <TabsTrigger value="analytics">Thống Kê</TabsTrigger>
+              <TabsTrigger value="advanced-analytics">Phân Tích Nâng Cao</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
@@ -1393,6 +1400,52 @@ export default function FarmDashboard() {
                   </Card>
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="advanced-analytics" className="space-y-6">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Phân Tích Nâng Cao</h3>
+                  <Badge variant="outline" className="text-sm">
+                    Dữ liệu thời gian thực
+                  </Badge>
+                </div>
+
+                {/* Analytics Tabs */}
+                <Tabs defaultValue="financial" className="w-full">
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="financial">Tài Chính</TabsTrigger>
+                    <TabsTrigger value="expense">Chi Phí</TabsTrigger>
+                    <TabsTrigger value="activity">Hoạt Động</TabsTrigger>
+                    <TabsTrigger value="crop">Cây Trồng</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="financial" className="space-y-6">
+                    <FinancialAnalytics 
+                      expenses={selectedFarm.expenses || []} 
+                      crops={selectedFarm.crops || []} 
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="expense" className="space-y-6">
+                    <ExpenseAnalytics 
+                      expenses={selectedFarm.expenses || []} 
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="activity" className="space-y-6">
+                    <ActivityAnalytics 
+                      activities={selectedFarm.activities || []} 
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="crop" className="space-y-6">
+                    <CropAnalytics 
+                      crops={selectedFarm.crops || []} 
+                    />
+                  </TabsContent>
+                </Tabs>
+              </div>
             </TabsContent>
           </Tabs>
         )}
