@@ -2,6 +2,22 @@
 @tailwind components;
 @tailwind utilities;
 
+/* AgriBot Custom Colors */
+@layer base {
+  :root {
+    --agri-green-50: 240 253 244;
+    --agri-green-100: 220 252 231;
+    --agri-green-200: 187 247 208;
+    --agri-green-300: 134 239 172;
+    --agri-green-400: 74 222 128;
+    --agri-green-500: 34 197 94;
+    --agri-green-600: 22 163 74;
+    --agri-green-700: 21 128 61;
+    --agri-green-800: 22 101 52;
+    --agri-green-900: 20 83 45;
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

@@ -1,13 +1,15 @@
-import { ReactNode } from 'react';
+"use client";
 
-interface AuthLayoutProps {
-  children: ReactNode;
-}
+import { AuthGuard } from '@/components/auth/auth-guard';
 
-export default function AuthLayout({ children }: AuthLayoutProps) {
+export default function AuthLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-400 to-cyan-800">
+    <AuthGuard requireAuth={false}>
       {children}
-    </div>
+    </AuthGuard>
   );
 }

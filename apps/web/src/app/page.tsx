@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,9 +18,18 @@ import {
   Leaf,
   Smartphone,
   Cloud,
+  User,
+  LogOut,
+  MessageSquare,
 } from "lucide-react";
 
 export default function HomePage() {
+  const { data: session, status } = useSession();
+
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: '/' });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-agri-green-100 to-agri-green-200 dark:from-gray-900 dark:to-green-800">
       {/* Header */}
@@ -33,42 +45,97 @@ export default function HomePage() {
           </Link>
           <div className="flex items-center space-x-4">
             <ThemeToggle />
-            <Link href="/login">
-              <Button variant="outline">Đăng nhập</Button>
-            </Link>
-            <Link href="/register">
-              <Button>Đăng ký</Button>
-            </Link>
+            {status === 'loading' ? (
+              <div className="animate-pulse bg-gray-200 h-10 w-20 rounded"></div>
+            ) : session ? (
+              <div className="flex items-center space-x-4">
+                <span className="text-sm text-gray-600 dark:text-gray-300">
+                  Xin chào, {session.user?.name}
+                </span>
+                <Link href="/dashboard">
+                  <Button variant="outline" className="flex items-center space-x-2">
+                    <MessageSquare className="h-4 w-4" />
+                    <span>Chat</span>
+                  </Button>
+                </Link>
+                <Button 
+                  variant="ghost" 
+                  onClick={handleSignOut}
+                  className="flex items-center space-x-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Đăng xuất</span>
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-4">
+                <Link href="/login">
+                  <Button variant="outline">Đăng nhập</Button>
+                </Link>
+                <Link href="/register">
+                  <Button>Đăng ký</Button>
+                </Link>
+              </div>
+            )}
           </div>
         </nav>
       </header>
 
       {/* Hero Section */}
       <main className="container mx-auto px-4 py-16">
-        <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-6">
-            Trợ lý AI Thông minh cho Nông nghiệp 
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
-            Hệ thống chatbot AI tích hợp IoT giúp nông dân quản lý trang trại,
-            tư vấn kỹ thuật canh tác và tự động hóa tưới tiêu.
-          </p>
-          <div className="flex justify-center space-x-4">
-            <Link href="/register">
-              <Button
-                size="lg"
-                className="bg-agri-green-600 hover:bg-agri-green-700"
-              >
-                Bắt đầu miễn phí
-              </Button>
-            </Link>
-            <Link href="/demo">
-              <Button size="lg" variant="outline">
-                Xem demo
-              </Button>
-            </Link>
+        {session ? (
+          // Welcome back section for logged in users
+          <div className="text-center mb-16">
+            <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-6">
+              Chào mừng trở lại, {session.user?.name}! 🌱
+            </h1>
+            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
+              Sẵn sàng để bắt đầu cuộc trò chuyện với trợ lý AI nông nghiệp của bạn?
+            </p>
+            <div className="flex justify-center space-x-4">
+              <Link href="/dashboard">
+                <Button
+                  size="lg"
+                  className="bg-agri-green-600 hover:bg-agri-green-700 flex items-center space-x-2"
+                >
+                  <MessageSquare className="h-5 w-5" />
+                  <span>Bắt đầu Chat</span>
+                </Button>
+              </Link>
+              <Link href="/demo">
+                <Button size="lg" variant="outline">
+                  Xem demo
+                </Button>
+              </Link>
+            </div>
           </div>
-        </div>
+        ) : (
+          // Landing section for non-logged in users
+          <div className="text-center mb-16">
+            <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-6">
+              Trợ lý AI Thông minh cho Nông nghiệp 
+            </h1>
+            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
+              Hệ thống chatbot AI tích hợp IoT giúp nông dân quản lý trang trại,
+              tư vấn kỹ thuật canh tác và tự động hóa tưới tiêu.
+            </p>
+            <div className="flex justify-center space-x-4">
+              <Link href="/register">
+                <Button
+                  size="lg"
+                  className="bg-agri-green-600 hover:bg-agri-green-700"
+                >
+                  Bắt đầu miễn phí
+                </Button>
+              </Link>
+              <Link href="/demo">
+                <Button size="lg" variant="outline">
+                  Xem demo
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* Features Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">

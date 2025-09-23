@@ -11,7 +11,7 @@ import { getJwtConfig } from './common/config/jwt.config';
 // Modules
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
-// import { ChatModule } from './modules/chat/chat.module';
+import { ChatModule } from './modules/chat/chat.module';
 // import { KnowledgeModule } from './modules/knowledge/knowledge.module';
 
 @Module({
@@ -45,7 +45,7 @@ import { UsersModule } from './modules/users/users.module';
     // Feature Modules
     AuthModule,
     UsersModule,
-    // ChatModule,
+    ChatModule,
     // KnowledgeModule,
   ],
   controllers: [AppController],
