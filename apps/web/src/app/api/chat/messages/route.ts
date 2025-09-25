@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
+// gửi prompt
 export async function POST(request: NextRequest) {
   try {
     // Check authentication
@@ -43,6 +44,8 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
+    console.log("data trả về client_chat/messages: ",data);
+    
     return NextResponse.json(data);
     
   } catch (error) {

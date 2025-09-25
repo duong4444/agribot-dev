@@ -80,6 +80,7 @@ export class ChatController {
     return { message: 'Cuộc trò chuyện đã được xóa thành công' };
   }
 
+  // !!!! Logic chính
   @Post('messages')
   @ApiOperation({ summary: 'Gửi tin nhắn' })
   @ApiResponse({
@@ -89,8 +90,10 @@ export class ChatController {
   })
   async sendMessage(
     @Request() req,
+    // content - conversationId - metadata
     @Body() sendMessageDto: SendMessageDto,
   ): Promise<SendMessageResponseDto> {
+    // req.user chứa User (entity)
     return await this.chatService.sendMessage(req.user, sendMessageDto);
   }
 

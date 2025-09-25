@@ -24,7 +24,7 @@ export class AIService {
 
   constructor(private configService: ConfigService) {}
 
-  /**
+  /** !!!!
    * Phân tích intent của câu hỏi nông nghiệp
    */
   async analyzeIntent(userMessage: string): Promise<IntentAnalysis> {
@@ -66,6 +66,7 @@ export class AIService {
     let bestIntent = 'general';
     let maxConfidence = 0.3; // Default confidence for general questions
 
+    // 
     for (const [intent, patterns] of Object.entries(intentPatterns)) {
       const matches = patterns.filter(pattern => message.includes(pattern));
       if (matches.length > 0) {
@@ -137,6 +138,7 @@ export class AIService {
     try {
       // Tạo prompt dựa trên intent
       const prompt = this.createPrompt(userMessage, intentAnalysis);
+      console.log("prompt_gửi AI: ",prompt);
       
       // TODO: Thay thế bằng OpenAI API thực tế
       const response = await this.generateMockResponse(prompt, intentAnalysis);
@@ -182,6 +184,9 @@ Intent: ${intent}
 Entities: ${JSON.stringify(entities)}
 
 Hãy trả lời bằng tiếng Việt, ngắn gọn nhưng đầy đủ thông tin.`;
+
+    console.log("base prompt: ",basePrompt);
+    
 
     // Customize prompt based on intent
     switch (intent) {

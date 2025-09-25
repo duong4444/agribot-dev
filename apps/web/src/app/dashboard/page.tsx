@@ -1,5 +1,5 @@
 "use client";
-
+// note hiện tại nhập prompt mới tự động tạo conversation mới
 import React, { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
@@ -28,7 +28,9 @@ interface Message {
 
 const Dashboard = () => {
   const { data: session } = useSession();
+  // messages của User || AI || Error
   const [messages, setMessages] = useState<Message[]>([]);
+  // prompt
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -41,12 +43,13 @@ const Dashboard = () => {
     scrollToBottom();
   }, [messages]);
 
+  // !!!! Logic chính - gửi cho BE
   const handleSendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      content: inputMessage,
+      content: inputMessage, // inputMessage
       type: 'user',
       timestamp: new Date(),
     };
@@ -56,6 +59,7 @@ const Dashboard = () => {
     setInputMessage('');
     setIsLoading(true);
 
+    // ban đầu conversationId = null
     try {
       // Call actual API
       const response = await fetch('/api/chat/messages', {
@@ -63,18 +67,24 @@ const Dashboard = () => {
         headers: {
           'Content-Type': 'application/json',
         },
+        // note
+        // body chứa content (prompt) , conversationId
         body: JSON.stringify({
           content: currentMessage,
           conversationId: null, // Will create new conversation
         }),
       });
-
+      console.log("data gốc_chat/messages: ",response);
+      
       if (!response.ok) {
         throw new Error('Failed to send message');
       }
 
+      // trả về từ BE
       const data = await response.json();
+      console.log("data.json_chat/messages: ",data);
       
+      // AI response
       const assistantMessage: Message = {
         id: data.response.id,
         content: data.response.content,
@@ -181,7 +191,7 @@ const Dashboard = () => {
                           <div
                             className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
                               message.type === 'user'
-                                ? 'bg-agri-green-600 text-white'
+                                ? 'bg-green-600 text-white'
                                 : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white'
                             }`}
                           >
@@ -223,6 +233,7 @@ const Dashboard = () => {
                   </div>
 
                   {/* Input */}
+                  {/* nhập prompt */}
                   <div className="border-t p-4">
                     <div className="flex space-x-2">
                       <Input

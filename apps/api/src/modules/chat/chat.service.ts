@@ -16,10 +16,10 @@ export class ChatService {
     private aiService: AIService,
   ) {}
 
-  // Tạo cuộc trò chuyện mới
+  // Tạo cuộc trò chuyện mới (ban đầu conversationId = null)
   async createConversation(
     user: User,
-    createConversationDto: CreateConversationDto,
+    createConversationDto: CreateConversationDto, // title - description
   ): Promise<Conversation> {
     const conversation = this.conversationRepository.create({
       ...createConversationDto,
@@ -56,7 +56,7 @@ export class ChatService {
     return conversation;
   }
 
-  // Gửi tin nhắn
+  // !!!! Gửi tin nhắn
   async sendMessage(
     user: User,
     sendMessageDto: SendMessageDto,
@@ -70,6 +70,7 @@ export class ChatService {
       conversation = await this.getConversation(sendMessageDto.conversationId, user);
     } else {
       // Tạo cuộc trò chuyện mới với tiêu đề từ tin nhắn đầu tiên
+      // return Conversation (entity)
       conversation = await this.createConversation(user, {
         title: this.generateTitleFromMessage(sendMessageDto.content),
         description: 'Cuộc trò chuyện mới',
@@ -86,9 +87,11 @@ export class ChatService {
       user,
     });
 
+    // lưu message của User vào DB
     const savedUserMessage = await this.messageRepository.save(userMessage);
 
     // Tạo phản hồi từ AI (tạm thời là placeholder)
+    // 
     const aiResponse = await this.generateAIResponse(sendMessageDto.content, conversation);
 
     // Lưu phản hồi của AI
@@ -159,7 +162,11 @@ export class ChatService {
     try {
       // Phân tích intent của câu hỏi
       const intentAnalysis = await this.aiService.analyzeIntent(userMessage);
-      
+      /**
+      intent: bestIntent,
+      confidence: maxConfidence,
+      entities
+       */
       // Tạo phản hồi AI dựa trên intent
       const aiResponse = await this.aiService.generateResponse(userMessage, intentAnalysis);
       
