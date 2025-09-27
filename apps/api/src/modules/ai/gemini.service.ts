@@ -49,7 +49,7 @@ export class GeminiService {
       };
 
       this.model = this.genAI.getGenerativeModel({ 
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.0-flash',
         generationConfig 
       });
 
@@ -93,7 +93,7 @@ export class GeminiService {
           completionTokens: this.estimateTokens(text),
           totalTokens: this.estimateTokens(prompt) + this.estimateTokens(text)
         },
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.0-flash',
         finishReason: 'stop',
         safetyRatings: (response as any).safetyRatings || []
       };
@@ -117,7 +117,7 @@ export class GeminiService {
     return this.generateResponse(prompt, {
       temperature: 0.7,
       maxTokens: 300, // Giảm từ 800 xuống 300 tokens để response ngắn hơn
-      model: 'gemini-1.5-flash'
+      model: 'gemini-2.0-flash'
     });
   }
 
@@ -273,7 +273,7 @@ YÊU CẦU:
 
     try {
       const model = this.genAI.getGenerativeModel({ 
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.0-flash',
         safetySettings: safetySettings || [
           {
             category: 'HARM_CATEGORY_HARASSMENT',
@@ -305,7 +305,7 @@ YÊU CẦU:
           completionTokens: this.estimateTokens(text),
           totalTokens: this.estimateTokens(prompt) + this.estimateTokens(text)
         },
-        model: 'gemini-1.5-flash',
+        model: 'gemini-2.0-flash',
         finishReason: 'stop',
         safetyRatings: (response as any).safetyRatings || []
       };
