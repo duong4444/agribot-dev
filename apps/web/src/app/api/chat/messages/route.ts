@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     if (!session?.accessToken) {
       console.log('No access token found');
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Unauthorized no accecssToken' },
         { status: 401 }
       );
     }
@@ -34,10 +34,15 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(body),
     });
 
+    console.log("res server: ",response);
+    
+
     if (!response.ok) {
       const errorData = await response.json();
+      console.log("errorData trong routes chat/messages: ",errorData);
+      
       return NextResponse.json(
-        { error: errorData.message || 'Failed to send message' },
+        { error: 'Failed to send message routes chat/messages' },
         { status: response.status }
       );
     }

@@ -74,8 +74,10 @@ const Dashboard = () => {
         }),
       });
 
+      console.log("response trả về từ BE: ",response);
+      
       if (!response.ok) {
-        throw new Error('Failed to send message');
+        throw new Error('Error dashboard page !');
       }
 
       const data = await response.json();
