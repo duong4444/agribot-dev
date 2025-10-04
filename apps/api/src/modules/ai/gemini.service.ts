@@ -19,6 +19,7 @@ export class GeminiService {
   private readonly logger = new Logger(GeminiService.name);
   private genAI: GoogleGenerativeAI;
   private model: GenerativeModel;
+  private modelName: string;
   private isConfigured = false;
 
   constructor(private configService: ConfigService) {
@@ -31,6 +32,7 @@ export class GeminiService {
   private async initializeGemini() {
     try {
       const apiKey = this.configService.get<string>('GEMINI_API_KEY');
+      this.modelName = this.configService.get<string>('GEMINI_MODEL') || 'gemini-2.0-flash';
       
       if (!apiKey) {
         this.logger.warn('Gemini API key not found. Using mock responses.');
@@ -49,7 +51,7 @@ export class GeminiService {
       };
 
       this.model = this.genAI.getGenerativeModel({ 
-        model: 'gemini-1.5-flash',
+        model: this.modelName,
         generationConfig 
       });
 
@@ -93,7 +95,7 @@ export class GeminiService {
           completionTokens: this.estimateTokens(text),
           totalTokens: this.estimateTokens(prompt) + this.estimateTokens(text)
         },
-        model: 'gemini-1.5-flash',
+        model: this.modelName,
         finishReason: 'stop',
         safetyRatings: (response as any).safetyRatings || []
       };
@@ -117,7 +119,7 @@ export class GeminiService {
     return this.generateResponse(prompt, {
       temperature: 0.7,
       maxTokens: 300, // Giảm từ 800 xuống 300 tokens để response ngắn hơn
-      model: 'gemini-1.5-flash'
+      model: this.modelName
     });
   }
 
@@ -273,7 +275,7 @@ YÊU CẦU:
 
     try {
       const model = this.genAI.getGenerativeModel({ 
-        model: 'gemini-1.5-flash',
+        model: this.modelName,
         safetySettings: safetySettings || [
           {
             category: 'HARM_CATEGORY_HARASSMENT',
@@ -305,7 +307,7 @@ YÊU CẦU:
           completionTokens: this.estimateTokens(text),
           totalTokens: this.estimateTokens(prompt) + this.estimateTokens(text)
         },
-        model: 'gemini-1.5-flash',
+        model: this.modelName,
         finishReason: 'stop',
         safetyRatings: (response as any).safetyRatings || []
       };
