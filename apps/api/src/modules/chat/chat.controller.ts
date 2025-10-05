@@ -89,7 +89,7 @@ export class ChatController {
   })
   async sendMessage(
     @Request() req,
-    @Body() sendMessageDto: SendMessageDto,
+    @Body() sendMessageDto: SendMessageDto, // content, conversationId?, metadata?
   ): Promise<SendMessageResponseDto> {
     return await this.chatService.sendMessage(req.user, sendMessageDto);
   }

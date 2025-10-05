@@ -20,7 +20,14 @@ const Dashboard = () => {
     messagesEndRef,
     sendMessage,
     handleKeyPress,
+    resetConversation,
+    loadConversation,
+    conversationId,
   } = useChat();
+
+  const handleSelectConversation = (conversationId: string) => {
+    loadConversation(conversationId);
+  };
 
   return (
     <AuthGuard>
@@ -44,7 +51,11 @@ const Dashboard = () => {
             </div>
 
             {/* Sidebar */}
-            <DashboardSidebar />
+            <DashboardSidebar 
+              onNewConversation={resetConversation}
+              onSelectConversation={handleSelectConversation}
+              currentConversationId={conversationId || undefined}
+            />
           </div>
         </div>
       </div>

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
@@ -39,10 +43,7 @@ export class ChatService {
   }
 
   // Lấy cuộc trò chuyện theo ID
-  async getConversation(
-    id: string,
-    user: User,
-  ): Promise<Conversation> {
+  async getConversation(id: string, user: User): Promise<Conversation> {
     const conversation = await this.conversationRepository.findOne({
       where: { id, user: { id: user.id } },
       relations: ['messages', 'user'],
@@ -60,15 +61,26 @@ export class ChatService {
   async sendMessage(
     user: User,
     sendMessageDto: SendMessageDto,
-  ): Promise<{ message: Message; conversation: Conversation; response: Message }> {
+  ): Promise<{
+    message: Message;
+    conversation: Conversation;
+    response: Message;
+  }> {
     const startTime = Date.now();
 
     // Tìm hoặc tạo cuộc trò chuyện
     let conversation: Conversation;
-    
+
     if (sendMessageDto.conversationId) {
-      conversation = await this.getConversation(sendMessageDto.conversationId, user);
+      console.log('có conversationId');
+
+      conversation = await this.getConversation(
+        sendMessageDto.conversationId,
+        user,
+      );
     } else {
+      console.log('tạo conversation mới - new row trong conversation');
+
       // Tạo cuộc trò chuyện mới với tiêu đề từ tin nhắn đầu tiên
       conversation = await this.createConversation(user, {
         title: this.generateTitleFromMessage(sendMessageDto.content),
@@ -76,20 +88,26 @@ export class ChatService {
       });
     }
 
+    console.log('CONVERSATION_ID: ', conversation.id);
+
     // Lưu tin nhắn của user
     const userMessage = this.messageRepository.create({
       content: sendMessageDto.content,
       type: MessageType.USER,
       status: MessageStatus.SENT,
       metadata: sendMessageDto.metadata,
-      conversation,
-      user,
+      conversation: { id: conversation.id } as Conversation,
+      conversationId: conversation.id,
+      user: { id: user.id } as User,
+      userId: user.id,
     });
 
     const savedUserMessage = await this.messageRepository.save(userMessage);
 
-    // Tạo phản hồi từ AI (tạm thời là placeholder)
-    const aiResponse = await this.generateAIResponse(sendMessageDto.content, conversation);
+    const aiResponse = await this.generateAIResponse(
+      sendMessageDto.content,
+      conversation,
+    );
 
     // Lưu phản hồi của AI
     const assistantMessage = this.messageRepository.create({
@@ -99,10 +117,12 @@ export class ChatService {
       intent: aiResponse.intent,
       confidence: aiResponse.confidence,
       responseTime: Date.now() - startTime,
-      conversation,
+      conversation: { id: conversation.id } as Conversation,
+      conversationId: conversation.id,
     });
 
-    const savedAssistantMessage = await this.messageRepository.save(assistantMessage);
+    const savedAssistantMessage =
+      await this.messageRepository.save(assistantMessage);
 
     // Cập nhật cuộc trò chuyện
     conversation.lastMessageAt = new Date();
@@ -119,7 +139,7 @@ export class ChatService {
   // Xóa cuộc trò chuyện
   async deleteConversation(id: string, user: User): Promise<void> {
     const conversation = await this.getConversation(id, user);
-    
+
     // Soft delete - chỉ đánh dấu là DELETED
     conversation.status = 'DELETED' as any;
     await this.conversationRepository.save(conversation);
@@ -158,8 +178,11 @@ export class ChatService {
   ): Promise<{ content: string; intent: string; confidence: number }> {
     try {
       // Try data query first (for intelligent assistant features)
-      const dataQueryResponse = await this.aiService.handleDataQuery(userMessage, conversation.user);
-      
+      const dataQueryResponse = await this.aiService.handleDataQuery(
+        userMessage,
+        conversation.user,
+      );
+
       // If it's a data query, return the response
       if (dataQueryResponse.metadata?.actionType) {
         return {
@@ -168,11 +191,14 @@ export class ChatService {
           confidence: dataQueryResponse.confidence,
         };
       }
-      
+
       // Fallback to knowledge-based response
       const intentAnalysis = await this.aiService.analyzeIntent(userMessage);
-      const aiResponse = await this.aiService.generateResponse(userMessage, intentAnalysis);
-      
+      const aiResponse = await this.aiService.generateResponse(
+        userMessage,
+        intentAnalysis,
+      );
+
       return {
         content: aiResponse.content,
         intent: aiResponse.intent,
@@ -180,10 +206,11 @@ export class ChatService {
       };
     } catch (error) {
       console.error('Error generating AI response:', error);
-      
+
       // Fallback response nếu AI service lỗi
       return {
-        content: 'Xin lỗi, tôi gặp sự cố khi xử lý câu hỏi của bạn. Vui lòng thử lại sau.',
+        content:
+          'Xin lỗi, tôi gặp sự cố khi xử lý câu hỏi của bạn. Vui lòng thử lại sau.',
         intent: 'error',
         confidence: 0.1,
       };

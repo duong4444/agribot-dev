@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from "react";
 
 export interface Message {
   id: string;
   content: string;
-  type: 'user' | 'assistant';
+  type: "user" | "assistant";
   timestamp: Date;
   intent?: string;
   confidence?: number;
@@ -12,12 +12,13 @@ export interface Message {
 
 export const useChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [inputMessage, setInputMessage] = useState('');
+  const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   useEffect(() => {
@@ -30,66 +31,122 @@ export const useChat = () => {
     const userMessage: Message = {
       id: Date.now().toString(),
       content: inputMessage,
-      type: 'user',
+      type: "user",
       timestamp: new Date(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     const currentMessage = inputMessage;
-    setInputMessage('');
+    setInputMessage("");
     setIsLoading(true);
 
     try {
       // Call actual API
-      const response = await fetch('/api/chat/messages', {
-        method: 'POST',
+      console.log(
+        "!!!!! : conversationId post chat/messages: ",
+        conversationId
+      );
+
+      const response = await fetch("/api/chat/messages", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           content: currentMessage,
-          conversationId: null, // Will create new conversation
+          conversationId: conversationId, // Sử dụng conversationId hiện tại
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to send message');
+        throw new Error("Failed to send message");
       }
 
       const data = await response.json();
+
+      console.log("conversationID useChats: ", conversationId);
+      console.log("conversationID trả về từ api: ", data.conversation?.id);
+
+      // Cập nhật conversationId từ response nếu chưa có
+      if (!conversationId && data.conversation?.id) {
+        setConversationId(data.conversation.id);
+      }
+
       
+      console.log("conversationID sau if: ", conversationId);
+
       const assistantMessage: Message = {
         id: data.response.id,
         content: data.response.content,
-        type: 'assistant',
+        type: "assistant",
         timestamp: new Date(data.response.createdAt),
         intent: data.response.intent,
         confidence: data.response.confidence,
         responseTime: data.response.responseTime,
       };
 
-      setMessages(prev => [...prev, assistantMessage]);
+      setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
-      console.error('Error sending message:', error);
-      
+      console.error("Error sending message:", error);
+
       // Fallback message on error
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: 'Xin lỗi, tôi gặp sự cố khi xử lý câu hỏi của bạn. Vui lòng thử lại sau.',
-        type: 'assistant',
+        content:
+          "Xin lỗi, tôi gặp sự cố khi xử lý câu hỏi của bạn. Vui lòng thử lại sau.",
+        type: "assistant",
         timestamp: new Date(),
       };
 
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
+    }
+  };
+
+  const resetConversation = () => {
+    setMessages([]);
+    setConversationId(null);
+    setInputMessage("");
+  };
+
+  const loadConversation = async (conversationId: string) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/chat/conversations/${conversationId}/messages`);
+      
+      if (!response.ok) {
+        throw new Error("Failed to load conversation");
+      }
+
+      const data = await response.json();
+      
+      // Set conversationId
+      setConversationId(conversationId);
+      
+      // Load messages
+      const loadedMessages: Message[] = data.messages.map((msg: any) => ({
+        id: msg.id,
+        content: msg.content,
+        type: msg.type.toLowerCase() as "user" | "assistant",
+        timestamp: new Date(msg.createdAt),
+        intent: msg.intent,
+        confidence: msg.confidence,
+        responseTime: msg.responseTime,
+      }));
+      
+      setMessages(loadedMessages);
+    } catch (error) {
+      console.error("Error loading conversation:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -101,6 +158,8 @@ export const useChat = () => {
     messagesEndRef,
     sendMessage,
     handleKeyPress,
+    resetConversation,
+    loadConversation,
+    conversationId,
   };
 };
-
