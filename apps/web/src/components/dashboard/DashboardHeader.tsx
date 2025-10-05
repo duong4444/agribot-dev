@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
@@ -18,6 +19,20 @@ interface DashboardHeaderProps {
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) => {
+  const router = useRouter();
+
+  const handleFarmManagement = () => {
+    router.push('/farm');
+  };
+
+  const handleAnalytics = () => {
+    router.push('/analytics');
+  };
+
+  const handleSettings = () => {
+    router.push('/settings');
+  };
+
   return (
     <header className="bg-white dark:bg-gray-800 shadow-sm border-b">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -40,16 +55,24 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) =>
             <Button 
               variant="ghost" 
               size="sm"
-              onClick={() => window.location.href = '/farm'}
+              onClick={handleFarmManagement}
             >
               <Home className="h-4 w-4 mr-2" />
               Farm Management
             </Button>
-            <Button variant="ghost" size="sm">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={handleAnalytics}
+            >
               <BarChart3 className="h-4 w-4 mr-2" />
               Analytics
             </Button>
-            <Button variant="ghost" size="sm">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={handleSettings}
+            >
               <Settings className="h-4 w-4 mr-2" />
               Settings
             </Button>
