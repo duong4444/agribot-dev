@@ -5,13 +5,13 @@ import { ChatService } from './chat.service';
 import { ChatGateway } from './chat.gateway';
 import { Conversation, Message } from './entities';
 import { UsersModule } from '../users/users.module';
-import { AIModule } from '../ai/ai.module';
+import { AIRefactoredModule } from '../ai/ai-refactored.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Conversation, Message]),
     UsersModule,
-    AIModule,
+    AIRefactoredModule,
   ],
   controllers: [ChatController],
   providers: [ChatService, ChatGateway],

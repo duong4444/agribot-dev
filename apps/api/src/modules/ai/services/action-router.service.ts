@@ -115,7 +115,8 @@ export class ActionRouterService {
       const financialData = await this.calculateFinancials(
         farms,
         timePeriod.start,
-        timePeriod.end
+        timePeriod.end,
+        user
       );
 
       // Generate human-friendly explanation
@@ -161,9 +162,9 @@ export class ActionRouterService {
       }
 
       // Get all crops
-      const allCrops = [];
+      const allCrops: any[] = [];
       for (const farm of farms) {
-        const crops = await this.farmService.getCropsByFarm(farm.id);
+        const crops = await this.farmService.getCropsByFarm(farm.id, user);
         allCrops.push(...crops);
       }
 
@@ -219,12 +220,11 @@ export class ActionRouterService {
       const timePeriod = this.extractTimePeriodFromEntities(entities);
 
       // Get activities
-      const allActivities = [];
+      const allActivities: any[] = [];
       for (const farm of farms) {
         const activities = await this.farmService.getActivitiesByFarm(
           farm.id,
-          timePeriod.start,
-          timePeriod.end
+          user
         );
         allActivities.push(...activities);
       }
@@ -271,9 +271,9 @@ export class ActionRouterService {
       }
 
       // Get analytics for all farms
-      const analyticsData = [];
+      const analyticsData: any[] = [];
       for (const farm of farms) {
-        const analytics = await this.farmService.getAnalytics(farm.id);
+        const analytics = await this.farmService.getFarmAnalytics(farm.id, user);
         analyticsData.push({
           farmName: farm.name,
           ...analytics,
@@ -496,7 +496,8 @@ export class ActionRouterService {
   private async calculateFinancials(
     farms: any[],
     startDate: Date,
-    endDate: Date
+    endDate: Date,
+    user: User
   ): Promise<any> {
     let totalRevenue = 0;
     let totalExpense = 0;
@@ -504,8 +505,7 @@ export class ActionRouterService {
     for (const farm of farms) {
       const expenses = await this.farmService.getExpensesByFarm(
         farm.id,
-        startDate,
-        endDate
+        user
       );
 
       const farmExpense = expenses.reduce(

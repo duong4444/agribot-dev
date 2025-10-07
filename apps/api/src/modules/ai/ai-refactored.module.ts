@@ -24,7 +24,7 @@ import {
 
 // Other modules
 import { FarmModule } from '../farm/farm.module';
-import { AIController } from './ai.controller';
+// import { AIController } from './ai.controller'; // Removed old controller
 import { AIRefactoredController } from './ai-refactored.controller';
 
 @Module({
@@ -33,7 +33,7 @@ import { AIRefactoredController } from './ai-refactored.controller';
     TypeOrmModule.forFeature([Document, DocumentChunk]),
     FarmModule,
   ],
-  controllers: [AIController, AIRefactoredController],
+  controllers: [AIRefactoredController],
   providers: [
     // Existing
     GeminiService,

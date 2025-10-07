@@ -146,12 +146,11 @@ export class VectorSearchService {
 
     // Calculate similarity in-memory
     const results: VectorSearchResult[] = chunks
+      .filter(chunk => chunk.embedding !== null && chunk.embedding !== undefined)
       .map(chunk => {
-        if (!chunk.embedding) return null;
-
         const score = this.embeddingService.cosineSimilarity(
           queryEmbedding,
-          chunk.embedding
+          chunk.embedding!
         );
 
         return {
@@ -160,7 +159,6 @@ export class VectorSearchService {
           distance: 1 - score,
         };
       })
-      .filter((r): r is VectorSearchResult => r !== null)
       .sort((a, b) => b.score - a.score)
       .slice(0, limit);
 

@@ -64,6 +64,20 @@ export class GeminiService {
   }
 
   /**
+   * Generate text using Gemini AI (simplified interface)
+   */
+  async generateText(
+    prompt: string,
+    options?: {
+      temperature?: number;
+      maxTokens?: number;
+    }
+  ): Promise<string> {
+    const response = await this.generateResponse(prompt, options);
+    return response.content;
+  }
+
+  /**
    * Generate response using Gemini AI
    */
   async generateResponse(

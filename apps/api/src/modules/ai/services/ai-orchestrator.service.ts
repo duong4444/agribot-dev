@@ -94,7 +94,7 @@ export class AIOrchestrator {
     user: User,
     startTime: number
   ): Promise<AIResponse> {
-    const { query } = intentResult;
+      const { originalQuery: query } = intentResult;
 
     // Layer 1: Try Exact Match
     this.logger.debug('Attempting Layer 1: Exact Match');
@@ -189,7 +189,7 @@ export class AIOrchestrator {
     user: User,
     startTime: number
   ): Promise<AIResponse> {
-    const { intent, entities, query } = intentResult;
+    const { intent, entities, originalQuery: query } = intentResult;
 
     this.logger.log(`Processing action intent: ${intent}`);
 

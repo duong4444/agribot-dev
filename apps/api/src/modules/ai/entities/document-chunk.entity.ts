@@ -38,8 +38,7 @@ export class DocumentChunk {
   // Using cube or vector extension
   @Index('idx_chunks_embedding', { synchronize: false })
   @Column({
-    type: 'vector',
-    length: 768, // Dimension for sentence-transformers model
+    type: 'json',
     nullable: true,
   })
   embedding: number[];

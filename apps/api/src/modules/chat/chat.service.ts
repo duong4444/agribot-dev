@@ -8,7 +8,7 @@ import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity';
 import { Conversation, Message, MessageType, MessageStatus } from './entities';
 import { SendMessageDto, CreateConversationDto } from './dto';
-import { AIService } from '../ai/ai.service';
+import { AIOrchestrator } from '../ai/services';
 
 @Injectable()
 export class ChatService {
@@ -17,7 +17,7 @@ export class ChatService {
     private conversationRepository: Repository<Conversation>,
     @InjectRepository(Message)
     private messageRepository: Repository<Message>,
-    private aiService: AIService,
+    private aiOrchestrator: AIOrchestrator,
   ) {}
 
   // Tạo cuộc trò chuyện mới
@@ -177,30 +177,15 @@ export class ChatService {
     conversation: Conversation,
   ): Promise<{ content: string; intent: string; confidence: number }> {
     try {
-      // Try data query first (for intelligent assistant features)
-      const dataQueryResponse = await this.aiService.handleDataQuery(
-        userMessage,
-        conversation.user,
-      );
-
-      // If it's a data query, return the response
-      if (dataQueryResponse.metadata?.actionType) {
-        return {
-          content: dataQueryResponse.content,
-          intent: dataQueryResponse.intent,
-          confidence: dataQueryResponse.confidence,
-        };
-      }
-
-      // Fallback to knowledge-based response
-      const intentAnalysis = await this.aiService.analyzeIntent(userMessage);
-      const aiResponse = await this.aiService.generateResponse(
-        userMessage,
-        intentAnalysis,
-      );
+      // Use new AI Orchestrator
+      const aiResponse = await this.aiOrchestrator.process({
+        query: userMessage,
+        user: conversation.user,
+        conversationId: conversation.id,
+      });
 
       return {
-        content: aiResponse.content,
+        content: aiResponse.message,
         intent: aiResponse.intent,
         confidence: aiResponse.confidence,
       };
