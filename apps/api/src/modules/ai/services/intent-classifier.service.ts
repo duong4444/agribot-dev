@@ -3,6 +3,7 @@ import { IntentType, IntentClassificationResult } from '../types';
 import { INTENT_PATTERNS } from '../constants';
 import { normalizeText } from '../utils';
 import { EntityExtractorService } from './entity-extractor.service';
+import { PythonAIClientService } from './python-ai-client.service';
 
 @Injectable()
 export class IntentClassifierService {
@@ -10,15 +11,41 @@ export class IntentClassifierService {
 
   constructor(
     private readonly entityExtractor: EntityExtractorService,
+    private readonly pythonAIClient: PythonAIClientService,
   ) {}
 
   /**
    * Classify user intent and extract entities
+   * Uses Python AI Service (PhoBERT) if available, falls back to rule-based
    */
   async classifyIntent(query: string): Promise<IntentClassificationResult> {
     const startTime = Date.now();
     const normalizedQuery = normalizeText(query);
 
+    // Try Python AI Service first
+    const pythonResult = await this.pythonAIClient.analyzeText(query, 3);
+    
+    if (pythonResult && pythonResult.intent_confidence > 0.7) {
+      // Use Python AI Service results
+      this.logger.debug('Using Python AI Service (PhoBERT) classification');
+      
+      const intent = this.pythonAIClient.convertToIntentType(pythonResult.intent);
+      const entities = pythonResult.entities.map(e => this.pythonAIClient.convertToEntity(e));
+      
+      const processingTime = Date.now() - startTime;
+      
+      return {
+        intent,
+        confidence: pythonResult.intent_confidence,
+        entities,
+        originalQuery: query,
+        normalizedQuery,
+      };
+    }
+
+    // Fallback to rule-based
+    this.logger.debug('Using rule-based classification (Python AI Service not available or low confidence)');
+    
     // Extract entities first
     const entities = this.entityExtractor.extractEntities(query);
 

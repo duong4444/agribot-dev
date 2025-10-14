@@ -20,6 +20,7 @@ import {
   LLMFallbackService,
   ActionRouterService,
   AIOrchestrator,
+  PythonAIClientService,
 } from './services';
 
 // Other modules
@@ -37,6 +38,9 @@ import { AIRefactoredController } from './ai-refactored.controller';
   providers: [
     // Existing
     GeminiService,
+    
+    // Python AI Client
+    PythonAIClientService,
     
     // Refactored services
     PreprocessingService,

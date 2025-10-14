@@ -28,5 +28,20 @@ services:
   #   volumes:
   #     - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
 
+  # Python AI Service (PhoBERT Intent & NER)
+  python-ai-service:
+    build:
+      context: ./apps/python-ai-service
+      dockerfile: Dockerfile
+    container_name: agri-python-ai-service
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./apps/python-ai-service/models:/app/models
+      - ./apps/python-ai-service/data:/app/data
+    restart: unless-stopped
+
 volumes:
   postgres_data:

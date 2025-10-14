@@ -127,6 +127,24 @@ models/
 *.pkl
 *.joblib
 
+# Python AI Service
+apps/python-ai-service/venv/
+apps/python-ai-service/__pycache__/
+apps/python-ai-service/*.pyc
+apps/python-ai-service/*.pyo
+apps/python-ai-service/*.pyd
+apps/python-ai-service/.Python
+apps/python-ai-service/models/
+apps/python-ai-service/data/
+apps/python-ai-service/.pytest_cache/
+apps/python-ai-service/.mypy_cache/
+apps/python-ai-service/.coverage
+apps/python-ai-service/htmlcov/
+
+# HuggingFace cache
+.cache/
+.huggingface/
+
 # Vector database data
 vector_data/
 embeddings/

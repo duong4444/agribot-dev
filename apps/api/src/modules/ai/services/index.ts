@@ -8,4 +8,5 @@ export * from './rag.service';
 export * from './llm-fallback.service';
 export * from './action-router.service';
 export * from './ai-orchestrator.service';
+export * from './python-ai-client.service';
 
