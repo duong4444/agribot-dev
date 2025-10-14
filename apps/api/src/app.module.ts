@@ -13,6 +13,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { FarmModule } from './modules/farm/farm.module';
+import { AIRefactoredModule } from './modules/ai/ai-refactored.module';
 // import { KnowledgeModule } from './modules/knowledge/knowledge.module';
 
 @Module({
@@ -48,6 +49,7 @@ import { FarmModule } from './modules/farm/farm.module';
     UsersModule,
     ChatModule,
     FarmModule,
+    AIRefactoredModule,
     // KnowledgeModule,
   ],
   controllers: [AppController],
