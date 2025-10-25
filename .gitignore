@@ -121,18 +121,18 @@ ehthumbs.db
 .env.test.local
 .env.production.local
 
-# AI/ML models and data
-models/
+# AI/ML models and data (trained models only)
+/models/
 *.model
 *.pkl
 *.joblib
 
 # Python AI Service
 apps/python-ai-service/venv/
-apps/python-ai-service/__pycache__/
-apps/python-ai-service/*.pyc
-apps/python-ai-service/*.pyo
-apps/python-ai-service/*.pyd
+apps/python-ai-service/**/__pycache__/
+apps/python-ai-service/**/*.pyc
+apps/python-ai-service/**/*.pyo
+apps/python-ai-service/**/*.pyd
 apps/python-ai-service/.Python
 apps/python-ai-service/models/
 apps/python-ai-service/data/
