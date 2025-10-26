@@ -234,3 +234,5 @@ logs/
 .pnp.*
 
 #FINE_TUNE_INSTRUCTION.md
+
+#ner_data.csv

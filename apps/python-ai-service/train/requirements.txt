@@ -1,0 +1,6 @@
+seqeval
+pandas
+torch
+transformers
+scikit-learn
+numpy

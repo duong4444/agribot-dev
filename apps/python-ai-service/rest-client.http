@@ -1,0 +1,41 @@
+### REST Client requests for Python AI Service
+# Requires VS Code REST Client extension or any compatible HTTP runner
+# Set the base URL for your running FastAPI server
+@baseUrl = http://localhost:8000
+
+### Health check (optional)
+GET {{baseUrl}}/
+Accept: application/json
+
+### Intent classification example
+POST {{baseUrl}}/intent/classify
+Content-Type: application/json
+
+{
+  "text": "tư vấn cách chăm sóc cà chua mùa mưa",
+  "top_k": 3
+}
+
+### NER extraction - crop example
+POST {{baseUrl}}/ner/extract
+Content-Type: application/json
+
+{
+  "text": "cách trồng cà chua tại ruộng số 5 ngày mai"
+}
+
+### NER extraction - device example
+POST {{baseUrl}}/ner/extract
+Content-Type: application/json
+
+{
+  "text": "bật máy bơm tự động lúc 6 giờ sáng"
+}
+
+### NER extraction - quantity example
+POST {{baseUrl}}/ner/extract
+Content-Type: application/json
+
+{
+  "text": "cần thêm 50kg phân NPK cho vườn cà phê"
+}

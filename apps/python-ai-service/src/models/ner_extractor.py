@@ -3,6 +3,8 @@ Named Entity Recognition using PhoBERT
 Fine-tuned for Vietnamese Agricultural Domain
 """
 
+import json
+import re
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
@@ -10,7 +12,6 @@ from typing import Any, Dict, List, Tuple
 import torch
 from loguru import logger
 from transformers import AutoModelForTokenClassification, AutoTokenizer
-import re
 
 
 class NERExtractor:
@@ -58,6 +59,8 @@ class NERExtractor:
         self.model_name = model_name
         self.tokenizer = None
         self.model = None
+        self.entity_labels: List[str] = self.ENTITY_LABELS.copy()
+        self.entity_type_map: Dict[str, str] = self.ENTITY_TYPE_MAP.copy()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         logger.info(f"NER Extractor initialized with device: {self.device}")
@@ -70,24 +73,44 @@ class NERExtractor:
 
             model_dir = Path(__file__).resolve().parents[2] / "models" / "ner_extractor"
 
+            # Load label mapping if available
+            label_map_path = model_dir / "label_mapping.json"
+            if label_map_path.exists():
+                try:
+                    mapping_data = json.loads(label_map_path.read_text(encoding="utf-8"))
+                    label_to_id = mapping_data.get("label_to_id")
+                    if isinstance(label_to_id, dict) and label_to_id:
+                        self.entity_labels = sorted(label_to_id.keys(), key=lambda label: label_to_id[label])
+                        logger.info(f"Loaded NER label mapping with {len(self.entity_labels)} labels")
+                        
+                        # Update entity type map from loaded labels
+                        entity_types = mapping_data.get("entity_types", [])
+                        if entity_types:
+                            for entity_type in entity_types:
+                                self.entity_type_map[entity_type] = entity_type.lower()
+                except Exception as mapping_error:
+                    logger.warning(f"Unable to read NER label mapping: {mapping_error}. Using default labels")
+
+            num_labels = len(self.entity_labels)
+
             if model_dir.exists():
                 logger.info(f"Loading fine-tuned model from {model_dir}...")
                 try:
                     self.model = AutoModelForTokenClassification.from_pretrained(
                         model_dir,
-                        num_labels=len(self.ENTITY_LABELS)
+                        num_labels=num_labels
                     )
                 except Exception as load_error:
                     logger.warning(f"Failed to load fine-tuned NER model: {load_error}. Falling back to base PhoBERT.")
                     self.model = AutoModelForTokenClassification.from_pretrained(
                         self.model_name,
-                        num_labels=len(self.ENTITY_LABELS)
+                        num_labels=num_labels
                     )
             else:
                 logger.warning("Fine-tuned NER model not found. Falling back to base PhoBERT (rule-based hybrid).")
                 self.model = AutoModelForTokenClassification.from_pretrained(
                     self.model_name,
-                    num_labels=len(self.ENTITY_LABELS)
+                    num_labels=num_labels
                 )
             
             self.model.to(self.device)
@@ -127,8 +150,8 @@ class NERExtractor:
                 )
                 offset_mapping = inputs.pop("offset_mapping")[0]
             except NotImplementedError:
-                logger.warning(
-                    "Tokenizer does not support offset mapping. Skipping PhoBERT span extraction and falling back to rule-based entities only."
+                logger.info(
+                    "Tokenizer does not support offset mapping. Using manual token alignment for PhoBERT predictions."
                 )
                 inputs = self.tokenizer(
                     text,
@@ -157,7 +180,12 @@ class NERExtractor:
                     inputs["input_ids"][0].cpu().numpy()
                 )
             else:
-                entities = self._extract_rule_based_entities(text)
+                # PhoBERT doesn't support offset mapping, so we manually create it
+                entities = self._convert_predictions_without_offsets(
+                    text,
+                    predictions.cpu().numpy(),
+                    inputs["input_ids"][0].cpu().numpy()
+                )
             
             # Apply rule-based post-processing for better accuracy
             entities = self._post_process_entities(text, entities)
@@ -189,7 +217,7 @@ class NERExtractor:
             if start == end:
                 continue
             
-            label = self.ENTITY_LABELS[pred]
+            label = self.entity_labels[pred]
             
             if label.startswith("B-"):
                 # Save previous entity
@@ -210,6 +238,115 @@ class NERExtractor:
                 # Continue current entity
                 current_entity["raw"] = text[current_entity["start"]:end]
                 current_entity["end"] = end
+            
+            elif label == "O" and current_entity:
+                # End current entity
+                entities.append(current_entity)
+                current_entity = None
+        
+        # Add last entity
+        if current_entity:
+            entities.append(current_entity)
+        
+        return entities
+    
+    def _convert_predictions_without_offsets(
+        self,
+        text: str,
+        predictions: List[int],
+        input_ids: List[int]
+    ) -> List[Dict[str, Any]]:
+        """
+        Convert predictions to entities without offset mapping.
+        This is a workaround for PhoBERT which doesn't support offset mapping.
+        """
+        entities = []
+        current_entity = None
+        
+        # Debug: Log ALL tokens and predictions
+        all_tokens_debug = []
+        for i, (token_id, pred) in enumerate(zip(input_ids, predictions)):
+            token = self.tokenizer.decode([token_id], skip_special_tokens=True)
+            label = self.entity_labels[pred]
+            all_tokens_debug.append(f"'{token}'→{label}")
+        logger.info(f"All tokens: {all_tokens_debug}")
+        
+        pred_labels = [self.entity_labels[p] for p in predictions]
+        non_o_labels = [l for l in pred_labels if l != 'O']
+        logger.info(f"NER Predictions - Total tokens: {len(predictions)}, Non-O predictions: {len(non_o_labels)}")
+        if non_o_labels:
+            logger.info(f"Entity predictions found: {non_o_labels}")
+        else:
+            logger.warning(f"⚠️ All predictions are 'O' (no entities) - Model may not be trained yet!")
+        
+        # Normalize text for matching
+        text_lower = text.lower()
+        current_pos = 0
+        
+        for idx, (pred, token_id) in enumerate(zip(predictions, input_ids)):
+            label = self.entity_labels[pred]
+            
+            # Skip special tokens (<s>, </s>, <pad>)
+            if token_id in [self.tokenizer.bos_token_id, self.tokenizer.eos_token_id, self.tokenizer.pad_token_id]:
+                continue
+            
+            # Decode token - PhoBERT adds underscores for word boundaries
+            token_text = self.tokenizer.decode([token_id], skip_special_tokens=True).strip()
+            if not token_text:
+                continue
+            
+            # Remove underscore prefix that PhoBERT uses (e.g., "_cà" -> "cà")
+            token_clean = token_text.replace("_", " ").strip()
+            
+            # Find token in text (case-insensitive search from current position)
+            token_lower = token_clean.lower()
+            token_start = text_lower.find(token_lower, current_pos)
+            
+            if token_start == -1:
+                # Try exact match without spaces
+                token_no_space = token_clean.replace(" ", "")
+                token_start = text_lower.find(token_no_space.lower(), current_pos)
+                if token_start != -1:
+                    token_clean = token_no_space
+            
+            if token_start == -1:
+                # Can't find this token - skip it
+                continue
+            
+            token_end = token_start + len(token_clean)
+            current_pos = token_end
+            
+            if label.startswith("B-"):
+                # Save previous entity
+                if current_entity:
+                    entities.append(current_entity)
+                
+                # Start new entity
+                entity_type = label[2:]
+                current_entity = {
+                    "type": self.ENTITY_TYPE_MAP.get(entity_type, entity_type.lower()),
+                    "raw": text[token_start:token_end],
+                    "start": token_start,
+                    "end": token_end,
+                    "confidence": 0.85
+                }
+            
+            elif label.startswith("I-"):
+                if current_entity:
+                    # Continue current entity - extend to include this token
+                    current_entity["raw"] = text[current_entity["start"]:token_end]
+                    current_entity["end"] = token_end
+                else:
+                    # Orphaned I- tag (B- was skipped/not found) - treat as new entity
+                    logger.debug(f"Orphaned I- tag {label} at position {token_start}, treating as B-")
+                    entity_type = label[2:]
+                    current_entity = {
+                        "type": self.ENTITY_TYPE_MAP.get(entity_type, entity_type.lower()),
+                        "raw": text[token_start:token_end],
+                        "start": token_start,
+                        "end": token_end,
+                        "confidence": 0.75  # Lower confidence for orphaned tags
+                    }
             
             elif label == "O" and current_entity:
                 # End current entity
