@@ -232,3 +232,5 @@ logs/
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+#FINE_TUNE_INSTRUCTION.md

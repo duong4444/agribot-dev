@@ -3,12 +3,13 @@ Named Entity Recognition using PhoBERT
 Fine-tuned for Vietnamese Agricultural Domain
 """
 
-import torch
-from transformers import AutoTokenizer, AutoModelForTokenClassification
-from typing import Dict, List, Any, Tuple
 import time
+from pathlib import Path
+from typing import Any, Dict, List, Tuple
+
+import torch
 from loguru import logger
-import os
+from transformers import AutoModelForTokenClassification, AutoTokenizer
 import re
 
 
@@ -66,19 +67,24 @@ class NERExtractor:
         try:
             logger.info(f"Loading tokenizer from {self.model_name}...")
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-            
-            # Check if fine-tuned model exists
-            fine_tuned_path = "./models/ner_extractor"
-            if os.path.exists(fine_tuned_path):
-                logger.info(f"Loading fine-tuned model from {fine_tuned_path}...")
-                self.model = AutoModelForTokenClassification.from_pretrained(
-                    fine_tuned_path,
-                    num_labels=len(self.ENTITY_LABELS)
-                )
+
+            model_dir = Path(__file__).resolve().parents[2] / "models" / "ner_extractor"
+
+            if model_dir.exists():
+                logger.info(f"Loading fine-tuned model from {model_dir}...")
+                try:
+                    self.model = AutoModelForTokenClassification.from_pretrained(
+                        model_dir,
+                        num_labels=len(self.ENTITY_LABELS)
+                    )
+                except Exception as load_error:
+                    logger.warning(f"Failed to load fine-tuned NER model: {load_error}. Falling back to base PhoBERT.")
+                    self.model = AutoModelForTokenClassification.from_pretrained(
+                        self.model_name,
+                        num_labels=len(self.ENTITY_LABELS)
+                    )
             else:
-                logger.warning("Fine-tuned NER model not found. Using rule-based fallback.")
-                logger.warning("For production, please fine-tune the model first!")
-                # Initialize with random classification head
+                logger.warning("Fine-tuned NER model not found. Falling back to base PhoBERT (rule-based hybrid).")
                 self.model = AutoModelForTokenClassification.from_pretrained(
                     self.model_name,
                     num_labels=len(self.ENTITY_LABELS)
@@ -110,16 +116,28 @@ class NERExtractor:
         
         try:
             # Tokenize input
-            inputs = self.tokenizer(
-                text,
-                return_tensors="pt",
-                truncation=True,
-                max_length=256,
-                padding=True,
-                return_offsets_mapping=True
-            )
-            
-            offset_mapping = inputs.pop("offset_mapping")[0]
+            try:
+                inputs = self.tokenizer(
+                    text,
+                    return_tensors="pt",
+                    truncation=True,
+                    max_length=256,
+                    padding=True,
+                    return_offsets_mapping=True
+                )
+                offset_mapping = inputs.pop("offset_mapping")[0]
+            except NotImplementedError:
+                logger.warning(
+                    "Tokenizer does not support offset mapping. Skipping PhoBERT span extraction and falling back to rule-based entities only."
+                )
+                inputs = self.tokenizer(
+                    text,
+                    return_tensors="pt",
+                    truncation=True,
+                    max_length=256,
+                    padding=True
+                )
+                offset_mapping = None
             
             # Move to device
             inputs = {k: v.to(self.device) for k, v in inputs.items()}
@@ -130,13 +148,16 @@ class NERExtractor:
                 logits = outputs.logits
                 predictions = torch.argmax(logits, dim=-1)[0]
             
-            # Convert predictions to entities
-            entities = self._convert_predictions_to_entities(
-                text,
-                predictions.cpu().numpy(),
-                offset_mapping.numpy(),
-                inputs["input_ids"][0].cpu().numpy()
-            )
+            entities: List[Dict[str, Any]] = []
+            if offset_mapping is not None:
+                entities = self._convert_predictions_to_entities(
+                    text,
+                    predictions.cpu().numpy(),
+                    offset_mapping.numpy(),
+                    inputs["input_ids"][0].cpu().numpy()
+                )
+            else:
+                entities = self._extract_rule_based_entities(text)
             
             # Apply rule-based post-processing for better accuracy
             entities = self._post_process_entities(text, entities)
@@ -242,6 +263,28 @@ class NERExtractor:
             (r'\d+[\d,\.]*\s*(đồng|vnđ|vnd|k|triệu|tr|tỷ)', 'money'),
         ]
         
+        crop_keywords = [
+            "cà chua",
+            "cà phê",
+            "lúa",
+            "ngô",
+            "bắp",
+            "khoai",
+            "rau",
+            "ớt",
+            "tiêu",
+            "sầu riêng"
+        ]
+
+        device_keywords = [
+            "máy bơm",
+            "máy tưới",
+            "quạt",
+            "cảm biến",
+            "sensor",
+            "thiết bị"
+        ]
+
         # Combine all patterns
         all_patterns = date_patterns + money_patterns
         
