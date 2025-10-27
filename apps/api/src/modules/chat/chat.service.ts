@@ -29,7 +29,8 @@ export class ChatService {
       ...createConversationDto,
       user,
     });
-
+    console.log("chạy vào hàm createConversation");
+    
     return await this.conversationRepository.save(conversation);
   }
 
@@ -42,12 +43,27 @@ export class ChatService {
     });
   }
 
-  // Lấy cuộc trò chuyện theo ID
+  // Lấy cuộc trò chuyện theo ID (với relations - dùng cho display)
   async getConversation(id: string, user: User): Promise<Conversation> {
+    console.log("chạy vào hàm getConversation");
+    
     const conversation = await this.conversationRepository.findOne({
       where: { id, user: { id: user.id } },
       relations: ['messages', 'user'],
       order: { messages: { createdAt: 'ASC' } },
+    });
+
+    if (!conversation) {
+      throw new NotFoundException('Cuộc trò chuyện không tồn tại');
+    }
+
+    return conversation;
+  }
+
+  // Verify conversation tồn tại (không load relations - dùng cho save message)
+  private async verifyConversation(id: string, user: User): Promise<Conversation> {
+    const conversation = await this.conversationRepository.findOne({
+      where: { id, user: { id: user.id } },
     });
 
     if (!conversation) {
@@ -67,21 +83,24 @@ export class ChatService {
     response: Message;
   }> {
     const startTime = Date.now();
+    console.log("para_sendMessage_user: ", user);
+    console.log("para_sendMessage_sendMessageDto: ", sendMessageDto);
 
     // Tìm hoặc tạo cuộc trò chuyện
     let conversation: Conversation;
 
     if (sendMessageDto.conversationId) {
-      console.log('có conversationId');
+      console.log('có conversationId: ', sendMessageDto.conversationId);
 
-      conversation = await this.getConversation(
+      conversation = await this.verifyConversation(
         sendMessageDto.conversationId,
         user,
       );
     } else {
       console.log('tạo conversation mới - new row trong conversation');
+      console.log("conversationId_check_NULL: ", sendMessageDto.conversationId);
 
-      // Tạo cuộc trò chuyện mới với tiêu đề từ tin nhắn đầu tiên
+      console.log("Tạo cuộc trò chuyện mới với tiêu đề từ tin nhắn đầu tiên");
       conversation = await this.createConversation(user, {
         title: this.generateTitleFromMessage(sendMessageDto.content),
         description: 'Cuộc trò chuyện mới',
@@ -96,17 +115,22 @@ export class ChatService {
       type: MessageType.USER,
       status: MessageStatus.SENT,
       metadata: sendMessageDto.metadata,
-      conversation: { id: conversation.id } as Conversation,
       conversationId: conversation.id,
-      user: { id: user.id } as User,
       userId: user.id,
     });
 
+    console.log("userMessage: ", userMessage);
+    
+
     const savedUserMessage = await this.messageRepository.save(userMessage);
+
+    console.log("savedUserMessage: ",savedUserMessage);
+    
 
     const aiResponse = await this.generateAIResponse(
       sendMessageDto.content,
-      conversation,
+      user,
+      conversation.id,
     );
 
     // Lưu phản hồi của AI
@@ -117,7 +141,6 @@ export class ChatService {
       intent: aiResponse.intent,
       confidence: aiResponse.confidence,
       responseTime: Date.now() - startTime,
-      conversation: { id: conversation.id } as Conversation,
       conversationId: conversation.id,
     });
 
@@ -155,7 +178,7 @@ export class ChatService {
     const conversation = await this.getConversation(conversationId, user);
 
     const [messages, total] = await this.messageRepository.findAndCount({
-      where: { conversation: { id: conversationId } },
+      where: { conversationId: conversationId },
       order: { createdAt: 'ASC' },
       skip: (page - 1) * limit,
       take: limit,
@@ -167,6 +190,8 @@ export class ChatService {
   // Tạo tiêu đề từ tin nhắn đầu tiên
   private generateTitleFromMessage(content: string): string {
     // Lấy 50 ký tự đầu tiên làm tiêu đề
+    console.log("chạy vào generateTitleFromMessage");
+    
     const title = content.substring(0, 50);
     return title.length < content.length ? `${title}...` : title;
   }
@@ -174,14 +199,15 @@ export class ChatService {
   // Tạo phản hồi AI sử dụng AI Service
   private async generateAIResponse(
     userMessage: string,
-    conversation: Conversation,
+    user: User,
+    conversationId: string,
   ): Promise<{ content: string; intent: string; confidence: number }> {
     try {
       // Use new AI Orchestrator
       const aiResponse = await this.aiOrchestrator.process({
         query: userMessage,
-        user: conversation.user,
-        conversationId: conversation.id,
+        user: user,
+        conversationId: conversationId,
       });
 
       return {

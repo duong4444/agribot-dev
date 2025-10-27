@@ -25,6 +25,7 @@ export const useChat = () => {
     scrollToBottom();
   }, [messages]);
 
+  // begin
   const sendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
 
@@ -43,7 +44,7 @@ export const useChat = () => {
     try {
       // Call actual API
       console.log(
-        "!!!!! : conversationId post chat/messages: ",
+        "!!!!! : conversationId post chat/messages_1: ",
         conversationId
       );
 
@@ -54,7 +55,7 @@ export const useChat = () => {
         },
         body: JSON.stringify({
           content: currentMessage,
-          conversationId: conversationId, // Sử dụng conversationId hiện tại
+          conversationId: conversationId, // Sử dụng conversationId hiện tại, ban đầu post conversationId null
         }),
       });
 
@@ -64,7 +65,7 @@ export const useChat = () => {
 
       const data = await response.json();
 
-      console.log("conversationID useChats: ", conversationId);
+      console.log("conversationID useChats_1: ", conversationId);
       console.log("conversationID trả về từ api: ", data.conversation?.id);
 
       // Cập nhật conversationId từ response nếu chưa có
@@ -103,6 +104,7 @@ export const useChat = () => {
       setIsLoading(false);
     }
   };
+  // end
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
