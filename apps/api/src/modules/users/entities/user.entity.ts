@@ -13,7 +13,6 @@ import * as bcrypt from 'bcrypt';
 export enum UserRole {
   FARMER = 'FARMER',
   ADMIN = 'ADMIN',
-  SUPER_ADMIN = 'SUPER_ADMIN',
 }
 
 @Entity('users')

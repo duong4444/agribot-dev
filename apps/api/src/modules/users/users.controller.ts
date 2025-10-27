@@ -16,7 +16,7 @@ export class UsersController {
 
   @Get()
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get all users (Admin only)' })
   @ApiResponse({ status: 200, description: 'Users retrieved successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -42,7 +42,7 @@ export class UsersController {
 
   @Get(':id')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get user by ID (Admin only)' })
   @ApiParam({ name: 'id', description: 'User ID' })
   @ApiResponse({ status: 200, description: 'User retrieved successfully' })
@@ -65,7 +65,7 @@ export class UsersController {
 
   @Put(':id/activate')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.ADMIN)
   async activate(@Param('id') id: string) {
     const user = await this.usersService.activate(id);
     return {
@@ -77,7 +77,7 @@ export class UsersController {
 
   @Put(':id/deactivate')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.ADMIN)
   async deactivate(@Param('id') id: string) {
     const user = await this.usersService.deactivate(id);
     return {
@@ -89,7 +89,7 @@ export class UsersController {
 
   @Put(':id/role')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.SUPER_ADMIN)
+  @Roles(UserRole.ADMIN)
   async changeRole(@Param('id') id: string, @Body() body: { role: string }) {
     const user = await this.usersService.changeRole(id, body.role);
     return {
@@ -101,7 +101,7 @@ export class UsersController {
 
   @Delete(':id')
   @UseGuards(RolesGuard)
-  @Roles(UserRole.SUPER_ADMIN)
+  @Roles(UserRole.ADMIN)
   async remove(@Param('id') id: string) {
     await this.usersService.delete(id);
     return {
