@@ -201,22 +201,41 @@ export default function HomePage() {
         </div>
 
         {/* CTA Section */}
-        <div className="text-center bg-white dark:bg-gray-800 rounded-lg p-8 shadow-lg">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-            Sẵn sàng bắt đầu?
-          </h2>
-          <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
-            Tham gia cùng hàng ngàn nông dân đã tin tưởng sử dụng AgriBot
-          </p>
-          <Link href="/register">
-            <Button
-              size="lg"
-              className="bg-agri-green-600 hover:bg-agri-green-700"
-            >
-              Tạo tài khoản miễn phí
-            </Button>
-          </Link>
-        </div>
+        {session ? (
+          <div className="text-center bg-white dark:bg-gray-800 rounded-lg p-8 shadow-lg">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              Tiếp tục hành trình cùng AgriBot
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
+              Truy cập bảng điều khiển để quản lý trang trại và trò chuyện với trợ lý AI
+            </p>
+            <Link href="/dashboard">
+              <Button
+                size="lg"
+                className="bg-agri-green-600 hover:bg-agri-green-700"
+              >
+                Đi tới bảng điều khiển
+              </Button>
+            </Link>
+          </div>
+        ) : (
+          <div className="text-center bg-white dark:bg-gray-800 rounded-lg p-8 shadow-lg">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+              Sẵn sàng bắt đầu?
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
+              Tham gia cùng hàng ngàn nông dân đã tin tưởng sử dụng AgriBot
+            </p>
+            <Link href="/register">
+              <Button
+                size="lg"
+                className="bg-agri-green-600 hover:bg-agri-green-700"
+              >
+                Tạo tài khoản miễn phí
+              </Button>
+            </Link>
+          </div>
+        )}
       </main>
 
       {/* Footer */}
