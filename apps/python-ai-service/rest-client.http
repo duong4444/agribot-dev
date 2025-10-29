@@ -12,7 +12,7 @@ POST {{baseUrl}}/intent/classify
 Content-Type: application/json
 
 {
-  "text": "tư vấn cách chăm sóc cà chua mùa mưa",
+  "text": "Điều chỉnh độ sáng thấp xuống",
   "top_k": 3
 }
 
@@ -21,7 +21,7 @@ POST {{baseUrl}}/ner/extract
 Content-Type: application/json
 
 {
-  "text": "cách trồng cà chua tại ruộng số 5 ngày mai"
+  "text": "độ ẩm bây giờ là bao nhiêu"
 }
 
 ### NER extraction - device example
@@ -29,7 +29,7 @@ POST {{baseUrl}}/ner/extract
 Content-Type: application/json
 
 {
-  "text": "bật máy bơm tự động lúc 6 giờ sáng"
+  "text": "Điều chỉnh độ sáng thấp xuống"
 }
 
 ### NER extraction - quantity example

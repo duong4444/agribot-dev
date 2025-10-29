@@ -19,6 +19,7 @@ scikit-learn==1.4.0
 # Utilities
 python-dotenv==1.0.0
 requests==2.31.0
+tqdm==4.66.1
 
 # Logging
 loguru==0.7.2

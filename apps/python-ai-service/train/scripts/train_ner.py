@@ -16,7 +16,7 @@ from seqeval.metrics import f1_score, precision_score, recall_score, classificat
 # 1. Load data
 print("📊 Loading NER data...")
 try:
-    df = pd.read_csv('../data/ner_data.csv', encoding='utf-8')
+    df = pd.read_csv('../data/ner_data_augmented.csv', encoding='utf-8')
     print(f"✅ Successfully loaded {len(df)} examples")
 except Exception as e:
     print(f"❌ Error loading CSV: {e}")

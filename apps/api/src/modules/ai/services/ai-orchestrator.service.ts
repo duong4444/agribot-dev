@@ -47,7 +47,9 @@ export class AIOrchestrator {
     try {
       // Step 1: Preprocessing
       const preprocessed = this.preprocessing.preprocess(query);
-
+      console.log("user_query || prompt: ",query);
+      console.log("query sau xử lý: ", preprocessed);
+      
       // Step 2: Intent Classification & Entity Extraction
       const intentResult = await this.intentClassifier.classifyIntent(query);
 

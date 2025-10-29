@@ -366,14 +366,17 @@ class NERExtractor:
         """
         processed = []
         
-        # Add rule-based entities for common patterns
+        # Add rule-based entities for common patterns (high priority)
         rule_entities = self._extract_rule_based_entities(text)
         
         # Merge PhoBERT and rule-based entities
         all_entities = entities + rule_entities
         
-        # Remove duplicates and overlaps
+        # Remove duplicates and overlaps (prefer rule-based for multi-word)
         all_entities = self._remove_overlapping_entities(all_entities)
+        
+        # Filter out invalid single-word entities
+        all_entities = self._filter_invalid_entities(text, all_entities)
         
         # Normalize values
         for entity in all_entities:
@@ -400,30 +403,58 @@ class NERExtractor:
             (r'\d+[\d,\.]*\s*(đồng|vnđ|vnd|k|triệu|tr|tỷ)', 'money'),
         ]
         
-        crop_keywords = [
-            "cà chua",
-            "cà phê",
-            "lúa",
-            "ngô",
-            "bắp",
-            "khoai",
-            "rau",
-            "ớt",
-            "tiêu",
-            "sầu riêng"
+        # Multi-word crop patterns (prioritize longer matches)
+        crop_patterns = [
+            # Common 2-3 word crops
+            (r'\bcà\s+chua\b', 'crop_name'),
+            (r'\bcà\s+phê\b', 'crop_name'),
+            (r'\bcà\s+rốt\b', 'crop_name'),
+            (r'\bcà\s+tím\b', 'crop_name'),
+            (r'\bkhoai\s+lang\b', 'crop_name'),
+            (r'\bkhoai\s+tây\b', 'crop_name'),
+            (r'\bkhoai\s+mì\b', 'crop_name'),
+            (r'\bsầu\s+riêng\b', 'crop_name'),
+            (r'\bthanh\s+long\b', 'crop_name'),
+            (r'\bhồ\s+tiêu\b', 'crop_name'),
+            (r'\bcao\s+su\b', 'crop_name'),
+            (r'\bđậu\s+tương\b', 'crop_name'),
+            (r'\bđậu\s+phộng\b', 'crop_name'),
+            (r'\bbắp\s+cải\b', 'crop_name'),
+            (r'\brau\s+muống\b', 'crop_name'),
+            (r'\brau\s+dền\b', 'crop_name'),
+            (r'\bdưa\s+chuột\b', 'crop_name'),
+            (r'\bdưa\s+hấu\b', 'crop_name'),
+            (r'\bsu\s+su\b', 'crop_name'),
+            (r'\bsu\s+hào\b', 'crop_name'),
+            (r'\bcủ\s+cải\b', 'crop_name'),
+        ]
+        
+        # Multi-word device patterns
+        device_patterns = [
+            (r'\bmáy\s+bơm\b', 'device_name'),
+            (r'\bmáy\s+tưới\b', 'device_name'),
+            (r'\bmáy\s+phun\b', 'device_name'),
+            (r'\bvan\s+nước\b', 'device_name'),
+            (r'\bcảm\s+biến\b', 'device_name'),
+            (r'\bhệ\s+thống\s+tưới\b', 'device_name'),
+        ]
+        
+        # Farm area patterns
+        area_patterns = [
+            (r'\bhàng\s+\d+\b', 'farm_area'),  # hàng 1, hàng 2
+            (r'\bluống\s+\d+\b', 'farm_area'),  # luống 1
+            (r'\bkhu\s+[A-Z]\b', 'farm_area'),  # khu A
+            (r'\bvườn\s+\w+\b', 'farm_area'),  # vườn cam
         ]
 
-        device_keywords = [
-            "máy bơm",
-            "máy tưới",
-            "quạt",
-            "cảm biến",
-            "sensor",
-            "thiết bị"
-        ]
-
-        # Combine all patterns
-        all_patterns = date_patterns + money_patterns
+        # Combine all patterns (prioritize multi-word patterns first)
+        all_patterns = (
+            crop_patterns + 
+            device_patterns + 
+            area_patterns + 
+            date_patterns + 
+            money_patterns
+        )
         
         for pattern, entity_type in all_patterns:
             for match in re.finditer(pattern, text, re.IGNORECASE):
@@ -432,18 +463,56 @@ class NERExtractor:
                     "raw": match.group(0),
                     "start": match.start(),
                     "end": match.end(),
-                    "confidence": 0.9  # High confidence for rule-based
+                    "confidence": 0.95  # Very high confidence for rule-based multi-word
                 })
         
         return entities
     
+    def _filter_invalid_entities(self, text: str, entities: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Filter out invalid entities based on context and common sense rules
+        """
+        filtered = []
+        
+        # Invalid single words that are often misclassified
+        invalid_crop_words = {"nam", "bắc", "trung", "miền", "chua", "tây", "đông"}
+        invalid_area_words = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "0"}
+        
+        for entity in entities:
+            raw_lower = entity["raw"].lower().strip()
+            entity_type = entity["type"]
+            
+            # Filter invalid crop names
+            if entity_type == "crop_name":
+                # Reject single invalid words
+                if raw_lower in invalid_crop_words:
+                    logger.debug(f"Filtered invalid crop: '{entity['raw']}'")
+                    continue
+                # Reject very short single-character crops (except valid ones)
+                if len(raw_lower) == 1:
+                    continue
+            
+            # Filter invalid farm areas
+            if entity_type == "farm_area":
+                # Reject standalone numbers without context
+                if raw_lower in invalid_area_words:
+                    logger.debug(f"Filtered invalid area: '{entity['raw']}'")
+                    continue
+            
+            filtered.append(entity)
+        
+        return filtered
+    
     def _remove_overlapping_entities(self, entities: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Remove overlapping entities, keeping the one with higher confidence"""
+        """Remove overlapping entities, keeping the one with higher confidence and longer span"""
         if not entities:
             return []
         
-        # Sort by start position
-        sorted_entities = sorted(entities, key=lambda x: (x["start"], -x["confidence"]))
+        # Sort by start position, then by confidence (higher first), then by length (longer first)
+        sorted_entities = sorted(
+            entities, 
+            key=lambda x: (x["start"], -x["confidence"], -(x["end"] - x["start"]))
+        )
         
         result = []
         last_end = -1

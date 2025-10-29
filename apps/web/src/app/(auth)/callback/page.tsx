@@ -50,9 +50,16 @@ export default function AuthCallbackPage() {
           setStatus('success');
           setMessage('Đăng nhập thành công! Đang chuyển hướng...');
           
-          // Redirect đến dashboard sau 2 giây
+          // Get session to check user role and redirect accordingly
+          const { getSession } = await import('next-auth/react');
+          const session = await getSession();
+          
           setTimeout(() => {
-            router.push('/dashboard');
+            if (session?.user?.role === "ADMIN") {
+              router.push('/admin');
+            } else {
+              router.push('/dashboard');
+            }
           }, 1000);
         }
       } catch (error) {
