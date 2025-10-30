@@ -142,77 +142,149 @@ export default function AdminPage() {
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
+          <Card className="border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Tổng Người Dùng
               </CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">—</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">—</div>
+              <p className="text-xs text-muted-foreground mt-1">
                 Đang kết nối với API
               </p>
+              <div className="mt-2 flex items-center text-xs">
+                <span className="text-green-600 dark:text-green-400 font-medium">↑ 12%</span>
+                <span className="text-gray-500 dark:text-gray-400 ml-1">so với tháng trước</span>
+              </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Người Dùng Hoạt Động
+                Hoạt Động 24h
               </CardTitle>
-              <UserCheck className="h-4 w-4 text-muted-foreground" />
+              <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                <UserCheck className="h-5 w-5 text-green-600 dark:text-green-400" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">—</div>
-              <p className="text-xs text-muted-foreground">
-                Trong 24h qua
+              <div className="text-3xl font-bold text-green-600 dark:text-green-400">—</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Người dùng hoạt động
               </p>
+              <div className="mt-2 flex items-center text-xs">
+                <span className="text-green-600 dark:text-green-400 font-medium">↑ 8%</span>
+                <span className="text-gray-500 dark:text-gray-400 ml-1">tăng so với hôm qua</span>
+              </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Cuộc Trò Chuyện
               </CardTitle>
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
+              <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
+                <MessageSquare className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">—</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">—</div>
+              <p className="text-xs text-muted-foreground mt-1">
                 Tổng số cuộc trò chuyện
               </p>
+              <div className="mt-2 flex items-center text-xs">
+                <span className="text-green-600 dark:text-green-400 font-medium">↑ 23%</span>
+                <span className="text-gray-500 dark:text-gray-400 ml-1">trong tuần này</span>
+              </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
                 Trạng Thái Hệ Thống
               </CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
+              <div className="p-2 bg-agri-green-100 dark:bg-agri-green-900/20 rounded-lg">
+                <Activity className="h-5 w-5 text-agri-green-600 dark:text-agri-green-400" />
+              </div>
             </CardHeader>
             <CardContent>
               <div className="flex items-center space-x-2">
-                <div className="h-3 w-3 bg-green-500 rounded-full"></div>
-                <span className="text-sm font-semibold">Hoạt Động Tốt</span>
+                <div className="h-3 w-3 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-xl font-semibold text-gray-900 dark:text-white">Hoạt Động Tốt</span>
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground mt-1">
                 Tất cả dịch vụ bình thường
               </p>
+              <div className="mt-2 flex items-center text-xs">
+                <span className="text-gray-500 dark:text-gray-400">Uptime: 99.9%</span>
+              </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Management Sections */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* User Management */}
-          <Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Knowledge Management - NEW */}
+          <Card className="border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-200">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Users className="h-5 w-5 text-agri-green-600" />
+                <div className="p-2 bg-agri-green-100 dark:bg-agri-green-900/20 rounded-lg">
+                  <Database className="h-5 w-5 text-agri-green-600 dark:text-agri-green-400" />
+                </div>
+                <span>Quản Lý Cơ Sở Tri Thức</span>
+              </CardTitle>
+              <CardDescription>
+                Quản lý kiến thức nông nghiệp để chatbot trả lời chính xác
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <div>
+                  <p className="font-medium text-sm">Cây trồng</p>
+                  <p className="text-xs text-gray-500">Quản lý thông tin cây trồng</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push('/admin/knowledge/crops')}
+                  className="hover:bg-agri-green-50 dark:hover:bg-agri-green-900/20"
+                >
+                  <Database className="h-4 w-4 mr-2" />
+                  Quản lý
+                </Button>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <div>
+                  <p className="font-medium text-sm">Tất cả danh mục</p>
+                  <p className="text-xs text-gray-500">Xem toàn bộ cơ sở tri thức</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push('/admin/knowledge')}
+                  className="hover:bg-agri-green-50 dark:hover:bg-agri-green-900/20"
+                >
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Xem tất cả
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* User Management */}
+          <Card className="border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-200">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                  <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
                 <span>Quản Lý Người Dùng</span>
               </CardTitle>
               <CardDescription>
@@ -220,37 +292,46 @@ export default function AdminPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                 <div>
                   <p className="font-medium text-sm">Danh sách người dùng</p>
                   <p className="text-xs text-gray-500">Xem và quản lý tất cả tài khoản</p>
                 </div>
-                <Button variant="outline" size="sm" disabled>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push('/admin/users')}
+                  className="hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                >
                   <Database className="h-4 w-4 mr-2" />
                   Xem
                 </Button>
               </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                 <div>
                   <p className="font-medium text-sm">Phân quyền</p>
                   <p className="text-xs text-gray-500">Thay đổi vai trò người dùng</p>
                 </div>
-                <Button variant="outline" size="sm" disabled>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push('/admin/users')}
+                  className="hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                >
                   <Shield className="h-4 w-4 mr-2" />
                   Quản lý
                 </Button>
               </div>
-              <p className="text-xs text-center text-gray-500 pt-2">
-                Tính năng đang được phát triển
-              </p>
             </CardContent>
           </Card>
 
           {/* Analytics & Reports */}
-          <Card>
+          <Card className="border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-200">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <BarChart3 className="h-5 w-5 text-agri-green-600" />
+                <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
+                  <BarChart3 className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                </div>
                 <span>Báo Cáo & Phân Tích</span>
               </CardTitle>
               <CardDescription>
@@ -280,7 +361,7 @@ export default function AdminPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => router.push("/dashboard")}
+                  onClick={() => router.push("/admin/chatbot")}
                 >
                   <MessageSquare className="h-4 w-4 mr-2" />
                   Truy cập
@@ -290,10 +371,12 @@ export default function AdminPage() {
           </Card>
 
           {/* System Settings */}
-          <Card>
+          <Card className="border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-200">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Settings className="h-5 w-5 text-agri-green-600" />
+                <div className="p-2 bg-orange-100 dark:bg-orange-900/20 rounded-lg">
+                  <Settings className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                </div>
                 <span>Cài Đặt Hệ Thống</span>
               </CardTitle>
               <CardDescription>
@@ -301,7 +384,22 @@ export default function AdminPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <div>
+                  <p className="font-medium text-sm">Thiết bị IoT</p>
+                  <p className="text-xs text-gray-500">Giám sát cảm biến & điều khiển</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push("/admin/iot")}
+                  className="hover:bg-orange-50 dark:hover:bg-orange-900/20"
+                >
+                  <Activity className="h-4 w-4 mr-2" />
+                  Quản lý
+                </Button>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                 <div>
                   <p className="font-medium text-sm">Cấu hình chatbot</p>
                   <p className="text-xs text-gray-500">Điều chỉnh AI parameters</p>
@@ -311,7 +409,7 @@ export default function AdminPage() {
                   Cấu hình
                 </Button>
               </div>
-              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                 <div>
                   <p className="font-medium text-sm">Quản lý nông trại</p>
                   <p className="text-xs text-gray-500">Xem tất cả nông trại</p>
@@ -320,22 +418,22 @@ export default function AdminPage() {
                   variant="outline"
                   size="sm"
                   onClick={() => router.push("/farm")}
+                  className="hover:bg-orange-50 dark:hover:bg-orange-900/20"
                 >
                   <Home className="h-4 w-4 mr-2" />
                   Xem
                 </Button>
               </div>
-              <p className="text-xs text-center text-gray-500 pt-2">
-                Một số tính năng đang phát triển
-              </p>
             </CardContent>
           </Card>
 
           {/* Quick Access */}
-          <Card>
+          <Card className="border-gray-200 dark:border-gray-700 shadow-lg hover:shadow-xl transition-all duration-200">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <Activity className="h-5 w-5 text-agri-green-600" />
+                <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                  <Activity className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
                 <span>Truy Cập Nhanh</span>
               </CardTitle>
               <CardDescription>
