@@ -39,3 +39,11 @@ Content-Type: application/json
 {
   "text": "cần thêm 50kg phân NPK cho vườn cà phê"
 }
+
+# analyze
+POST {{baseUrl}}/analyze
+Content-Type: application/json
+
+{
+  "text": "cần thêm 50kg phân NPK cho vườn cà phê"
+}

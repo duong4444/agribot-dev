@@ -67,12 +67,17 @@ export class PythonAIClientService {
 
     try {
       const startTime = Date.now();
+      console.log("post đến 8000/analyze..........................................");
       
       const response = await this.client.post<PythonAIResponse>('/analyze', {
         text,
         top_k: topK,
       });
 
+      console.log("INTENT trả về từ 8000/analyze: ",response.data.intent);
+      console.log("entities trả về từ 8000/analyze: ",response.data.entities);
+
+      
       const processingTime = Date.now() - startTime;
       this.logger.debug(
         `Python AI Analysis: Intent=${response.data.intent}, ` +

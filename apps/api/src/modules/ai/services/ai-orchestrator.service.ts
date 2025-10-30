@@ -1,15 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { User } from '../../users/entities/user.entity';
-import { 
-  AIResponse, 
-  IntentType, 
+import {
+  AIResponse,
+  IntentType,
   ProcessingLayer,
-  IntentClassificationResult 
+  IntentClassificationResult,
 } from '../types';
 import { DEFAULT_AI_CONFIG, ERROR_MESSAGES } from '../constants';
 
 // Services
-import { PreprocessingService } from './preprocessing.service';
 import { IntentClassifierService } from './intent-classifier.service';
 import { ExactMatchService } from './exact-match.service';
 import { RAGService } from './rag.service';
@@ -27,7 +26,6 @@ export class AIOrchestrator {
   private readonly logger = new Logger(AIOrchestrator.name);
 
   constructor(
-    private readonly preprocessing: PreprocessingService,
     private readonly intentClassifier: IntentClassifierService,
     private readonly exactMatch: ExactMatchService,
     private readonly rag: RAGService,
@@ -36,7 +34,9 @@ export class AIOrchestrator {
   ) {}
 
   /**
-   * Main orchestration method - Process user query through 3-layer architecture
+   * Main orchestration method - Process user query through 2-step architecture
+   * Step 1: Intent Classification & Entity Extraction
+   * Step 2: Route to Action or Knowledge processing
    */
   async process(request: ProcessRequest): Promise<AIResponse> {
     const startTime = Date.now();
@@ -45,33 +45,46 @@ export class AIOrchestrator {
     this.logger.log(`Processing query: "${query}" for user ${user.id}`);
 
     try {
-      // Step 1: Preprocessing
-      const preprocessed = this.preprocessing.preprocess(query);
-      console.log("user_query || prompt: ",query);
-      console.log("query sau xử lý: ", preprocessed);
+      // Step 1: Intent Classification & Entity Extraction
+      console.log("STEP1 trong orchest==========INTENT CLASSIFIER & NER ==================");
+      console.log('user_query || prompt: ', query);
       
-      // Step 2: Intent Classification & Entity Extraction
-      const intentResult = await this.intentClassifier.classifyIntent(query);
+      const intentResult = await this.intentClassifier.classifyIntent(query);   
+      // return {
+      //   intent,
+      //   confidence: pythonResult.intent_confidence,
+      //   entities,
+      //   originalQuery: query,
+      //   normalizedQuery,
+      // };
+      console.log('!!!!intent_result_ai_orchestrator!!!!: ', intentResult);
 
       this.logger.debug(
-        `Intent: ${intentResult.intent}, Confidence: ${intentResult.confidence.toFixed(2)}, Entities: ${intentResult.entities.length}`
+        `Intent: ${intentResult.intent}, Confidence: ${intentResult.confidence.toFixed(2)}, Entities: ${intentResult.entities.length}`,
       );
 
-      // Step 3: Route based on intent category
+      // Step 2: Route based on intent category
+      console.log("STEP2 trong orchest===============CHECK ACTION || KNOWLEDGE=============");
+      // action || knowledge
       const intentCategory = this.intentClassifier.getIntentCategory(
-        intentResult.intent
+        intentResult.intent,
       );
+
+      console.log('intent_category_|->ACTION || KNOWLEDGE<-|_ai_orchestrator: ', intentCategory);
 
       if (intentCategory === 'action') {
         // Action intents: query database or control devices
+        console.log('======================ACTION_CATEGORY================================');
+
         return await this.processActionIntent(intentResult, user, startTime);
       } else {
         // Knowledge intents: 3-layer knowledge retrieval
+        console.log('======================KNOWLEDGE_CATEGORY=======================');
         return await this.processKnowledgeIntent(intentResult, user, startTime);
       }
     } catch (error) {
       this.logger.error('Error in AI orchestration:', error);
-      
+
       return {
         success: false,
         message: 'Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại.',
@@ -94,20 +107,23 @@ export class AIOrchestrator {
   private async processKnowledgeIntent(
     intentResult: IntentClassificationResult,
     user: User,
-    startTime: number
+    startTime: number,
   ): Promise<AIResponse> {
-      const { originalQuery: query } = intentResult;
+    const { originalQuery: query } = intentResult;
 
     // Layer 1: Try Exact Match
     this.logger.debug('Attempting Layer 1: Exact Match');
+    console.log('.............................TRY LAYER1_FTS..................................................');
     const exactResult = await this.exactMatch.findExactMatch(query, user.id);
+    console.log('exactResult_layer1_FTS: ', exactResult);
 
     if (
       exactResult.found &&
       exactResult.confidence >= DEFAULT_AI_CONFIG.exactMatchThreshold
     ) {
       this.logger.log('✓ Layer 1 (Exact Match) succeeded');
-      
+      console.log('PROCESSING LAYER1');
+
       return {
         success: true,
         message: exactResult.content!,
@@ -127,17 +143,21 @@ export class AIOrchestrator {
     }
 
     // Layer 2: Try RAG
+    console.log('.....................................TRY LAYER2_RAG............................................');
+
     this.logger.debug('Attempting Layer 2: RAG');
     const ragResult = await this.rag.retrieve(query, {
       userId: user.id,
       useHybrid: true,
     });
+    console.log('ragResult_layer2_RAG: ', ragResult);
 
     if (
       ragResult.found &&
       ragResult.confidence >= DEFAULT_AI_CONFIG.ragConfidenceThreshold
     ) {
       this.logger.log('✓ Layer 2 (RAG) succeeded');
+      console.log("PROCESSING LAYER2");
       
       return {
         success: true,
@@ -147,7 +167,7 @@ export class AIOrchestrator {
         confidence: ragResult.confidence,
         responseTime: Date.now() - startTime,
         ragResult,
-        sources: ragResult.sources.map(s => ({
+        sources: ragResult.sources.map((s) => ({
           type: 'document' as const,
           reference: s.filename,
           confidence: s.relevanceScore,
@@ -156,12 +176,15 @@ export class AIOrchestrator {
     }
 
     // Layer 3: LLM Fallback
+    console.log('..................................LAYER3 FALLBACK LLM...............................');
+
     this.logger.debug('Attempting Layer 3: LLM Fallback');
     const llmResult = await this.llmFallback.generateResponse(query, {
       reason: ragResult.found
         ? 'RAG confidence too low'
         : 'No relevant documents found',
     });
+    console.log('llmResult_layer3_LLM_FALLBACK: ', llmResult);
 
     this.logger.log('✓ Layer 3 (LLM Fallback) completed');
 
@@ -189,7 +212,7 @@ export class AIOrchestrator {
   private async processActionIntent(
     intentResult: IntentClassificationResult,
     user: User,
-    startTime: number
+    startTime: number,
   ): Promise<AIResponse> {
     const { intent, entities, originalQuery: query } = intentResult;
 
@@ -240,6 +263,3 @@ export class AIOrchestrator {
     return `Processed via ${layerName} | Confidence: ${(response.confidence * 100).toFixed(0)}% | Time: ${response.responseTime}ms`;
   }
 }
-
-
-

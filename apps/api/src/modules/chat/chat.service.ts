@@ -203,6 +203,8 @@ export class ChatService {
     conversationId: string,
   ): Promise<{ content: string; intent: string; confidence: number }> {
     try {
+      console.log("user_prompt: ", userMessage);
+      
       // Use new AI Orchestrator
       const aiResponse = await this.aiOrchestrator.process({
         query: userMessage,
@@ -210,12 +212,15 @@ export class ChatService {
         conversationId: conversationId,
       });
 
+      console.log("ai_response: ", aiResponse);
+  
       return {
         content: aiResponse.message,
         intent: aiResponse.intent,
         confidence: aiResponse.confidence,
       };
     } catch (error) {
+      console.log("error_generateAIResponse_chat.service: ", error);
       console.error('Error generating AI response:', error);
 
       // Fallback response nếu AI service lỗi

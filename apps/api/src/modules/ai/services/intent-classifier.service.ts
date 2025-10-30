@@ -21,19 +21,43 @@ export class IntentClassifierService {
   async classifyIntent(query: string): Promise<IntentClassificationResult> {
     const startTime = Date.now();
     const normalizedQuery = normalizeText(query);
+    console.log('normalize_prompt_text: ', normalizedQuery);
 
     // Try Python AI Service first
+    // console.log("gọi đến port 8000/analyze");
+    // TRẢ VỀ KẾT QUẢ CHO STEP1_ORCHESTRATOR
     const pythonResult = await this.pythonAIClient.analyzeText(query, 3);
-    
+    // pythonResult === response.data từ 8000/analyze
+    console.log('pythonResult: ', pythonResult?.intent);
+    console.log(
+      'pythonResult_entities_!!!!!!!!!!!!!: ',
+      pythonResult?.entities,
+    );
+
     if (pythonResult && pythonResult.intent_confidence > 0.7) {
       // Use Python AI Service results
+      console.log('!!!DÙNG PYTHON CHO INENT CLASSIFIER!!!');
+
       this.logger.debug('Using Python AI Service (PhoBERT) classification');
-      
-      const intent = this.pythonAIClient.convertToIntentType(pythonResult.intent);
-      const entities = pythonResult.entities.map(e => this.pythonAIClient.convertToEntity(e));
-      
+
+      const intent = this.pythonAIClient.convertToIntentType(
+        pythonResult.intent,
+      );
+      console.log(
+        'intent_convertToIntentType_aka_intent_trả_về_step1_orchest: ',
+        intent,
+      );
+
+      const entities = pythonResult.entities.map((e) =>
+        this.pythonAIClient.convertToEntity(e),
+      );
+      console.log(
+        'entities_convertToEntity_aka_entities_trả_về_step1_orchest: ',
+        entities,
+      );
+
       const processingTime = Date.now() - startTime;
-      
+
       return {
         intent,
         confidence: pythonResult.intent_confidence,
@@ -44,13 +68,17 @@ export class IntentClassifierService {
     }
 
     // Fallback to rule-based
-    this.logger.debug('Using rule-based classification (Python AI Service not available or low confidence)');
-    
+    console.log('RULE-BASED INTENT');
+
+    this.logger.debug(
+      'Using rule-based classification (Python AI Service not available or low confidence)',
+    );
+
     // Extract entities first
     const entities = this.entityExtractor.extractEntities(query);
 
     // Determine intent based on patterns
-    const intent = this.determineIntent(normalizedQuery);
+    const intent = this.determineIntent(normalizedQuery); //  return analytics_query,...
     const confidence = this.calculateConfidence(normalizedQuery, intent);
 
     const result: IntentClassificationResult = {
@@ -63,7 +91,7 @@ export class IntentClassifierService {
 
     const processingTime = Date.now() - startTime;
     this.logger.debug(
-      `Intent classified: ${intent} (confidence: ${confidence.toFixed(2)}) in ${processingTime}ms`
+      `Intent classified: ${intent} (confidence: ${confidence.toFixed(2)}) in ${processingTime}ms`,
     );
 
     return result;
@@ -81,12 +109,16 @@ export class IntentClassifierService {
     }
 
     // 2. Financial Query
-    if (this.matchesPatterns(normalizedQuery, INTENT_PATTERNS.FINANCIAL_QUERY)) {
+    if (
+      this.matchesPatterns(normalizedQuery, INTENT_PATTERNS.FINANCIAL_QUERY)
+    ) {
       return IntentType.FINANCIAL_QUERY;
     }
 
     // 3. Analytics Query
-    if (this.matchesPatterns(normalizedQuery, INTENT_PATTERNS.ANALYTICS_QUERY)) {
+    if (
+      this.matchesPatterns(normalizedQuery, INTENT_PATTERNS.ANALYTICS_QUERY)
+    ) {
       return IntentType.ANALYTICS_QUERY;
     }
 
@@ -106,7 +138,9 @@ export class IntentClassifierService {
     }
 
     // 7. Knowledge Query (explicit knowledge-seeking patterns)
-    if (this.matchesPatterns(normalizedQuery, INTENT_PATTERNS.KNOWLEDGE_QUERY)) {
+    if (
+      this.matchesPatterns(normalizedQuery, INTENT_PATTERNS.KNOWLEDGE_QUERY)
+    ) {
       return IntentType.KNOWLEDGE_QUERY;
     }
 
@@ -118,19 +152,19 @@ export class IntentClassifierService {
    * Check if query matches any pattern in the list
    */
   private matchesPatterns(query: string, patterns: RegExp[]): boolean {
-    return patterns.some(pattern => pattern.test(query));
+    return patterns.some((pattern) => pattern.test(query));
   }
 
   /**
    * Calculate confidence score for the detected intent
    */
   private calculateConfidence(query: string, intent: IntentType): number {
-    const patterns = this.getIntentPatterns(intent);
+    const patterns = this.getIntentPatterns(intent); // regex của các intent
     if (!patterns) return 0.5;
 
     let maxScore = 0;
 
-    patterns.forEach(pattern => {
+    patterns.forEach((pattern) => {
       const matches = query.match(pattern);
       if (matches) {
         // Score based on match coverage
@@ -142,7 +176,7 @@ export class IntentClassifierService {
     });
 
     // Boost confidence if multiple patterns match
-    const matchCount = patterns.filter(p => p.test(query)).length;
+    const matchCount = patterns.filter((p) => p.test(query)).length;
     const boost = Math.min(matchCount * 0.1, 0.3);
 
     return Math.min(maxScore + boost, 1.0);
@@ -210,12 +244,8 @@ export class IntentClassifierService {
    * Check if intent requires IoT action
    */
   requiresIoT(intent: IntentType): boolean {
-    return [
-      IntentType.DEVICE_CONTROL,
-      IntentType.SENSOR_QUERY,
-    ].includes(intent);
+    return [IntentType.DEVICE_CONTROL, IntentType.SENSOR_QUERY].includes(
+      intent,
+    );
   }
 }
-
-
-

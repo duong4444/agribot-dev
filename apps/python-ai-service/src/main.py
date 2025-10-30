@@ -76,7 +76,7 @@ class CombinedRequest(BaseModel):
 class CombinedResponse(BaseModel):
     intent: str
     intent_confidence: float
-    all_intents: List[Dict[str, float]]
+    all_intents: List[Dict[str, Any]]
     entities: List[Entity]
     processing_time_ms: float
 
