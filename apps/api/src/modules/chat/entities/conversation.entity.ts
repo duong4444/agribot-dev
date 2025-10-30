@@ -49,6 +49,7 @@ export class Conversation {
 
   @OneToMany('Message', 'conversation', {
     cascade: true,
+    onDelete: 'CASCADE',
   })
   messages: any[];
 

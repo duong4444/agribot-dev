@@ -3,7 +3,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send } from 'lucide-react';
+import { Send, Loader2 } from 'lucide-react';
 
 interface ChatInputProps {
   value: string;
@@ -23,28 +23,31 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   placeholder = "Nhập câu hỏi về nông nghiệp..."
 }) => {
   return (
-    <div className="border-t bg-gray-50 dark:bg-gray-800 p-3 sm:p-4 flex-shrink-0">
-      <div className="flex space-x-2">
+    <div className="border-t border-gray-200 dark:border-gray-700 bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-800/50 p-4 sm:p-5 flex-shrink-0 shadow-inner">
+      <div className="flex gap-3 max-w-4xl mx-auto">
         <Input
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyPress={onKeyPress}
           placeholder={placeholder}
           disabled={isLoading}
-          className="flex-1 border-gray-300 dark:border-gray-600 focus:border-agri-green-500 focus:ring-agri-green-500"
+          className="flex-1 border-gray-300 dark:border-gray-600 focus:border-agri-green-500 focus:ring-agri-green-500 rounded-xl shadow-sm bg-white dark:bg-gray-900 h-11 px-4"
         />
         <Button
           onClick={onSend}
           disabled={!value.trim() || isLoading}
-          className="bg-agri-green-600 hover:bg-agri-green-700 px-4"
+          className="bg-gradient-to-r from-agri-green-600 to-agri-green-700 hover:from-agri-green-700 hover:to-agri-green-800 shadow-md hover:shadow-lg transition-all duration-200 rounded-xl px-5 h-11 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isLoading ? (
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            <Loader2 className="h-5 w-5 animate-spin" />
           ) : (
-            <Send className="h-4 w-4" />
+            <Send className="h-5 w-5" />
           )}
         </Button>
       </div>
+      <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-3">
+        Nhấn Enter để gửi tin nhắn
+      </p>
     </div>
   );
 };

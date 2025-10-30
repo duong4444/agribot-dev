@@ -34,13 +34,26 @@ export class ChatService {
     return await this.conversationRepository.save(conversation);
   }
 
-  // Lấy danh sách cuộc trò chuyện của user
-  async getConversations(user: User): Promise<Conversation[]> {
-    return await this.conversationRepository.find({
-      where: { user: { id: user.id } },
+  // Lấy danh sách cuộc trò chuyện của user (exclude deleted, with pagination)
+  async getConversations(
+    user: User,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<{ conversations: Conversation[]; total: number }> {
+    const skip = (page - 1) * limit;
+
+    const [conversations, total] = await this.conversationRepository.findAndCount({
+      where: { 
+        user: { id: user.id },
+        status: 'ACTIVE' as any, // Only get active conversations
+      },
       order: { lastMessageAt: 'DESC', createdAt: 'DESC' },
       relations: ['messages'],
+      skip,
+      take: limit,
     });
+
+    return { conversations, total };
   }
 
   // Lấy cuộc trò chuyện theo ID (với relations - dùng cho display)
@@ -159,13 +172,21 @@ export class ChatService {
     };
   }
 
-  // Xóa cuộc trò chuyện
+  // Xóa cuộc trò chuyện (hard delete from database)
   async deleteConversation(id: string, user: User): Promise<void> {
-    const conversation = await this.getConversation(id, user);
+    const conversation = await this.conversationRepository.findOne({
+      where: { id, user: { id: user.id } },
+    });
 
-    // Soft delete - chỉ đánh dấu là DELETED
-    conversation.status = 'DELETED' as any;
-    await this.conversationRepository.save(conversation);
+    if (!conversation) {
+      throw new NotFoundException('Cuộc trò chuyện không tồn tại');
+    }
+
+    // Delete all messages first (explicit delete for safety)
+    await this.messageRepository.delete({ conversationId: id });
+
+    // Then delete the conversation
+    await this.conversationRepository.remove(conversation);
   }
 
   // Lấy lịch sử tin nhắn

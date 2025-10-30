@@ -159,9 +159,10 @@ export class PythonAIClientService {
       'create_record': IntentType.CREATE_RECORD,
       'update_record': IntentType.UPDATE_RECORD,
       'delete_record': IntentType.DELETE_RECORD,
+      'unknown': IntentType.UNKNOWN,
     };
 
-    return intentMap[pythonIntent] || IntentType.KNOWLEDGE_QUERY;
+    return intentMap[pythonIntent] || IntentType.UNKNOWN;
   }
 
   /**

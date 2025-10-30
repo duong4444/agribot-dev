@@ -42,14 +42,30 @@ export class ChatController {
   }
 
   @Get('conversations')
-  @ApiOperation({ summary: 'Lấy danh sách cuộc trò chuyện' })
+  @ApiOperation({ summary: 'Lấy danh sách cuộc trò chuyện (with pagination)' })
   @ApiResponse({
     status: 200,
     description: 'Danh sách cuộc trò chuyện',
     type: [ConversationResponseDto],
   })
-  async getConversations(@Request() req): Promise<ConversationResponseDto[]> {
-    return await this.chatService.getConversations(req.user);
+  async getConversations(
+    @Request() req,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
+  ): Promise<{
+    conversations: ConversationResponseDto[];
+    total: number;
+    page: number;
+    limit: number;
+    hasMore: boolean;
+  }> {
+    const result = await this.chatService.getConversations(req.user, page, limit);
+    return {
+      ...result,
+      page: Number(page),
+      limit: Number(limit),
+      hasMore: result.conversations.length === Number(limit),
+    };
   }
 
   @Get('conversations/:id')
