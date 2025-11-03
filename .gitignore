@@ -252,3 +252,6 @@ QUICk_FIX_NER.md
 intent_data.txt
 ner_data.txt
 rest-client.http
+add_fts.txt
+layer1_flow.md
+LAYER1_TESTING_GUIDE.md

@@ -48,9 +48,22 @@ export function removeVietnameseAccents(text: string): string {
 }
 
 /**
- * Calculate text similarity (simple Jaccard similarity)
+ * Calculate text similarity using multiple algorithms
+ * Returns weighted average of Jaccard, Cosine, and Levenshtein
  */
 export function calculateSimilarity(text1: string, text2: string): number {
+  const jaccard = jaccardSimilarity(text1, text2);
+  const cosine = cosineSimilarity(text1, text2);
+  const levenshtein = levenshteinSimilarity(text1, text2);
+
+  // Weighted average: Jaccard (40%), Cosine (40%), Levenshtein (20%)
+  return jaccard * 0.4 + cosine * 0.4 + levenshtein * 0.2;
+}
+
+/**
+ * Jaccard similarity (set-based)
+ */
+export function jaccardSimilarity(text1: string, text2: string): number {
   const tokens1 = new Set(tokenize(text1));
   const tokens2 = new Set(tokenize(text2));
 
@@ -63,6 +76,119 @@ export function calculateSimilarity(text1: string, text2: string): number {
   if (union.size === 0) return 0;
 
   return intersection.size / union.size;
+}
+
+/**
+ * Cosine similarity (vector-based)
+ */
+export function cosineSimilarity(text1: string, text2: string): number {
+  const tokens1 = tokenize(text1);
+  const tokens2 = tokenize(text2);
+
+  // Build vocabulary
+  const vocabulary = new Set([...tokens1, ...tokens2]);
+  
+  // Create frequency vectors
+  const vector1: number[] = [];
+  const vector2: number[] = [];
+
+  vocabulary.forEach(token => {
+    vector1.push(tokens1.filter(t => t === token).length);
+    vector2.push(tokens2.filter(t => t === token).length);
+  });
+
+  // Calculate dot product
+  let dotProduct = 0;
+  let magnitude1 = 0;
+  let magnitude2 = 0;
+
+  for (let i = 0; i < vector1.length; i++) {
+    dotProduct += vector1[i] * vector2[i];
+    magnitude1 += vector1[i] * vector1[i];
+    magnitude2 += vector2[i] * vector2[i];
+  }
+
+  magnitude1 = Math.sqrt(magnitude1);
+  magnitude2 = Math.sqrt(magnitude2);
+
+  if (magnitude1 === 0 || magnitude2 === 0) return 0;
+
+  return dotProduct / (magnitude1 * magnitude2);
+}
+
+/**
+ * Levenshtein distance similarity (character-based)
+ */
+export function levenshteinSimilarity(text1: string, text2: string): number {
+  const distance = levenshteinDistance(text1, text2);
+  const maxLength = Math.max(text1.length, text2.length);
+  
+  if (maxLength === 0) return 1;
+  
+  return 1 - distance / maxLength;
+}
+
+/**
+ * Calculate Levenshtein distance
+ */
+function levenshteinDistance(str1: string, str2: string): number {
+  const m = str1.length;
+  const n = str2.length;
+
+  // Create matrix
+  const dp: number[][] = Array(m + 1)
+    .fill(null)
+    .map(() => Array(n + 1).fill(0));
+
+  // Initialize first row and column
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+
+  // Fill matrix
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (str1[i - 1] === str2[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1];
+      } else {
+        dp[i][j] = Math.min(
+          dp[i - 1][j] + 1,     // deletion
+          dp[i][j - 1] + 1,     // insertion
+          dp[i - 1][j - 1] + 1  // substitution
+        );
+      }
+    }
+  }
+
+  return dp[m][n];
+}
+
+/**
+ * BM25 scoring for ranking (used in search)
+ */
+export function calculateBM25Score(
+  query: string,
+  document: string,
+  avgDocLength: number,
+  k1: number = 1.5,
+  b: number = 0.75
+): number {
+  const queryTokens = tokenize(query);
+  const docTokens = tokenize(document);
+  const docLength = docTokens.length;
+
+  let score = 0;
+
+  queryTokens.forEach(term => {
+    const termFreq = docTokens.filter(t => t === term).length;
+    
+    if (termFreq > 0) {
+      const numerator = termFreq * (k1 + 1);
+      const denominator = termFreq + k1 * (1 - b + b * (docLength / avgDocLength));
+      score += numerator / denominator;
+    }
+  });
+
+  return score;
 }
 
 /**

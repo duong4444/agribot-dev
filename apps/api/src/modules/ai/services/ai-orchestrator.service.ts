@@ -10,7 +10,7 @@ import { DEFAULT_AI_CONFIG, ERROR_MESSAGES } from '../constants';
 
 // Services
 import { IntentClassifierService } from './intent-classifier.service';
-import { ExactMatchService } from './exact-match.service';
+import { ExactMatchV2Service } from './exact-match-v2.service';
 import { RAGService } from './rag.service';
 import { LLMFallbackService } from './llm-fallback.service';
 import { ActionRouterService, ActionContext } from './action-router.service';
@@ -27,7 +27,7 @@ export class AIOrchestrator {
 
   constructor(
     private readonly intentClassifier: IntentClassifierService,
-    private readonly exactMatch: ExactMatchService,
+    private readonly exactMatch: ExactMatchV2Service,
     private readonly rag: RAGService,
     private readonly llmFallback: LLMFallbackService,
     private readonly actionRouter: ActionRouterService,
@@ -187,11 +187,11 @@ export class AIOrchestrator {
       '.............................TRY LAYER1_FTS..................................................',
     );
     const exactResult = await this.exactMatch.findExactMatch(query, user.id);
-    console.log('exactResult_layer1_FTS: ', exactResult);
+    console.log('_orchestrator_ exactResult_layer1_FTS: ', exactResult);
 
     if (
       exactResult.found &&
-      exactResult.confidence >= DEFAULT_AI_CONFIG.exactMatchThreshold
+      exactResult.confidence >= DEFAULT_AI_CONFIG.exactMatchThreshold // 0.9
     ) {
       this.logger.log('✓ Layer 1 (Exact Match) succeeded');
       console.log('PROCESSING LAYER1');
@@ -228,7 +228,7 @@ export class AIOrchestrator {
 
     if (
       ragResult.found &&
-      ragResult.confidence >= DEFAULT_AI_CONFIG.ragConfidenceThreshold
+      ragResult.confidence >= DEFAULT_AI_CONFIG.ragConfidenceThreshold // 0.7
     ) {
       this.logger.log('✓ Layer 2 (RAG) succeeded');
       console.log('PROCESSING LAYER2');

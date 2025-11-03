@@ -40,7 +40,14 @@ async function bootstrap() {
     },
   });
   
-  app.enableCors();
+  // CORS Configuration
+  app.enableCors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3001',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  });
+  
   await app.listen(3000);
 }
 bootstrap();

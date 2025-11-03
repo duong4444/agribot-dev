@@ -13,7 +13,6 @@ import {
   PreprocessingService,
   EntityExtractorService,
   IntentClassifierService,
-  ExactMatchService,
   EmbeddingService,
   VectorSearchService,
   RAGService,
@@ -23,10 +22,23 @@ import {
   PythonAIClientService,
 } from './services';
 
+// Layer 1 Enhanced Services
+import { ExactMatchEnhancedService } from './services/exact-match-enhanced.service';
+import { SearchCacheService } from './services/search-cache.service';
+import { ExactMatchV2Service } from './services/exact-match-v2.service';
+
+// Document Management Services
+import { DocumentService } from './services/document.service';
+import { TextExtractionService } from './services/text-extraction.service';
+import { ChunkingService } from './services/chunking.service';
+
+// Guards
+import { AdminGuard } from './guards/admin.guard';
+
 // Other modules
 import { FarmModule } from '../farm/farm.module';
-// import { AIController } from './ai.controller'; // Removed old controller
 import { AIRefactoredController } from './ai-refactored.controller';
+import { AdminDocumentController } from './controllers/admin-document.controller';
 
 @Module({
   imports: [
@@ -34,34 +46,45 @@ import { AIRefactoredController } from './ai-refactored.controller';
     TypeOrmModule.forFeature([Document, DocumentChunk]),
     FarmModule,
   ],
-  controllers: [AIRefactoredController],
+  controllers: [AIRefactoredController, AdminDocumentController],
   providers: [
     // Existing
     GeminiService,
-    
+
     // Python AI Client
     PythonAIClientService,
-    
+
     // Refactored services
     PreprocessingService,
     EntityExtractorService,
     IntentClassifierService,
-    ExactMatchService,
     EmbeddingService,
     VectorSearchService,
     RAGService,
     LLMFallbackService,
     ActionRouterService,
     AIOrchestrator,
+
+    // Layer 1 Enhanced Services (FTS + Caching)
+    SearchCacheService,
+    ExactMatchEnhancedService,
+    ExactMatchV2Service,
+
+    // Document Management Services
+    DocumentService,
+    TextExtractionService,
+    ChunkingService,
+
+    // Guards
+    AdminGuard,
   ],
   exports: [
     GeminiService,
     AIOrchestrator,
     IntentClassifierService,
-    ExactMatchService,
+    ExactMatchV2Service,
     RAGService,
     ActionRouterService,
   ],
 })
 export class AIRefactoredModule {}
-
