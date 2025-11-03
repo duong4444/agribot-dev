@@ -80,7 +80,7 @@ export const useChat = () => {
         id: data.response.id,
         content: data.response.content,
         type: "assistant",
-        timestamp: new Date(data.response.createdAt),
+        timestamp: new Date(),
         intent: data.response.intent,
         confidence: data.response.confidence,
         responseTime: data.response.responseTime,

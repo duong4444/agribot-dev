@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { ConfirmModal } from '@/components/ui/confirm-modal';
 import { Loader2, MessageSquare, Trash2 } from 'lucide-react';
 import { useConversations } from './useConversations';
 
@@ -29,6 +30,8 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
     refetch
   } = useConversations();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const handleNewConversation = () => {
@@ -50,22 +53,33 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
     // Prevent triggering the conversation selection
     event.stopPropagation();
     
-    if (!confirm('Bạn có chắc chắn muốn xóa cuộc trò chuyện này?')) {
-      return;
-    }
+    // Show confirmation modal
+    setConversationToDelete(conversationId);
+    setShowDeleteModal(true);
+  };
 
-    setDeletingId(conversationId);
+  const confirmDelete = async () => {
+    if (!conversationToDelete) return;
+
+    setDeletingId(conversationToDelete);
     
-    const success = await deleteConversation(conversationId);
+    const success = await deleteConversation(conversationToDelete);
     
     if (success) {
       // If we're currently viewing this conversation, reset to new conversation
-      if (currentConversationId === conversationId && onNewConversation) {
+      if (currentConversationId === conversationToDelete && onNewConversation) {
         onNewConversation();
       }
     }
     
     setDeletingId(null);
+    setShowDeleteModal(false);
+    setConversationToDelete(null);
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setConversationToDelete(null);
   };
 
   // Infinite scroll handler
@@ -89,7 +103,8 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
   }, [isLoadingMore, hasMore]);
 
   return (
-    <div className="space-y-4">
+    <>
+      <div className="space-y-4">
       {/* Recent Conversations */}
       <Card className="border-gray-200 dark:border-gray-700 shadow-lg h-[calc(100vh-8rem)] flex flex-col">
         <CardHeader className="space-y-4 pb-4 flex-shrink-0">
@@ -188,6 +203,20 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
         </CardContent>
       </Card>
     </div>
+
+    {/* Delete Confirmation Modal */}
+    <ConfirmModal
+      isOpen={showDeleteModal}
+      onClose={cancelDelete}
+      onConfirm={confirmDelete}
+      title="Xóa cuộc trò chuyện"
+      message="Bạn có chắc chắn muốn xóa cuộc trò chuyện này? Hành động này không thể hoàn tác."
+      confirmText="Xóa"
+      cancelText="Hủy"
+      isLoading={deletingId !== null}
+      variant="danger"
+    />
+    </>
   );
 };
 

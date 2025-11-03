@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,13 +23,32 @@ import {
   User,
   LogOut,
   MessageSquare,
+  FileText,
+  Users,
+  Settings,
+  Shield,
 } from "lucide-react";
 
 export default function HomePage() {
   const { data: session, status } = useSession();
+  const router = useRouter();
+
+  // Redirect admin users to admin dashboard
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user?.role === 'ADMIN') {
+      router.push('/admin');
+    }
+  }, [session, status, router]);
 
   const handleSignOut = async () => {
     await signOut({ callbackUrl: '/' });
+  };
+
+  const getDashboardLink = () => {
+    if (session?.user?.role === 'ADMIN') {
+      return '/admin';
+    }
+    return '/dashboard';
   };
 
   return (
@@ -52,10 +73,19 @@ export default function HomePage() {
                 <span className="text-sm text-gray-600 dark:text-gray-300">
                   Xin chào, {session.user?.name}
                 </span>
-                <Link href="/dashboard">
+                <Link href={getDashboardLink()}>
                   <Button variant="outline" className="flex items-center space-x-2">
-                    <MessageSquare className="h-4 w-4" />
-                    <span>Chat</span>
+                    {session.user?.role === 'ADMIN' ? (
+                      <>
+                        <Shield className="h-4 w-4" />
+                        <span>Quản trị</span>
+                      </>
+                    ) : (
+                      <>
+                        <MessageSquare className="h-4 w-4" />
+                        <span>Chat</span>
+                      </>
+                    )}
                   </Button>
                 </Link>
                 <Button 
@@ -84,31 +114,63 @@ export default function HomePage() {
       {/* Hero Section */}
       <main className="container mx-auto px-4 py-16">
         {session ? (
-          // Welcome back section for logged in users
-          <div className="text-center mb-16">
-            <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-6">
-              Chào mừng trở lại, {session.user?.name}! 🌱
-            </h1>
-            <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
-              Sẵn sàng để bắt đầu cuộc trò chuyện với trợ lý AI nông nghiệp của bạn?
-            </p>
-            <div className="flex justify-center space-x-4">
-              <Link href="/dashboard">
-                <Button
-                  size="lg"
-                  className="bg-agri-green-600 hover:bg-agri-green-700 flex items-center space-x-2"
-                >
-                  <MessageSquare className="h-5 w-5" />
-                  <span>Bắt đầu Chat</span>
-                </Button>
-              </Link>
-              <Link href="/demo">
-                <Button size="lg" variant="outline">
-                  Xem demo
-                </Button>
-              </Link>
+          session.user?.role === 'ADMIN' ? (
+            // Admin user section
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center justify-center px-4 py-2 mb-4 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded-full">
+                <Shield className="h-4 w-4 mr-2" />
+                <span className="text-sm font-semibold">ADMIN</span>
+              </div>
+              <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-6">
+                Chào mừng, {session.user?.name}! 👨‍💼
+              </h1>
+              <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
+                Quản lý hệ thống AgriBot, tài liệu, người dùng và giám sát hoạt động
+              </p>
+              <div className="flex justify-center gap-4">
+                <Link href="/admin">
+                  <Button
+                    size="lg"
+                    className="bg-purple-600 hover:bg-purple-700 flex items-center space-x-2"
+                  >
+                    <Shield className="h-5 w-5" />
+                    <span>Bảng điều khiển Admin</span>
+                  </Button>
+                </Link>
+                <Link href="/admin/documents">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="flex items-center space-x-2"
+                  >
+                    <FileText className="h-5 w-5" />
+                    <span>Quản lý Tài liệu</span>
+                  </Button>
+                </Link>
+              </div>
             </div>
-          </div>
+          ) : (
+            // Regular user section
+            <div className="text-center mb-16">
+              <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-6">
+                Chào mừng trở lại, {session.user?.name}! 🌱
+              </h1>
+              <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
+                Sẵn sàng để bắt đầu cuộc trò chuyện với trợ lý AI nông nghiệp của bạn?
+              </p>
+              <div className="flex justify-center">
+                <Link href={getDashboardLink()}>
+                  <Button
+                    size="lg"
+                    className="bg-agri-green-600 hover:bg-agri-green-700 flex items-center space-x-2"
+                  >
+                    <MessageSquare className="h-5 w-5" />
+                    <span>Bắt đầu Chat</span>
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          )
         ) : (
           // Landing section for non-logged in users
           <div className="text-center mb-16">
@@ -119,7 +181,7 @@ export default function HomePage() {
               Hệ thống chatbot AI tích hợp IoT giúp nông dân quản lý trang trại,
               tư vấn kỹ thuật canh tác và tự động hóa tưới tiêu.
             </p>
-            <div className="flex justify-center space-x-4">
+            <div className="flex justify-center">
               <Link href="/register">
                 <Button
                   size="lg"
@@ -128,17 +190,45 @@ export default function HomePage() {
                   Bắt đầu miễn phí
                 </Button>
               </Link>
-              <Link href="/demo">
-                <Button size="lg" variant="outline">
-                  Xem demo
-                </Button>
-              </Link>
             </div>
           </div>
         )}
 
         {/* Features Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
+          {session?.user?.role === 'ADMIN' && (
+            <>
+              <Card className="border-purple-200 hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <FileText className="h-12 w-12 text-purple-600 mb-4" />
+                  <CardTitle>Quản lý Tài liệu</CardTitle>
+                  <CardDescription>
+                    Upload và quản lý tài liệu nông nghiệp cho hệ thống AI
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+
+              <Card className="border-purple-200 hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <Users className="h-12 w-12 text-purple-600 mb-4" />
+                  <CardTitle>Quản lý Người dùng</CardTitle>
+                  <CardDescription>
+                    Quản lý tài khoản người dùng và phân quyền hệ thống
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+
+              <Card className="border-purple-200 hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <BarChart3 className="h-12 w-12 text-purple-600 mb-4" />
+                  <CardTitle>Thống kê & Phân tích</CardTitle>
+                  <CardDescription>
+                    Xem thống kê hệ thống và phân tích dữ liệu chi tiết
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </>
+          )}
           <Card className="border-agri-green-200 hover:shadow-lg transition-shadow">
             <CardHeader>
               <Bot className="h-12 w-12 text-agri-green-600 mb-4" />
@@ -202,22 +292,51 @@ export default function HomePage() {
 
         {/* CTA Section */}
         {session ? (
-          <div className="text-center bg-white dark:bg-gray-800 rounded-lg p-8 shadow-lg">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-              Tiếp tục hành trình cùng AgriBot
-            </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
-              Truy cập bảng điều khiển để quản lý trang trại và trò chuyện với trợ lý AI
-            </p>
-            <Link href="/dashboard">
-              <Button
-                size="lg"
-                className="bg-agri-green-600 hover:bg-agri-green-700"
-              >
-                Đi tới bảng điều khiển
-              </Button>
-            </Link>
-          </div>
+          session.user?.role === 'ADMIN' ? (
+            <div className="text-center bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900 dark:to-purple-800 rounded-lg p-8 shadow-lg">
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+                Công cụ Quản trị Hệ thống
+              </h2>
+              <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
+                Truy cập các công cụ quản lý và giám sát hệ thống AgriBot
+              </p>
+              <div className="flex justify-center gap-4">
+                <Link href="/admin">
+                  <Button
+                    size="lg"
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
+                    Bảng điều khiển Admin
+                  </Button>
+                </Link>
+                <Link href="/admin/documents">
+                  <Button
+                    size="lg"
+                    variant="outline"
+                  >
+                    Quản lý Tài liệu
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center bg-white dark:bg-gray-800 rounded-lg p-8 shadow-lg">
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+                Tiếp tục hành trình cùng AgriBot
+              </h2>
+              <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
+                Truy cập bảng điều khiển để quản lý trang trại và trò chuyện với trợ lý AI
+              </p>
+              <Link href={getDashboardLink()}>
+                <Button
+                  size="lg"
+                  className="bg-agri-green-600 hover:bg-agri-green-700"
+                >
+                  Đi tới bảng điều khiển
+                </Button>
+              </Link>
+            </div>
+          )
         ) : (
           <div className="text-center bg-white dark:bg-gray-800 rounded-lg p-8 shadow-lg">
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">

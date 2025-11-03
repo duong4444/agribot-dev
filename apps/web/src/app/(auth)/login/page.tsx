@@ -42,7 +42,7 @@ export default function LoginPage() {
       } else {
         // Get the session to check user role
         const session = await getSession();
-        console.log("session_user: ",session?.user);
+        // console.log("session_user: ",session?.user);
         
         if (session?.user?.role === "ADMIN") {
           router.push("/admin");

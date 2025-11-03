@@ -6,8 +6,8 @@ export async function POST(request: NextRequest) {
   try {
     // Check authentication
     const session = await getServerSession(authOptions);
-    console.log('Session:', session);
-    console.log('AccessToken:', session?.accessToken);
+    // console.log('Session:', session);
+    // console.log('AccessToken:', session?.accessToken);
     
     if (!session?.accessToken) {
       console.log('No access token found');

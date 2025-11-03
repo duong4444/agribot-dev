@@ -24,8 +24,12 @@ export function AuthGuard({
     if (requireAuth && !session) {
       router.push(redirectTo);
     } else if (!requireAuth && session) {
-      // If user is logged in but on public page, redirect to dashboard
-      router.push('/dashboard');
+      // If user is logged in but on public page, redirect based on role
+      if (session.user?.role === 'ADMIN') {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard');
+      }
     }
   }, [session, status, requireAuth, redirectTo, router]);
 
