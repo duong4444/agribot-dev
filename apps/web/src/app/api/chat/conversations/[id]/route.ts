@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth';
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check authentication
@@ -16,7 +16,8 @@ export async function DELETE(
       );
     }
 
-    const conversationId = params.id;
+    const { id } = await params;
+    const conversationId = id;
 
     // Forward request to backend API
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';

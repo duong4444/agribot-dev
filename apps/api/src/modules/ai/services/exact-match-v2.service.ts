@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ExactMatchResult } from '../types';
 import { ExactMatchEnhancedService } from './exact-match-enhanced.service';
 import { SearchCacheService, CacheStats } from './search-cache.service';
+import { QueryPreprocessorService } from './query-preprocessor.service';
 
 /**
  * Exact Match V2 Service
@@ -29,6 +30,7 @@ export class ExactMatchV2Service {
   constructor(
     private readonly enhancedService: ExactMatchEnhancedService,
     private readonly cacheService: SearchCacheService,
+    private readonly queryPreprocessor: QueryPreprocessorService,
   ) {
     // Schedule periodic cache cleanup
     this.cacheService.scheduleCleanup(300000); // 5 minutes
@@ -74,6 +76,23 @@ export class ExactMatchV2Service {
       }
     }
 
+    // Step 1.5: Preprocess query to remove noise words
+    const queryAnalysis = this.queryPreprocessor.analyzeQuery(query);
+    let searchQuery = query;
+    
+    if (queryAnalysis.recommendPreprocessing) {
+      const preprocessed = this.queryPreprocessor.preprocess(query);
+      searchQuery = preprocessed.cleaned;
+      
+      this.logger.debug(
+        `🧹 Query preprocessed:\n` +
+        `  Original: "${preprocessed.original}"\n` +
+        `  Cleaned: "${preprocessed.cleaned}"\n` +
+        `  Keywords: [${preprocessed.keywords.join(', ')}]\n` +
+        `  Noise words removed: ${queryAnalysis.wordCount - preprocessed.keywords.length}`
+      );
+    }
+
     // Step 2: Perform actual search
     let result: ExactMatchResult;
     let method: 'fts' | 'fuzzy' | 'expansion' = 'fts';
@@ -81,20 +100,20 @@ export class ExactMatchV2Service {
     
     try {
       if (options.useExpansion) {
-        // Try with query expansion
+        // Try with query expansion (use cleaned query)
         console.log('chạy vào đây vì truyền expansion');
 
-        result = await this.enhancedService.searchWithExpansion(query, userId);
+        result = await this.enhancedService.searchWithExpansion(searchQuery, userId);
         method = 'expansion';
       } else {
-        // Standard FTS search
+        // Standard FTS search (use cleaned query)
         console.log('logic chính của FTS');
 
         console.log(
           '_exactMatchV2_ đi gọi findExactMatch của exact-match-enhanced',
         );
 
-        result = await this.enhancedService.findExactMatch(query, userId, {
+        result = await this.enhancedService.findExactMatch(searchQuery, userId, {
           useFuzzyFallback: options.useFuzzyFallback ?? true,
         });
         method = result.confidence < 0.5 ? 'fuzzy' : 'fts';

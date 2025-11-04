@@ -26,6 +26,7 @@ import {
 import { ExactMatchEnhancedService } from './services/exact-match-enhanced.service';
 import { SearchCacheService } from './services/search-cache.service';
 import { ExactMatchV2Service } from './services/exact-match-v2.service';
+import { QueryPreprocessorService } from './services/query-preprocessor.service';
 
 // Document Management Services
 import { DocumentService } from './services/document.service';
@@ -65,7 +66,8 @@ import { AdminDocumentController } from './controllers/admin-document.controller
     ActionRouterService,
     AIOrchestrator,
 
-    // Layer 1 Enhanced Services (FTS + Caching)
+    // Layer 1 Enhanced Services (FTS + Caching + Query Preprocessing)
+    QueryPreprocessorService,
     SearchCacheService,
     ExactMatchEnhancedService,
     ExactMatchV2Service,

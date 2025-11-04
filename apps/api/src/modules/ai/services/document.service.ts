@@ -38,7 +38,7 @@ export class DocumentService {
   ): Promise<Document> {
     const startTime = Date.now();
     
-    // Ensure filename is properly encoded in UTF-8
+    // Ensure filename is properly encoded in UTF-8 and sanitized
     let originalName = file.originalname;
     try {
       // Try to fix encoding if it's corrupted
@@ -49,6 +49,9 @@ export class DocumentService {
     } catch (error) {
       this.logger.warn('Could not fix filename encoding:', error);
     }
+    
+    // Sanitize filename to prevent path traversal
+    originalName = this.sanitizeFilename(originalName);
     
     this.logger.log(`Bắt đầu xử lý file: ${originalName}`);
 
@@ -91,12 +94,26 @@ export class DocumentService {
    * Xử lý tài liệu bất đồng bộ
    */
   private async processDocumentAsync(documentId: string, filepath: string): Promise<void> {
+    const startTime = Date.now(); // FIX: Track start time properly
+    
     try {
       this.logger.log(`Bắt đầu xử lý bất đồng bộ: ${documentId}`);
 
-      // 1. Extract text từ file
-      const rawText = await this.textExtraction.extractText(filepath);
+      // 1. Extract text từ file với timeout
+      const extractionTimeout = 5 * 60 * 1000; // 5 minutes
+      const rawText = await Promise.race([
+        this.textExtraction.extractText(filepath),
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Text extraction timeout')), extractionTimeout)
+        )
+      ]);
+      
       this.logger.log(`Đã extract text: ${rawText.length} ký tự`);
+
+      // Validate extracted text
+      if (!rawText || rawText.trim().length < 10) {
+        throw new Error('Extracted text is empty or too short');
+      }
 
       // 2. Cập nhật rawText
       await this.documentRepo.update(documentId, { rawText });
@@ -105,7 +122,12 @@ export class DocumentService {
       const chunks = await this.chunking.createChunks(rawText, documentId);
       this.logger.log(`Đã tạo ${chunks.length} chunks`);
 
+      if (chunks.length === 0) {
+        throw new Error('No chunks created from text');
+      }
+
       // 4. Cập nhật trạng thái thành công
+      const processingTime = Date.now() - startTime; // FIX: Calculate correctly
       await this.documentRepo.update(documentId, {
         processingStatus: DocumentStatus.COMPLETED,
         indexed: true,
@@ -113,16 +135,19 @@ export class DocumentService {
         processedAt: new Date(),
       });
 
-      const processingTime = Date.now() - Date.now();
-      this.logger.log(`Hoàn thành xử lý document ${documentId} trong ${processingTime}ms`);
+      this.logger.log(`✅ Hoàn thành xử lý document ${documentId} trong ${processingTime}ms`);
 
     } catch (error) {
-      this.logger.error(`Lỗi xử lý document ${documentId}:`, error);
+      const processingTime = Date.now() - startTime;
+      this.logger.error(`❌ Lỗi xử lý document ${documentId} sau ${processingTime}ms:`, error);
       
-      // Cập nhật trạng thái lỗi
+      // Cập nhật trạng thái lỗi với error message
       await this.documentRepo.update(documentId, {
         processingStatus: DocumentStatus.FAILED,
+        // TODO: Add errorMessage field to entity
       });
+
+      // TODO: Send notification to admin về failed processing
     }
   }
 
@@ -367,6 +392,61 @@ export class DocumentService {
     }
 
     return { deletedCount, errors };
+  }
+
+  /**
+   * Sanitize filename to prevent path traversal and other security issues
+   */
+  private sanitizeFilename(filename: string): string {
+    // Remove path separators
+    filename = filename.replace(/[\/\\]/g, '_');
+    
+    // Remove potentially dangerous characters
+    filename = filename.replace(/[<>:"|?*\x00-\x1f]/g, '_');
+    
+    // Remove leading/trailing dots and spaces
+    filename = filename.replace(/^\.+/, '').replace(/\.+$/, '').trim();
+    
+    // Limit length
+    const maxLength = 200;
+    if (filename.length > maxLength) {
+      const ext = path.extname(filename);
+      const base = path.basename(filename, ext);
+      filename = base.substring(0, maxLength - ext.length) + ext;
+    }
+    
+    // Ensure filename is not empty
+    if (!filename || filename === '') {
+      filename = 'untitled';
+    }
+    
+    return filename;
+  }
+
+  /**
+   * Validate file magic bytes (not just MIME type)
+   */
+  private async validateFileType(filepath: string, mimeType: string): Promise<boolean> {
+    try {
+      const buffer = fs.readFileSync(filepath);
+      const magic = buffer.toString('hex', 0, 4);
+      
+      const validMagicBytes: Record<string, string[]> = {
+        'application/pdf': ['25504446'], // %PDF
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['504b0304'], // PK (ZIP)
+        'text/plain': [], // Any bytes OK for text
+      };
+      
+      if (validMagicBytes[mimeType]) {
+        if (validMagicBytes[mimeType].length === 0) return true;
+        return validMagicBytes[mimeType].some(m => magic.startsWith(m));
+      }
+      
+      return false;
+    } catch (error) {
+      this.logger.error('Error validating file type:', error);
+      return false;
+    }
   }
 }
 

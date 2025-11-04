@@ -10,7 +10,7 @@ import { AIConfig } from '../types/ai.types';
 
 export const DEFAULT_AI_CONFIG: AIConfig = {
   // Layer thresholds
-  exactMatchThreshold: 0.9,
+  exactMatchThreshold: 0.7, // Lowered from 0.9 for better FTS matching
   ragConfidenceThreshold: 0.7,
   llmFallbackThreshold: 0.5,
   

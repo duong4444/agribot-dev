@@ -149,7 +149,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onUploadSuccess 
 
     const formData = new FormData();
     formData.append('file', state.file);
-    formData.append('category', state.category);
+    formData.append('category', state.category.toLowerCase());
     formData.append('language', state.language);
     if (state.tags.length > 0) {
       formData.append('tags', JSON.stringify(state.tags));

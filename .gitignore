@@ -255,3 +255,7 @@ rest-client.http
 add_fts.txt
 layer1_flow.md
 LAYER1_TESTING_GUIDE.md
+/knowledge_base
+QUERY_OPTIMIZATION_ANALYSIS.md
+UPLOAD_IMPROVEMENTS.md
+apps/api/uploads

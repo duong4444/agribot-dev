@@ -37,10 +37,10 @@ export class AdminDocumentController {
   constructor(private readonly documentService: DocumentService) {}
 
   /**
-   * Upload và xử lý tài liệu mới (PDF/DOCX)
+   * Upload và xử lý tài liệu mới (PDF/DOCX/DOC/TXT)
    */
   @Post('upload')
-  @ApiOperation({ summary: 'Upload tài liệu mới (PDF/DOCX)' })
+  @ApiOperation({ summary: 'Upload tài liệu mới (PDF/DOCX/DOC/TXT)' })
   @ApiConsumes('multipart/form-data')
   @ApiResponse({ status: 201, description: 'Tài liệu được upload thành công' })
   @UseInterceptors(FileInterceptor('file', multerConfig))
@@ -57,10 +57,11 @@ export class AdminDocumentController {
       'application/pdf',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // DOCX
       'application/msword', // DOC
+      'text/plain', // TXT
     ];
 
     if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new BadRequestException('Chỉ hỗ trợ file PDF và DOCX');
+      throw new BadRequestException('Chỉ hỗ trợ file PDF, DOCX, DOC và TXT');
     }
 
     try {

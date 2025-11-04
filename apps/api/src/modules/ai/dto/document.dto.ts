@@ -8,20 +8,29 @@ export class CreateDocumentDto {
   @IsEnum(DocumentCategory)
   category: DocumentCategory;
 
-  @ApiPropertyOptional({ description: 'Tags cho tài liệu', type: [String] })
+  @ApiPropertyOptional({ description: 'Tags cho tài liệu (max 10 tags, mỗi tag 2-30 ký tự)', type: [String], example: ['lua', 'canh-tac', 'huong-dan'] })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
+  @Transform(({ value }) => {
+    if (!Array.isArray(value)) return [];
+    // Normalize tags: lowercase, trim, limit length
+    return value.slice(0, 10).map(tag => 
+      String(tag).trim().toLowerCase().substring(0, 30)
+    ).filter(tag => tag.length >= 2);
+  })
   tags?: string[];
 
-  @ApiPropertyOptional({ description: 'Ngôn ngữ tài liệu', default: 'vi' })
+  @ApiPropertyOptional({ description: 'Ngôn ngữ tài liệu (vi, en)', default: 'vi', enum: ['vi', 'en'] })
   @IsOptional()
   @IsString()
+  @IsEnum(['vi', 'en'], { message: 'Language must be either "vi" or "en"' })
   language?: string = 'vi';
 
-  @ApiPropertyOptional({ description: 'Ghi chú thêm' })
+  @ApiPropertyOptional({ description: 'Ghi chú thêm (max 500 ký tự)' })
   @IsOptional()
   @IsString()
+  @Transform(({ value }) => value ? String(value).trim().substring(0, 500) : undefined)
   notes?: string;
 }
 

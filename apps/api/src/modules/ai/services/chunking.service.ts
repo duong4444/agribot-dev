@@ -48,12 +48,12 @@ export class ChunkingService {
       throw new Error('Document không tồn tại');
     }
 
-    // Cấu hình mặc định
+    // Cấu hình mặc định - Optimized for Q&A format
     const config = {
-      maxChunkSize: 1000,
-      overlapSize: 100,
+      maxChunkSize: 400,  // Reduced from 1000 to create smaller, more focused chunks
+      overlapSize: 50,    // Reduced overlap
       preserveParagraphs: true,
-      minChunkSize: 100,
+      minChunkSize: 50,   // Reduced minimum size
       ...options,
     };
 
@@ -132,6 +132,58 @@ export class ChunkingService {
   }
 
   /**
+   * Phát hiện xem text có format Q&A với separator --- hay không
+   */
+  private isQAFormat(text: string): boolean {
+    // Kiểm tra có ít nhất 2 separator --- không
+    const separatorCount = (text.match(/\n---\n/g) || []).length;
+    return separatorCount >= 2;
+  }
+
+  /**
+   * Chia text theo format Q&A (mỗi Q&A pair là 1 chunk)
+   */
+  private splitByQAFormat(text: string): Array<{
+    content: string;
+    startPosition: number;
+    endPosition: number;
+    pageNumber?: number;
+    section?: string;
+  }> {
+    const chunks: Array<{
+      content: string;
+      startPosition: number;
+      endPosition: number;
+      pageNumber?: number;
+      section?: string;
+    }> = [];
+
+    // Tách text thành các Q&A pairs theo separator ---
+    const qaPairs = text.split(/\n---\n/).filter(pair => pair.trim().length > 0);
+    
+    let currentPosition = 0;
+    
+    for (const pair of qaPairs) {
+      const trimmedPair = pair.trim();
+      if (trimmedPair.length === 0) continue;
+      
+      // Tìm vị trí bắt đầu của pair trong text gốc
+      const startPos = text.indexOf(trimmedPair, currentPosition);
+      const endPos = startPos + trimmedPair.length;
+      
+      chunks.push({
+        content: trimmedPair,
+        startPosition: startPos,
+        endPosition: endPos,
+      });
+      
+      currentPosition = endPos;
+    }
+
+    return chunks;
+  }
+
+  /**
    * Chia theo đoạn văn (preserve paragraphs)
    */
   private splitByParagraphs(
@@ -140,6 +192,12 @@ export class ChunkingService {
     overlapSize: number,
     minChunkSize: number,
   ) {
+    // Kiểm tra xem có phải format Q&A không
+    if (this.isQAFormat(text)) {
+      this.logger.log('Phát hiện format Q&A, sử dụng chunking đặc biệt');
+      return this.splitByQAFormat(text);
+    }
+
     const chunks: Array<{
       content: string;
       startPosition: number;

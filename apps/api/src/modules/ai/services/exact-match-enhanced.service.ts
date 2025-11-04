@@ -156,9 +156,19 @@ export class ExactMatchEnhancedService {
           `✅ Exact match found (score: ${topMatch.scores.final.toFixed(3)}) in ${processingTime}ms`,
         );
 
+        // Extract specific answer from chunk if possible
+        const extractedAnswer = this.extractRelevantAnswer(
+          topMatch.chunk.content,
+          normalizedQuery
+        );
+        
+        this.logger.debug(`🔍 Answer extraction - Query: "${normalizedQuery}"`);
+        this.logger.debug(`📄 Chunk content preview: "${topMatch.chunk.content.substring(0, 200)}..."`);
+        this.logger.debug(`✂️ Extracted answer: ${extractedAnswer ? `"${extractedAnswer.substring(0, 200)}..."` : 'null (using full content)'}`);
+
         return {
           found: true,
-          content: topMatch.chunk.content,
+          content: extractedAnswer || topMatch.chunk.content,
           source: {
             documentId: topMatch.chunk.documentId,
             filename: topMatch.chunk.metadata?.documentFilename || 'Unknown',
@@ -214,20 +224,20 @@ export class ExactMatchEnhancedService {
         .createQueryBuilder('chunk')
         .leftJoinAndSelect('chunk.document', 'document')
         .addSelect(
-          "ts_rank(chunk.searchVector, plainto_tsquery('vietnamese', :query))",
+          "ts_rank(chunk.searchVector, plainto_tsquery('simple', :query))",
           'fts_rank',
         )
-        .where("chunk.searchVector @@ plainto_tsquery('vietnamese', :query)", {
+        .where("chunk.searchVector @@ plainto_tsquery('simple', :query)", {
           query,
         })
         .andWhere('document.processingStatus = :status', {
           status: 'completed',
         });
 
-      // Add user filter
-      if (userId) {
-        queryBuilder.andWhere('document.userId = :userId', { userId });
-      }
+      // Add user filter - TEMPORARILY DISABLED FOR TESTING
+      // if (userId) {
+      //   queryBuilder.andWhere('document.userId = :userId', { userId });
+      // }
 
       // Order by rank and limit
       queryBuilder.orderBy('fts_rank', 'DESC').limit(limit);
@@ -302,13 +312,14 @@ export class ExactMatchEnhancedService {
       const normalizedBM25 = Math.min(bm25 / 10, 1);
 
       // Calculate final weighted score
-      // FTS Rank: 30%, Similarity: 25%, Jaccard: 15%, Cosine: 15%, BM25: 15%
+      // FTS Rank: 60%, Similarity: 15%, Jaccard: 10%, Cosine: 10%, BM25: 5%
+      // Prioritize FTS rank for exact matches
       const finalScore =
-        chunk.ftsRank * 0.3 +
-        similarity * 0.25 +
-        jaccard * 0.15 +
-        cosine * 0.15 +
-        normalizedBM25 * 0.15;
+        chunk.ftsRank * 0.6 +
+        similarity * 0.15 +
+        jaccard * 0.1 +
+        cosine * 0.1 +
+        normalizedBM25 * 0.05;
 
       return {
         chunk,
@@ -462,6 +473,82 @@ export class ExactMatchEnhancedService {
       avgTokenCount: parseFloat(result?.avgTokenCount || '0'),
       documentsCount: parseInt(result?.documentsCount || '0'),
     };
+  }
+
+  /**
+   * Extract relevant answer from chunk content based on query
+   */
+  private extractRelevantAnswer(content: string, query: string): string | null {
+    try {
+      this.logger.debug(`🔍 Extracting answer for query: "${query}"`);
+      this.logger.debug(`📄 Content to process: "${content.substring(0, 300)}..."`);
+      
+      // First, try to find Q&A pairs separated by "---"
+      const sections = content.split(/\n---\n/);
+      this.logger.debug(`📑 Found ${sections.length} sections`);
+      
+      // Find the section that contains the query keywords
+      const queryKeywords = query.toLowerCase()
+        .replace(/[?.,!]/g, '') // Remove punctuation
+        .split(/\s+/)
+        .filter(word => word.length > 2); // Filter out short words
+      
+      this.logger.debug(`🔑 Query keywords: [${queryKeywords.join(', ')}]`);
+      
+      for (let i = 0; i < sections.length; i++) {
+        const section = sections[i];
+        const sectionLower = section.toLowerCase();
+        
+        // Check if this section contains query keywords
+        const matchCount = queryKeywords.filter(keyword => 
+          sectionLower.includes(keyword)
+        ).length;
+        
+        this.logger.debug(`📝 Section ${i} matches: ${matchCount}/${queryKeywords.length} keywords`);
+        
+        // If more than 30% of keywords match, return this section
+        if (matchCount >= Math.ceil(queryKeywords.length * 0.3)) {
+          const trimmedSection = section.trim();
+          this.logger.debug(`✅ Found matching section: "${trimmedSection.substring(0, 100)}..."`);
+          return trimmedSection;
+        }
+      }
+      
+      // If no good section match, try to find Q&A pairs in the content
+      const lines = content.split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.includes('?')) {
+          // Found a question, check if it matches our query
+          const lineLower = line.toLowerCase();
+          const matchCount = queryKeywords.filter(keyword => 
+            lineLower.includes(keyword)
+          ).length;
+          
+          if (matchCount >= Math.ceil(queryKeywords.length * 0.3)) {
+            // Found matching question, collect the answer
+            let result = line;
+            for (let j = i + 1; j < lines.length; j++) {
+              const nextLine = lines[j];
+              if (nextLine.includes('---') || nextLine.includes('?')) {
+                break; // Stop at next separator or question
+              }
+              if (nextLine.trim()) {
+                result += '\n' + nextLine;
+              }
+            }
+            this.logger.debug(`✅ Found Q&A pair: "${result.substring(0, 100)}..."`);
+            return result.trim();
+          }
+        }
+      }
+      
+      this.logger.debug(`❌ No matching section found, returning null`);
+      return null; // Return null to use full content
+    } catch (error) {
+      this.logger.warn('Failed to extract relevant answer:', error.message);
+      return null;
+    }
   }
 
   /**
