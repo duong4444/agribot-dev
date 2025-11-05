@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from 'react';
-import { Upload, File, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Upload, File, X, CheckCircle, AlertCircle, Eye, Leaf } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -23,6 +23,15 @@ type DocumentCategory =
   | 'EQUIPMENT'
   | 'GENERAL';
 
+interface ChunkPreview {
+  chunk_id: string;
+  loai_cay: string;
+  chu_de_lon: string;
+  tieu_de_chunk: string;
+  noi_dung: string;
+  thu_tu: number;
+}
+
 interface UploadState {
   file: File | null;
   category: DocumentCategory;
@@ -33,6 +42,9 @@ interface UploadState {
   progress: number;
   error: string | null;
   success: boolean;
+  successMessage: string;
+  previewChunks: ChunkPreview[];
+  showPreview: boolean;
 }
 
 const CATEGORIES: { value: DocumentCategory; label: string }[] = [
@@ -58,6 +70,9 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onUploadSuccess 
     progress: 0,
     error: null,
     success: false,
+    successMessage: '',
+    previewChunks: [],
+    showPreview: false,
   });
 
   const [tagInput, setTagInput] = useState('');
@@ -84,28 +99,21 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onUploadSuccess 
   }, []);
 
   const handleFile = (file: File) => {
-    // Validate file type
-    const allowedTypes = [
-      'application/pdf',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/msword',
-      'text/plain'
-    ];
-
-    if (!allowedTypes.includes(file.type)) {
+    // Validate file type - Only .md files
+    if (!file.name.endsWith('.md')) {
       setState(prev => ({
         ...prev,
-        error: 'Chỉ hỗ trợ file PDF, DOCX, DOC và TXT',
+        error: 'Chỉ hỗ trợ file Markdown (.md)',
         file: null,
       }));
       return;
     }
 
-    // Validate file size (50MB)
-    if (file.size > 50 * 1024 * 1024) {
+    // Validate file size (10MB for markdown)
+    if (file.size > 10 * 1024 * 1024) {
       setState(prev => ({
         ...prev,
-        error: 'Kích thước file không được vượt quá 50MB',
+        error: 'Kích thước file không được vượt quá 10MB',
         file: null,
       }));
       return;
@@ -116,6 +124,8 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onUploadSuccess 
       file,
       error: null,
       success: false,
+      previewChunks: [],
+      showPreview: false,
     }));
   };
 
@@ -142,6 +152,44 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onUploadSuccess 
     }));
   };
 
+  const handlePreview = async () => {
+    if (!state.file) return;
+
+    setState(prev => ({ ...prev, uploading: true, error: null }));
+
+    const formData = new FormData();
+    formData.append('file', state.file);
+
+    try {
+      const response = await fetch('/api/admin/crop-knowledge/preview', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Preview failed');
+      }
+
+      const result = await response.json();
+
+      if (result.success && result.data?.chunks) {
+        setState(prev => ({
+          ...prev,
+          uploading: false,
+          previewChunks: result.data.chunks,
+          showPreview: true,
+        }));
+      }
+    } catch (error: any) {
+      setState(prev => ({
+        ...prev,
+        uploading: false,
+        error: error.message || 'Có lỗi xảy ra khi preview',
+      }));
+    }
+  };
+
   const handleUpload = async () => {
     if (!state.file) return;
 
@@ -150,16 +198,12 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onUploadSuccess 
     const formData = new FormData();
     formData.append('file', state.file);
     formData.append('category', state.category.toLowerCase());
-    formData.append('language', state.language);
     if (state.tags.length > 0) {
-      formData.append('tags', JSON.stringify(state.tags));
-    }
-    if (state.notes) {
-      formData.append('notes', state.notes);
+      formData.append('tags', state.tags.join(','));
     }
 
     try {
-      const response = await fetch('/api/admin/documents', {
+      const response = await fetch('/api/admin/crop-knowledge/upload', {
         method: 'POST',
         body: formData,
       });
@@ -171,29 +215,35 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onUploadSuccess 
 
       const result = await response.json();
 
-      setState(prev => ({
-        ...prev,
-        uploading: false,
-        success: true,
-        progress: 100,
-      }));
-
-      // Reset form after 2 seconds
-      setTimeout(() => {
-        setState({
-          file: null,
-          category: 'GENERAL',
-          tags: [],
-          language: 'vi',
-          notes: '',
+      if (result.success && result.data) {
+        const msg = `✅ Upload thành công! Tạo ${result.data.chunksCreated} chunks cho ${result.data.cropType}`;
+        setState(prev => ({
+          ...prev,
           uploading: false,
-          progress: 0,
-          error: null,
-          success: false,
-        });
-        onUploadSuccess?.();
-      }, 2000);
+          success: true,
+          successMessage: msg,
+          progress: 100,
+        }));
 
+        // Reset form after 3 seconds
+        setTimeout(() => {
+          setState({
+            file: null,
+            category: 'GENERAL',
+            tags: [],
+            language: 'vi',
+            notes: '',
+            uploading: false,
+            progress: 0,
+            error: null,
+            success: false,
+            successMessage: '',
+            previewChunks: [],
+            showPreview: false,
+          });
+          onUploadSuccess?.();
+        }, 3000);
+      }
     } catch (error: any) {
       setState(prev => ({
         ...prev,
@@ -214,6 +264,9 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onUploadSuccess 
       progress: 0,
       error: null,
       success: false,
+      successMessage: '',
+      previewChunks: [],
+      showPreview: false,
     });
     setTagInput('');
   };
@@ -222,11 +275,11 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onUploadSuccess 
     <Card>
       <CardHeader className="py-3">
         <CardTitle className="text-base flex items-center gap-2">
-          <Upload className="h-4 w-4" />
-          Upload Tài liệu
+          <Leaf className="h-4 w-4" />
+          Upload Kiến thức Cây trồng
         </CardTitle>
         <CardDescription>
-          Upload tài liệu nông nghiệp (PDF, DOCX, DOC, TXT - tối đa 50MB)
+          Upload file Markdown (.md) với cấu trúc: H1 (loại cây) → H2 (chủ đề) → H3 (chunk) - tối đa 10MB
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -264,16 +317,16 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onUploadSuccess 
             <>
               <Upload className="h-12 w-12 mx-auto mb-4 text-gray-400" />
               <p className="text-lg font-medium mb-2">
-                Kéo thả file vào đây hoặc click để chọn
+                Kéo thả file .md vào đây hoặc click để chọn
               </p>
               <p className="text-sm text-gray-500 mb-4">
-                PDF, DOCX, DOC, TXT (tối đa 50MB)
+                Markdown (.md) - tối đa 10MB
               </p>
               <input
                 type="file"
                 id="file-upload"
                 className="hidden"
-                accept=".pdf,.docx,.doc,.txt"
+                accept=".md"
                 onChange={handleFileChange}
                 disabled={state.uploading}
               />
@@ -372,7 +425,26 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onUploadSuccess 
         {state.success && (
           <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg text-green-800 dark:text-green-200">
             <CheckCircle className="h-5 w-5 flex-shrink-0" />
-            <p className="text-sm">Tài liệu đã được upload thành công!</p>
+            <p className="text-sm">{state.successMessage || 'Tài liệu đã được upload thành công!'}</p>
+          </div>
+        )}
+
+        {/* Preview Chunks */}
+        {state.showPreview && state.previewChunks.length > 0 && (
+          <div className="space-y-2 max-h-64 overflow-y-auto border rounded-lg p-3">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-semibold text-sm">Preview Chunks ({state.previewChunks.length})</h4>
+              <span className="text-xs text-gray-500">Loại cây: {state.previewChunks[0]?.loai_cay}</span>
+            </div>
+            {state.previewChunks.slice(0, 5).map((chunk, idx) => (
+              <div key={idx} className="p-2 border rounded bg-gray-50 dark:bg-gray-800 text-xs">
+                <div className="font-medium text-green-600">{chunk.chu_de_lon} → {chunk.tieu_de_chunk}</div>
+                <p className="text-gray-600 dark:text-gray-400 line-clamp-2 mt-1">{chunk.noi_dung}</p>
+              </div>
+            ))}
+            {state.previewChunks.length > 5 && (
+              <p className="text-xs text-gray-500 text-center">... và {state.previewChunks.length - 5} chunks khác</p>
+            )}
           </div>
         )}
 
@@ -395,11 +467,20 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onUploadSuccess 
         {/* Action Buttons */}
         <div className="flex gap-2 pt-4">
           <Button
+            variant="outline"
+            onClick={handlePreview}
+            disabled={!state.file || state.uploading}
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Preview
+          </Button>
+          <Button
             className="flex-1"
             onClick={handleUpload}
             disabled={!state.file || state.uploading}
           >
-            {state.uploading ? 'Đang upload...' : 'Upload tài liệu'}
+            <Upload className="h-4 w-4 mr-2" />
+            {state.uploading ? 'Đang upload...' : 'Upload'}
           </Button>
           <Button
             variant="outline"

@@ -81,6 +81,21 @@ export class AdminDocumentController {
   }
 
   /**
+   * Lấy thống kê tài liệu (must be before :id route)
+   */
+  @Get('stats/overview')
+  @ApiOperation({ summary: 'Thống kê tổng quan tài liệu' })
+  @ApiResponse({ status: 200, description: 'Thống kê tài liệu' })
+  async getDocumentStats() {
+    const stats = await this.documentService.getStats();
+
+    return {
+      success: true,
+      data: stats,
+    };
+  }
+
+  /**
    * Lấy danh sách tài liệu với phân trang và filter
    */
   @Get()
@@ -202,21 +217,6 @@ export class AdminDocumentController {
       success: true,
       message: 'Tài liệu được xử lý lại thành công',
       data: result,
-    };
-  }
-
-  /**
-   * Lấy thống kê tài liệu
-   */
-  @Get('stats/overview')
-  @ApiOperation({ summary: 'Thống kê tổng quan tài liệu' })
-  @ApiResponse({ status: 200, description: 'Thống kê tài liệu' })
-  async getDocumentStats() {
-    const stats = await this.documentService.getStats();
-
-    return {
-      success: true,
-      data: stats,
     };
   }
 

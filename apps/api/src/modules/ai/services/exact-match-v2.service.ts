@@ -3,6 +3,7 @@ import { ExactMatchResult } from '../types';
 import { ExactMatchEnhancedService } from './exact-match-enhanced.service';
 import { SearchCacheService, CacheStats } from './search-cache.service';
 import { QueryPreprocessorService } from './query-preprocessor.service';
+import { CropKnowledgeFTSService } from './crop-knowledge-fts.service';
 
 /**
  * Exact Match V2 Service
@@ -18,7 +19,7 @@ interface SearchMetrics {
   confidence: number;
   processingTime: number;
   cacheHit: boolean;
-  method: 'fts' | 'fuzzy' | 'expansion' | 'cache';
+  method: 'fts' | 'fuzzy' | 'expansion' | 'cache' | 'crop_fts';
 }
 
 @Injectable()
@@ -31,6 +32,7 @@ export class ExactMatchV2Service {
     private readonly enhancedService: ExactMatchEnhancedService,
     private readonly cacheService: SearchCacheService,
     private readonly queryPreprocessor: QueryPreprocessorService,
+    private readonly cropKnowledgeFTS: CropKnowledgeFTSService,
   ) {
     // Schedule periodic cache cleanup
     this.cacheService.scheduleCleanup(300000); // 5 minutes
@@ -65,7 +67,7 @@ export class ExactMatchV2Service {
           query,
           userId,
           found: cached.found,
-          confidence: cached.confidence,
+          confidence: cached.confidence || 0,
           processingTime,
           cacheHit: true,
           method: 'cache',
@@ -95,18 +97,33 @@ export class ExactMatchV2Service {
 
     // Step 2: Perform actual search
     let result: ExactMatchResult;
-    let method: 'fts' | 'fuzzy' | 'expansion' = 'fts';
+    let method: 'fts' | 'fuzzy' | 'expansion' | 'crop_fts' = 'fts';
     console.log("option.useFuzzyFallback: ", options.useFuzzyFallback);
     
     try {
-      if (options.useExpansion) {
-        // Try with query expansion (use cleaned query)
+      // Step 2.1: Try Crop Knowledge FTS first (new refactored Layer 1)
+      // Note: Pass undefined for userId to search all public crop knowledge (uploaded by admin)
+      console.log('🌱 Trying Crop Knowledge FTS first...');
+      const cropResult = await this.cropKnowledgeFTS.searchCropKnowledge(
+        searchQuery,
+        undefined, // Search all public knowledge, not filtered by user
+        {
+          limit: 5,
+          threshold: 0.7,
+        },
+      );
+
+      if (cropResult.found) {
+        result = cropResult;
+        method = 'crop_fts';
+      } else if (options.useExpansion) {
+        // Fallback: Try with query expansion (use cleaned query)
         console.log('chạy vào đây vì truyền expansion');
 
         result = await this.enhancedService.searchWithExpansion(searchQuery, userId);
         method = 'expansion';
       } else {
-        // Standard FTS search (use cleaned query)
+        // Fallback: Standard FTS search (use cleaned query)
         console.log('logic chính của FTS');
 
         console.log(
@@ -116,11 +133,11 @@ export class ExactMatchV2Service {
         result = await this.enhancedService.findExactMatch(searchQuery, userId, {
           useFuzzyFallback: options.useFuzzyFallback ?? true,
         });
-        method = result.confidence < 0.5 ? 'fuzzy' : 'fts';
+        method = (result.confidence || 0) < 0.5 ? 'fuzzy' : 'fts';
       }
 
       // Step 3: Cache the result (if found or high confidence)
-      if (result.found || result.confidence > 0.3) {
+      if (result.found || (result.confidence || 0) > 0.3) {
         const ttl = result.found ? 3600 : 1800; // 1 hour if found, 30 min otherwise
         this.cacheService.set(query, result, userId, ttl);
       }
@@ -131,7 +148,7 @@ export class ExactMatchV2Service {
         query,
         userId,
         found: result.found,
-        confidence: result.confidence,
+        confidence: result.confidence || 0,
         processingTime,
         cacheHit: false,
         method,
@@ -139,7 +156,7 @@ export class ExactMatchV2Service {
 
       this.logger.debug(
         `🔍 Search completed via ${method} in ${processingTime}ms - ` +
-          `Found: ${result.found}, Confidence: ${result.confidence.toFixed(3)}`,
+          `Found: ${result.found}, Confidence: ${(result.confidence || 0).toFixed(3)}`,
       );
 
       return result;

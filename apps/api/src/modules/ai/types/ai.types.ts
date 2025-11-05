@@ -81,7 +81,8 @@ export interface ExactMatchResult {
     pageNumber?: number;
     chunkIndex?: number;
   };
-  confidence: number;
+  confidence?: number;
+  metadata?: any; // Additional metadata for debugging
 }
 
 // Layer 2: RAG

@@ -189,9 +189,10 @@ export class AIOrchestrator {
     const exactResult = await this.exactMatch.findExactMatch(query, user.id);
     console.log('_orchestrator_ exactResult_layer1_FTS: ', exactResult);
 
+    // Check if exact match is confident enough
     if (
       exactResult.found &&
-      exactResult.confidence >= DEFAULT_AI_CONFIG.exactMatchThreshold // 0.9
+      (exactResult.confidence || 0) >= DEFAULT_AI_CONFIG.exactMatchThreshold // 0.9
     ) {
       this.logger.log('✓ Layer 1 (Exact Match) succeeded');
       console.log('PROCESSING LAYER1');
@@ -201,14 +202,14 @@ export class AIOrchestrator {
         message: exactResult.content!,
         intent: intentResult.intent,
         processingLayer: ProcessingLayer.EXACT_MATCH,
-        confidence: exactResult.confidence,
+        confidence: exactResult.confidence || 0.9,
         responseTime: Date.now() - startTime,
         exactMatch: exactResult,
         sources: [
           {
             type: 'document',
             reference: exactResult.source?.filename || 'Unknown',
-            confidence: exactResult.confidence,
+            confidence: exactResult.confidence || 0.9,
           },
         ],
       };

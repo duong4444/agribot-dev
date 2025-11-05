@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 // Entities
 import { Document, DocumentChunk } from './entities';
+import { CropKnowledgeChunk } from './entities/crop-knowledge-chunk.entity';
 
 // Existing services
 import { GeminiService } from './gemini.service';
@@ -28,6 +29,11 @@ import { SearchCacheService } from './services/search-cache.service';
 import { ExactMatchV2Service } from './services/exact-match-v2.service';
 import { QueryPreprocessorService } from './services/query-preprocessor.service';
 
+// Crop Knowledge Services (Refactored Layer 1)
+import { MarkdownChunkingService } from './services/markdown-chunking.service';
+import { CropKnowledgeService } from './services/crop-knowledge.service';
+import { CropKnowledgeFTSService } from './services/crop-knowledge-fts.service';
+
 // Document Management Services
 import { DocumentService } from './services/document.service';
 import { TextExtractionService } from './services/text-extraction.service';
@@ -40,14 +46,21 @@ import { AdminGuard } from './guards/admin.guard';
 import { FarmModule } from '../farm/farm.module';
 import { AIRefactoredController } from './ai-refactored.controller';
 import { AdminDocumentController } from './controllers/admin-document.controller';
+import { AdminCropKnowledgeController } from './controllers/admin-crop-knowledge.controller';
+import { PublicDebugController } from './controllers/public-debug.controller';
 
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([Document, DocumentChunk]),
+    TypeOrmModule.forFeature([Document, DocumentChunk, CropKnowledgeChunk]),
     FarmModule,
   ],
-  controllers: [AIRefactoredController, AdminDocumentController],
+  controllers: [
+    AIRefactoredController, 
+    AdminDocumentController, 
+    AdminCropKnowledgeController,
+    PublicDebugController, // For testing only
+  ],
   providers: [
     // Existing
     GeminiService,
@@ -71,6 +84,11 @@ import { AdminDocumentController } from './controllers/admin-document.controller
     SearchCacheService,
     ExactMatchEnhancedService,
     ExactMatchV2Service,
+    
+    // Crop Knowledge Services (Refactored Layer 1)
+    MarkdownChunkingService,
+    CropKnowledgeService,
+    CropKnowledgeFTSService,
 
     // Document Management Services
     DocumentService,
@@ -87,6 +105,8 @@ import { AdminDocumentController } from './controllers/admin-document.controller
     ExactMatchV2Service,
     RAGService,
     ActionRouterService,
+    CropKnowledgeFTSService,
+    CropKnowledgeService,
   ],
 })
 export class AIRefactoredModule {}

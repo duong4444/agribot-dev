@@ -60,7 +60,7 @@ const AdminDocumentsPage = () => {
                   </div>
                   <div>
                     <h1 className="text-xl font-bold text-gray-900 dark:text-white">AgriBot Admin</h1>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Quản lý Tài liệu</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Kiến thức Cây trồng</p>
                   </div>
                 </div>
               </div>
@@ -87,10 +87,10 @@ const AdminDocumentsPage = () => {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Quản lý Tài liệu
+              Quản lý Kiến thức Cây trồng
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              Upload và quản lý tài liệu nông nghiệp cho hệ thống AI
+              Upload file Markdown (.md) với cấu trúc chunking cho Layer 1 FTS
             </p>
           </div>
 

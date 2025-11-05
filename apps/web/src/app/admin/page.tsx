@@ -36,20 +36,20 @@ const AdminPage = () => {
 
   const adminModules = [
     {
-      title: 'Quản lý Tài liệu',
-      description: 'Upload và quản lý tài liệu nông nghiệp cho hệ thống AI',
-      icon: FileText,
+      title: 'Kiến thức Cây trồng',
+      description: 'Upload file .md với structural chunking cho Layer 1 FTS',
+      icon: Leaf,
       href: '/admin/documents',
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100 dark:bg-blue-900',
+      color: 'text-green-600',
+      bgColor: 'bg-green-100 dark:bg-green-900',
     },
     {
       title: 'Quản lý Người dùng',
       description: 'Quản lý tài khoản người dùng và phân quyền',
       icon: Users,
       href: '/admin/users',
-      color: 'text-green-600',
-      bgColor: 'bg-green-100 dark:bg-green-900',
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-100 dark:bg-blue-900',
     },
     {
       title: 'Thống kê & Phân tích',
