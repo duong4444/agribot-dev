@@ -24,18 +24,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score
 import numpy as np
 
-# Intent labels mapping
+# Intent labels mapping (UPDATED: 6 intents only)
 INTENT_LABELS = [
-    "financial_query",    # 0
-    "crop_query",         # 1
-    "device_control",     # 2
-    "activity_query",     # 3
-    "analytics_query",    # 4
-    "farm_query",         # 5
-    "sensor_query",       # 6
-    "create_record",      # 7
-    "update_record",      # 8
-    "delete_record",      # 9
+    "knowledge_query",    # 0 - Hỏi đáp kiến thức nông nghiệp
+    "financial_query",    # 1 - Hỏi về tài chính
+    "analytics_query",    # 2 - Yêu cầu phân tích
+    "device_control",     # 3 - Điều khiển thiết bị IoT
+    "sensor_query",       # 4 - Hỏi dữ liệu cảm biến
+    "unknown",            # 5 - Không xác định
 ]
 
 def create_sample_data():

@@ -20,18 +20,12 @@ class IntentClassifier:
     
     # Intent labels (matching NestJS IntentType enum)
     INTENT_LABELS = [
-        "knowledge_query",      # 0
-        "financial_query",      # 1
-        "crop_query",           # 2
-        "activity_query",       # 3
-        "analytics_query",      # 4
-        "farm_query",           # 5
-        "device_control",       # 6
-        "sensor_query",         # 7
-        "create_record",        # 8
-        "update_record",        # 9
-        "delete_record",        # 10
-        "unknown",              # 11
+        "knowledge_query",      # 0 - Hỏi đáp kiến thức nông nghiệp
+        "financial_query",      # 1 - Hỏi về tài chính
+        "analytics_query",      # 2 - Yêu cầu phân tích
+        "device_control",       # 3 - Điều khiển thiết bị IoT
+        "sensor_query",         # 4 - Hỏi dữ liệu cảm biến
+        "unknown",              # 5 - Không xác định
     ]
     
     def __init__(self, model_name: str = "vinai/phobert-base"):
@@ -170,25 +164,21 @@ class IntentClassifier:
         """Rule-based fallback classification"""
         text_lower = text.lower()
         
-        # Financial patterns
+        # Pattern keywords for remaining intents
         financial_keywords = ['doanh thu', 'thu nhập', 'lợi nhuận', 'chi phí', 'tiền', 'giá', 'bao nhiêu tiền', 'tổng tiền', 'giá trị']
-        crop_keywords = ['trồng', 'cây', 'cà chua', 'rau', 'crop', 'giống', 'hạt giống', 'cây trồng']
         device_keywords = ['bật', 'tắt', 'điều khiển', 'control', 'máy', 'thiết bị', 'hệ thống']
-        activity_keywords = ['tưới', 'bón phân', 'thu hoạch', 'chăm sóc', 'hoạt động']
+        sensor_keywords = ['nhiệt độ', 'độ ẩm', 'cảm biến', 'sensor', 'đo', 'giám sát']
         analytics_keywords = ['phân tích', 'thống kê', 'báo cáo', 'biểu đồ', 'chart', 'analytics']
         
         # Check patterns with priority
         if any(word in text_lower for word in financial_keywords):
             intent = 'financial_query'
             confidence = 0.9
-        elif any(word in text_lower for word in crop_keywords):
-            intent = 'crop_query'
-            confidence = 0.9
         elif any(word in text_lower for word in device_keywords):
             intent = 'device_control'
             confidence = 0.9
-        elif any(word in text_lower for word in activity_keywords):
-            intent = 'activity_query'
+        elif any(word in text_lower for word in sensor_keywords):
+            intent = 'sensor_query'
             confidence = 0.9
         elif any(word in text_lower for word in analytics_keywords):
             intent = 'analytics_query'

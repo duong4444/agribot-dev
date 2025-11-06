@@ -52,6 +52,7 @@ export class CropKnowledgeFTSService {
       limit?: number;
       minRank?: number;
       threshold?: number;
+      cropFilter?: string; // Filter by specific crop type
     },
   ): Promise<ExactMatchResult> {
     const startTime = Date.now();
@@ -66,6 +67,7 @@ export class CropKnowledgeFTSService {
         userId,
         options?.limit || 10,
         options?.minRank || 0.01,
+        options?.cropFilter,
       );
 
       if (results.length === 0) {
@@ -142,10 +144,11 @@ export class CropKnowledgeFTSService {
     userId?: string,
     limit: number = 10,
     minRank: number = 0.001, // Lower min rank for better recall
+    cropFilter?: string, // Optional crop type filter
   ): Promise<SearchResult[]> {
     try {
       this.logger.debug(
-        `Executing FTS: query="${query}", userId=${userId}, limit=${limit}, minRank=${minRank}`,
+        `Executing FTS: query="${query}", userId=${userId}, limit=${limit}, minRank=${minRank}, cropFilter=${cropFilter || 'none'}`,
       );
 
       const results = await this.chunkRepo.query(
@@ -159,9 +162,9 @@ export class CropKnowledgeFTSService {
           metadata,
           rank,
           headline
-        FROM search_crop_knowledge_fts($1, $2, $3, $4)
+        FROM search_crop_knowledge_fts($1, $2, $3, $4, $5)
         `,
-        [query, userId || null, limit, minRank],
+        [query, userId || null, limit, minRank, cropFilter || null],
       );
 
       this.logger.debug(`FTS returned ${results.length} results`);

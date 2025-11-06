@@ -127,24 +127,14 @@ export class IntentClassifierService {
       return IntentType.SENSOR_QUERY;
     }
 
-    // 5. Crop Query
-    if (this.matchesPatterns(normalizedQuery, INTENT_PATTERNS.CROP_QUERY)) {
-      return IntentType.CROP_QUERY;
-    }
-
-    // 6. Activity Query
-    if (this.matchesPatterns(normalizedQuery, INTENT_PATTERNS.ACTIVITY_QUERY)) {
-      return IntentType.ACTIVITY_QUERY;
-    }
-
-    // 7. Knowledge Query (explicit knowledge-seeking patterns)
+    // 5. Knowledge Query (explicit knowledge-seeking patterns)
     if (
       this.matchesPatterns(normalizedQuery, INTENT_PATTERNS.KNOWLEDGE_QUERY)
     ) {
       return IntentType.KNOWLEDGE_QUERY;
     }
 
-    // 8. Default to Knowledge Query
+    // 6. Default to Knowledge Query
     return IntentType.KNOWLEDGE_QUERY;
   }
 
@@ -189,10 +179,6 @@ export class IntentClassifierService {
     switch (intent) {
       case IntentType.FINANCIAL_QUERY:
         return INTENT_PATTERNS.FINANCIAL_QUERY;
-      case IntentType.CROP_QUERY:
-        return INTENT_PATTERNS.CROP_QUERY;
-      case IntentType.ACTIVITY_QUERY:
-        return INTENT_PATTERNS.ACTIVITY_QUERY;
       case IntentType.ANALYTICS_QUERY:
         return INTENT_PATTERNS.ANALYTICS_QUERY;
       case IntentType.DEVICE_CONTROL:
@@ -212,15 +198,9 @@ export class IntentClassifierService {
   getIntentCategory(intent: IntentType): 'knowledge' | 'action' {
     const actionIntents = [
       IntentType.FINANCIAL_QUERY,
-      IntentType.CROP_QUERY,
-      IntentType.ACTIVITY_QUERY,
       IntentType.ANALYTICS_QUERY,
-      IntentType.FARM_QUERY,
       IntentType.SENSOR_QUERY,
       IntentType.DEVICE_CONTROL,
-      IntentType.CREATE_RECORD,
-      IntentType.UPDATE_RECORD,
-      IntentType.DELETE_RECORD,
     ];
 
     return actionIntents.includes(intent) ? 'action' : 'knowledge';
@@ -232,10 +212,7 @@ export class IntentClassifierService {
   requiresDatabase(intent: IntentType): boolean {
     return [
       IntentType.FINANCIAL_QUERY,
-      IntentType.CROP_QUERY,
-      IntentType.ACTIVITY_QUERY,
       IntentType.ANALYTICS_QUERY,
-      IntentType.FARM_QUERY,
       IntentType.SENSOR_QUERY,
     ].includes(intent);
   }

@@ -186,7 +186,9 @@ export class AIOrchestrator {
     console.log(
       '.............................TRY LAYER1_FTS..................................................',
     );
-    const exactResult = await this.exactMatch.findExactMatch(query, user.id);
+    const exactResult = await this.exactMatch.findExactMatch(query, user.id, {
+      entities: intentResult.entities, // Pass entities from NER for filtering
+    });
     console.log('_orchestrator_ exactResult_layer1_FTS: ', exactResult);
 
     // Check if exact match is confident enough

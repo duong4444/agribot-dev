@@ -150,15 +150,9 @@ export class PythonAIClientService {
     const intentMap: Record<string, IntentType> = {
       'knowledge_query': IntentType.KNOWLEDGE_QUERY,
       'financial_query': IntentType.FINANCIAL_QUERY,
-      'crop_query': IntentType.CROP_QUERY,
-      'activity_query': IntentType.ACTIVITY_QUERY,
       'analytics_query': IntentType.ANALYTICS_QUERY,
-      'farm_query': IntentType.FARM_QUERY,
       'device_control': IntentType.DEVICE_CONTROL,
       'sensor_query': IntentType.SENSOR_QUERY,
-      'create_record': IntentType.CREATE_RECORD,
-      'update_record': IntentType.UPDATE_RECORD,
-      'delete_record': IntentType.DELETE_RECORD,
       'unknown': IntentType.UNKNOWN,
     };
 

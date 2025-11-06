@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ExactMatchResult } from '../types';
+import { ExactMatchResult, Entity } from '../types';
 import { ExactMatchEnhancedService } from './exact-match-enhanced.service';
 import { SearchCacheService, CacheStats } from './search-cache.service';
 import { QueryPreprocessorService } from './query-preprocessor.service';
@@ -48,6 +48,7 @@ export class ExactMatchV2Service {
       skipCache?: boolean;
       useExpansion?: boolean;
       useFuzzyFallback?: boolean;
+      entities?: Entity[]; // Entities from NER for better filtering
     } = {},
   ): Promise<ExactMatchResult> {
     const startTime = Date.now();
@@ -100,6 +101,14 @@ export class ExactMatchV2Service {
     let method: 'fts' | 'fuzzy' | 'expansion' | 'crop_fts' = 'fts';
     console.log("option.useFuzzyFallback: ", options.useFuzzyFallback);
     
+    // Extract crop name from entities for filtering
+    const cropEntity = options.entities?.find(e => e.type === 'crop_name');
+    const cropFilter = cropEntity?.value;
+    
+    if (cropFilter) {
+      this.logger.debug(`🌾 Detected crop filter from NER: "${cropFilter}"`);
+    }
+    
     try {
       // Step 2.1: Try Crop Knowledge FTS first (new refactored Layer 1)
       // Note: Pass undefined for userId to search all public crop knowledge (uploaded by admin)
@@ -110,6 +119,7 @@ export class ExactMatchV2Service {
         {
           limit: 5,
           threshold: 0.7,
+          cropFilter, // Pass crop filter from NER
         },
       );
 

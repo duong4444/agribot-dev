@@ -208,3 +208,5 @@ knowledge_base/*
 QUERY_OPTIMIZATION_ANALYSIS.md
 UPLOAD_IMPROVEMENTS.md
 TEST-FTS-GUIDE.md
+fix-crop-filter.sql
+fix-fts-or-query.sql

@@ -50,30 +50,10 @@ export const INTENT_PATTERNS = {
     /giá\s*trị/i,
   ],
   
-  // Crop queries
-  CROP_QUERY: [
-    /cây\s*trồng/i,
-    /mùa\s*vụ/i,
-    /giống/i,
-    /năng\s*suất/i,
-    /thu\s*hoạch/i,
-    /trồng\s*(được|rồi)?/i,
-  ],
-  
-  // Activity queries
-  ACTIVITY_QUERY: [
-    /hoạt\s*động/i,
-    /công\s*việc/i,
-    /đã\s*làm/i,
-    /lịch\s*sử/i,
-    /ghi\s*chép/i,
-  ],
-  
   // Device control (IoT)
   DEVICE_CONTROL: [
     /bật/i,
     /tắt/i,
-    /tưới/i,
     /điều\s*khiển/i,
     /thiết\s*bị/i,
     /máy/i,
@@ -88,6 +68,7 @@ export const INTENT_PATTERNS = {
     /ánh\s*sáng/i,
     /ph/i,
     /đo/i,
+    /giám\s*sát/i,
   ],
   
   // Analytics
@@ -109,6 +90,10 @@ export const INTENT_PATTERNS = {
     /vì\s*sao/i,
     /cách/i,
     /hướng\s*dẫn/i,
+    /bệnh/i,
+    /sâu/i,
+    /trồng/i,
+    /chăm\s*sóc/i,
   ],
 };
 

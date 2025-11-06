@@ -47,32 +47,14 @@ export class ActionRouterService {
         case IntentType.FINANCIAL_QUERY:
           return await this.handleFinancialQuery(user, entities, query);
 
-        case IntentType.CROP_QUERY:
-          return await this.handleCropQuery(user, entities, query);
-
-        case IntentType.ACTIVITY_QUERY:
-          return await this.handleActivityQuery(user, entities, query);
-
         case IntentType.ANALYTICS_QUERY:
           return await this.handleAnalyticsQuery(user, entities, query);
-
-        case IntentType.FARM_QUERY:
-          return await this.handleFarmQuery(user, entities, query);
 
         case IntentType.SENSOR_QUERY:
           return await this.handleSensorQuery(user, entities, query);
 
         case IntentType.DEVICE_CONTROL:
           return await this.handleDeviceControl(user, entities, query);
-
-        case IntentType.CREATE_RECORD:
-          return await this.handleCreateRecord(user, entities, query);
-
-        case IntentType.UPDATE_RECORD:
-          return await this.handleUpdateRecord(user, entities, query);
-
-        case IntentType.DELETE_RECORD:
-          return await this.handleDeleteRecord(user, entities, query);
 
         default:
           return {

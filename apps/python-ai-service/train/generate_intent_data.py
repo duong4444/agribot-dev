@@ -38,8 +38,8 @@ import time
 @dataclass
 class Config:
     """Configuration for data generation"""
-    input_file: str = "data/intent_data.csv"
-    output_file: str = "data/intent_data_augmented.csv"
+    input_file: str = "data/intent_data_6intents.csv"
+    output_file: str = "data/intent_data_augmented_6intents.csv"
     target_samples: int = 200
     max_replacements: int = 2  # Số từ đồng nghĩa tối đa thay thế trong 1 câu
     min_sample_length: int = 3
@@ -152,32 +152,6 @@ TEMPLATES = {
         "So sánh {metric} {period1} với {period2}.",
     ],
     
-    "crop_query": [
-        "{area} đang trồng cây gì?",
-        "Xem thông tin {area}.",
-        "Tình trạng của {crop} ở {area}?",
-        "{crop} ở {area} đang ở giai đoạn nào?",
-        "Ngày {action} của {area} là khi nào?",
-        "Giống cây trồng ở {area}?",
-        "Diện tích của {area} là bao nhiêu?",
-        "Danh sách các loại cây đang trồng.",
-        "Cây nào sắp đến kỳ {action}?",
-        "Xem lịch sử cây trồng của {area}.",
-    ],
-    
-    "activity_query": [
-        "Lịch {activity} {period}?",
-        "Hoạt động nào đã làm {period}?",
-        "Xem nhật ký {activity}.",
-        "Danh sách công việc {period}.",
-        "Lịch sử {activity} của {area}?",
-        "Ai đã {activity} ở {area}?",
-        "Kế hoạch {activity} {period}?",
-        "Công việc nào còn chưa hoàn thành?",
-        "Chi tiết hoạt động {activity} ngày {date}.",
-        "Nhắc nhở về {activity}.",
-    ],
-    
     "analytics_query": [
         "Thống kê {metric} {period}.",
         "Phân tích {metric} của {item}.",
@@ -215,58 +189,6 @@ TEMPLATES = {
         "Biểu đồ {sensor} {period}.",
         "{sensor} cao nhất/thấp nhất {period}?",
         "Xu hướng {sensor} {period}.",
-    ],
-    
-    "create_record": [
-        "Thêm {item} mới.",
-        "Tạo {item} với {details}.",
-        "Ghi nhận {activity} ở {area}.",
-        "Thêm kế hoạch {activity} cho {area}.",
-        "Tạo báo cáo {type}.",
-        "Ghi lại {event} {period}.",
-        "Đăng ký {item} mới.",
-        "Lưu thông tin {item}.",
-        "Thêm {item} vào {area}.",
-        "Tạo lịch trình {activity}.",
-    ],
-    
-    "update_record": [
-        "Sửa {item} {identifier}.",
-        "Cập nhật thông tin {item}.",
-        "Thay đổi {field} của {item} thành {value}.",
-        "Chỉnh sửa {item} ở {area}.",
-        "Điều chỉnh {parameter} của {item}.",
-        "Sửa {field} trong {record}.",
-        "Cập nhật trạng thái {item}.",
-        "Thay đổi lịch {activity}.",
-        "Sửa thông tin {item} này.",
-        "Cập nhật {item} với {details}.",
-    ],
-    
-    "delete_record": [
-        "Xóa {item} {identifier}.",
-        "Gỡ bỏ {item} ở {area}.",
-        "Hủy {item} này.",
-        "Loại bỏ {record} {period}.",
-        "Xóa lịch {activity}.",
-        "Gỡ {item} ra khỏi danh sách.",
-        "Xóa thông tin {item}.",
-        "Hủy bỏ {activity} {period}.",
-        "Xóa tất cả {item} ở {area}.",
-        "Gỡ {item} này đi.",
-    ],
-    
-    "farm_query": [
-        "Thông tin nông trại {name}.",
-        "Diện tích nông trại là bao nhiêu?",
-        "Xem bản đồ nông trại.",
-        "Các khu vực trong nông trại?",
-        "Loại hình canh tác là gì?",
-        "Vị trí nông trại ở đâu?",
-        "Quy mô nông trại như thế nào?",
-        "Nông trại có mấy khu vực?",
-        "Tổng quan về nông trại.",
-        "Cơ sở vật chất của nông trại?",
     ],
     
     "unknown": [
@@ -907,8 +829,8 @@ def main():
     """Main function"""
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="Generate augmented intent data")
-    parser.add_argument('--input', default="data/intent_data.csv", help="Input CSV file")
-    parser.add_argument('--output', default="data/intent_data_augmented.csv", help="Output CSV file")
+    parser.add_argument('--input', default="data/intent_data_6intents.csv", help="Input CSV file")
+    parser.add_argument('--output', default="data/intent_data_augmented_6intents.csv", help="Output CSV file")
     parser.add_argument('--target', type=int, default=200, help="Target samples per intent (sẽ được điều chỉnh nếu số lượng mẫu gốc trung bình cao hơn)")
     parser.add_argument('--parallel', action='store_true', help="Enable parallel processing")
     parser.add_argument('--workers', type=int, default=4, help="Number of parallel workers")

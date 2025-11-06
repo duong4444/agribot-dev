@@ -9,26 +9,18 @@
 
 export enum IntentType {
   // Knowledge queries
-  KNOWLEDGE_QUERY = 'knowledge_query',
+  KNOWLEDGE_QUERY = 'knowledge_query',      // Hỏi đáp kiến thức nông nghiệp
   
-  // Business queries (từ database)
-  FINANCIAL_QUERY = 'financial_query',      // Doanh thu, chi phí
-  CROP_QUERY = 'crop_query',                // Thông tin cây trồng
-  ACTIVITY_QUERY = 'activity_query',        // Hoạt động nông trại
-  ANALYTICS_QUERY = 'analytics_query',      // Phân tích, báo cáo
-  FARM_QUERY = 'farm_query',                // Thông tin nông trại
+  // Business queries
+  FINANCIAL_QUERY = 'financial_query',      // Hỏi về tài chính
+  ANALYTICS_QUERY = 'analytics_query',      // Yêu cầu phân tích
   
   // IoT Actions
-  DEVICE_CONTROL = 'device_control',        // Điều khiển thiết bị
-  SENSOR_QUERY = 'sensor_query',            // Truy vấn cảm biến
-  
-  // CRUD Actions
-  CREATE_RECORD = 'create_record',          // Tạo bản ghi
-  UPDATE_RECORD = 'update_record',          // Cập nhật
-  DELETE_RECORD = 'delete_record',          // Xóa
+  DEVICE_CONTROL = 'device_control',        // Điều khiển thiết bị IoT
+  SENSOR_QUERY = 'sensor_query',            // Hỏi dữ liệu cảm biến
   
   // Fallback
-  UNKNOWN = 'unknown',
+  UNKNOWN = 'unknown',                      // Không xác định
 }
 
 export enum EntityType {
@@ -39,6 +31,7 @@ export enum EntityType {
   DEVICE_NAME = 'device_name',
   ACTIVITY_TYPE = 'activity_type',
   METRIC = 'metric',
+  FINANCIAL_TYPE = 'financial_type',
 }
 
 export interface Entity {
