@@ -142,21 +142,21 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
           ) : (
             <div 
               ref={scrollContainerRef}
-              className="space-y-2 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent hover:scrollbar-thumb-gray-400 dark:hover:scrollbar-thumb-gray-500 flex-1"
+              className="space-y-1.5 overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent hover:scrollbar-thumb-gray-400 dark:hover:scrollbar-thumb-gray-500 flex-1"
             >
               {conversations.map((conversation) => (
                 <div
                   key={conversation.id}
-                  className={`group relative p-3.5 rounded-xl border transition-all duration-200 cursor-pointer ${
+                  className={`group relative p-2.5 rounded-lg border transition-all duration-200 cursor-pointer ${
                     currentConversationId === conversation.id 
-                      ? 'bg-gradient-to-r from-agri-green-50 to-emerald-50 dark:from-agri-green-900/20 dark:to-emerald-900/20 border-agri-green-300 dark:border-agri-green-700 shadow-md scale-[1.02]' 
-                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-agri-green-200 dark:hover:border-agri-green-800 hover:shadow-md hover:scale-[1.01]'
+                      ? 'bg-gradient-to-r from-agri-green-50 to-emerald-50 dark:from-agri-green-900/20 dark:to-emerald-900/20 border-agri-green-400 dark:border-agri-green-600 shadow-md' 
+                      : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-agri-green-300 dark:hover:border-agri-green-700 hover:shadow-sm'
                   }`}
                   onClick={() => handleSelectConversation(conversation.id)}
                 >
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-semibold truncate ${
+                      <p className={`text-xs font-medium truncate ${
                         currentConversationId === conversation.id
                           ? 'text-agri-green-900 dark:text-agri-green-100'
                           : 'text-gray-900 dark:text-gray-100'
@@ -168,13 +168,13 @@ export const DashboardSidebar: React.FC<DashboardSidebarProps> = ({
                       <button
                         onClick={(e) => handleDeleteConversation(conversation.id, e)}
                         disabled={deletingId === conversation.id}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-all duration-200 hover:scale-110"
+                        className="opacity-0 group-hover:opacity-100 p-1 rounded-md hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-all duration-200 hover:scale-110"
                         title="Xóa cuộc trò chuyện"
                       >
                         {deletingId === conversation.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <Loader2 className="h-3 w-3 animate-spin" />
                         ) : (
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="h-3 w-3" />
                         )}
                       </button>
                     </div>

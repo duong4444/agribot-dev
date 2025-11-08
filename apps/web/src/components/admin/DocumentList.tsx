@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { ConfirmModal } from '@/components/ui/confirm-modal';
 import {
   Table,
   TableBody,
@@ -86,6 +87,9 @@ export const DocumentList: React.FC<DocumentListProps> = ({ refreshTrigger }) =>
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<DocumentCategory | ''>('');
   const [selectedStatus, setSelectedStatus] = useState<DocumentStatus | ''>('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<{ id: string; filename: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchDocuments = async () => {
     setLoading(true);
@@ -136,12 +140,17 @@ export const DocumentList: React.FC<DocumentListProps> = ({ refreshTrigger }) =>
   };
 
   const handleDelete = async (id: string, filename: string) => {
-    if (!confirm(`Bạn có chắc chắn muốn xóa tài liệu "${filename}"?`)) {
-      return;
-    }
+    setDocumentToDelete({ id, filename });
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!documentToDelete) return;
+
+    setIsDeleting(true);
 
     try {
-      const response = await fetch(`/api/admin/documents/${id}`, {
+      const response = await fetch(`/api/admin/documents/${documentToDelete.id}`, {
         method: 'DELETE',
       });
 
@@ -149,10 +158,19 @@ export const DocumentList: React.FC<DocumentListProps> = ({ refreshTrigger }) =>
         throw new Error('Failed to delete document');
       }
 
-      fetchDocuments();
+      await fetchDocuments();
+      setShowDeleteModal(false);
+      setDocumentToDelete(null);
     } catch (err: any) {
       alert(`Lỗi: ${err.message || 'Không thể xóa tài liệu'}`);
+    } finally {
+      setIsDeleting(false);
     }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setDocumentToDelete(null);
   };
 
   const handleReprocess = async (id: string, filename: string) => {
@@ -201,6 +219,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({ refreshTrigger }) =>
   const totalPages = Math.ceil(total / limit);
 
   return (
+    <>
     <Card>
       <CardHeader className="py-3">
         <CardTitle className="text-base flex items-center gap-2">
@@ -407,5 +426,19 @@ export const DocumentList: React.FC<DocumentListProps> = ({ refreshTrigger }) =>
         )}
       </CardContent>
     </Card>
+
+    {/* Delete Confirmation Modal */}
+    <ConfirmModal
+      isOpen={showDeleteModal}
+      onClose={cancelDelete}
+      onConfirm={confirmDelete}
+      title="Xóa tài liệu"
+      message={`Bạn có chắc chắn muốn xóa tài liệu "${documentToDelete?.filename}"? Hành động này không thể hoàn tác.`}
+      confirmText="Xóa"
+      cancelText="Hủy"
+      isLoading={isDeleting}
+      variant="danger"
+    />
+    </>
   );
 };
