@@ -1,5 +1,7 @@
 import React from 'react';
 import { MessageMetadata } from './message-metadata';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface MessageContentProps {
   content: string;
@@ -16,89 +18,7 @@ export const MessageContent: React.FC<MessageContentProps> = ({
   confidence, 
   responseTime 
 }) => {
-  // Function to format AI response content
-  const formatContent = (text: string) => {
-    // Split by double line breaks to create sections
-    const sections = text.split('\n\n');
-    
-    return sections.map((section, index) => {
-      // Check if section is a header (contains ** or * at start)
-      if (section.match(/^\*\*.*\*\*$/)) {
-        return (
-          <h3 key={index} className="font-semibold text-base mb-2 mt-3 first:mt-0">
-            {section.replace(/\*\*/g, '')}
-          </h3>
-        );
-      }
-      
-      // Check if section is a subheader (contains * at start)
-      if (section.match(/^\*.*$/)) {
-        return (
-          <h4 key={index} className="font-medium text-sm mb-2 mt-2 first:mt-0 text-agri-green-700 dark:text-agri-green-300">
-            {section.replace(/\*/g, '')}
-          </h4>
-        );
-      }
-      
-      // Check if section contains bullet points
-      if (section.includes('* ')) {
-        const lines = section.split('\n');
-        return (
-          <div key={index} className="mb-3">
-            {lines.map((line, lineIndex) => {
-              if (line.trim().startsWith('* ')) {
-                return (
-                  <div key={lineIndex} className="flex items-start mb-1">
-                    <span className="text-agri-green-600 dark:text-agri-green-400 mr-2 mt-1">•</span>
-                    <span className="text-sm leading-relaxed">{line.replace(/^\* /, '')}</span>
-                  </div>
-                );
-              }
-              return (
-                <p key={lineIndex} className="text-sm leading-relaxed mb-2">
-                  {line}
-                </p>
-              );
-            })}
-          </div>
-        );
-      }
-      
-      // Check if section contains numbered lists
-      if (section.match(/^\d+\./)) {
-        const lines = section.split('\n');
-        return (
-          <div key={index} className="mb-3">
-            {lines.map((line, lineIndex) => {
-              if (line.match(/^\d+\./)) {
-                return (
-                  <div key={lineIndex} className="flex items-start mb-1">
-                    <span className="text-agri-green-600 dark:text-agri-green-400 mr-2 mt-1 font-medium">
-                      {line.match(/^\d+\./)?.[0]}
-                    </span>
-                    <span className="text-sm leading-relaxed">{line.replace(/^\d+\.\s*/, '')}</span>
-                  </div>
-                );
-              }
-              return (
-                <p key={lineIndex} className="text-sm leading-relaxed mb-2">
-                  {line}
-                </p>
-              );
-            })}
-          </div>
-        );
-      }
-      
-      // Regular paragraph
-      return (
-        <p key={index} className="text-sm leading-relaxed mb-3 last:mb-0">
-          {section}
-        </p>
-      );
-    });
-  };
-
+  
   if (type === 'user') {
     return (
       <div className="text-sm leading-relaxed">
@@ -109,7 +29,25 @@ export const MessageContent: React.FC<MessageContentProps> = ({
 
   return (
     <div className="space-y-1">
-      {formatContent(content)}
+      <div className="prose prose-sm dark:prose-invert max-w-none prose-p:leading-relaxed prose-p:mb-3 last:prose-p:mb-0 prose-headings:font-semibold prose-h3:text-base prose-h3:mb-2 prose-h3:mt-3 first:prose-h3:mt-0 prose-ul:my-3 prose-li:my-1 prose-li:leading-relaxed">
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          components={{
+            // Override default components to match your styling
+            h3: ({node, ...props}) => <h3 className="font-semibold text-base mb-2 mt-3 first:mt-0" {...props} />,
+            p: ({node, ...props}) => <p className="text-sm leading-relaxed mb-3 last:mb-0" {...props} />,
+            ul: ({node, ...props}) => <ul className="space-y-1" {...props} />,
+            li: ({node, ...props}) => (
+              <div className="flex items-start">
+                <span className="text-agri-green-600 dark:text-agri-green-400 mr-2 mt-1">•</span>
+                <span className="flex-1 text-sm">{props.children}</span>
+              </div>
+            ),
+          }}
+        >
+          {content}
+        </ReactMarkdown>
+      </div>
       {type === 'assistant' && (
         <MessageMetadata 
           intent={intent}
