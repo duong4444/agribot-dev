@@ -95,8 +95,17 @@ export class GeminiService {
     try {
       const startTime = Date.now();
       
+      // Build generation config with overrides
+      const generationConfig: GenerationConfig = {
+        temperature: options?.temperature || 0.7,
+        maxOutputTokens: options?.maxTokens || 1000,
+      };
+
       // Generate content using Gemini
-      const result = await this.model.generateContent(prompt);
+      const result = await this.model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig,
+      });
       const response = await result.response;
       const text = response.text();
       

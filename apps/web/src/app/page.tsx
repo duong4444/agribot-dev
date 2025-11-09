@@ -53,6 +53,28 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-agri-green-100 to-agri-green-200 dark:from-gray-900 dark:to-green-800">
+      {/* If admin is authenticated, show redirect message only */}
+      {status === 'authenticated' && session?.user?.role === 'ADMIN' ? (
+        <div className="flex items-center justify-center min-h-screen">
+          <Card className="max-w-md w-full mx-4">
+            <CardContent className="pt-6 text-center">
+              <div className="mb-4">
+                <Shield className="h-16 w-16 text-purple-600 mx-auto mb-4" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                ADMIN đã đăng nhập
+              </h1>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                Chuyển hướng đến trang ADMIN...
+              </p>
+              <div className="flex justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <>
       {/* Header */}
       <header className="container mx-auto px-4 py-6">
         <nav className="flex items-center justify-between">
@@ -369,6 +391,8 @@ export default function HomePage() {
           </p>
         </div>
       </footer>
+      </>
+      )}
     </div>
   );
 }

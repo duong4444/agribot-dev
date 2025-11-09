@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { FileText, Trash2, RefreshCw, Download, Eye, Search, Filter } from 'lucide-react';
+import { FileText, Trash2, Search, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -173,26 +173,6 @@ export const DocumentList: React.FC<DocumentListProps> = ({ refreshTrigger }) =>
     setDocumentToDelete(null);
   };
 
-  const handleReprocess = async (id: string, filename: string) => {
-    if (!confirm(`Bạn có muốn xử lý lại tài liệu "${filename}"?`)) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/admin/documents/${id}/reprocess`, {
-        method: 'POST',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to reprocess document');
-      }
-
-      fetchDocuments();
-    } catch (err: any) {
-      alert(`Lỗi: ${err.message || 'Không thể xử lý lại tài liệu'}`);
-    }
-  };
-
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(2)} KB`;
@@ -350,14 +330,6 @@ export const DocumentList: React.FC<DocumentListProps> = ({ refreshTrigger }) =>
                       </TableCell>
                       <TableCell>
                         <div className="flex justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleReprocess(doc.id, doc.originalName)}
-                            title="Xử lý lại"
-                          >
-                            <RefreshCw className="h-4 w-4" />
-                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"

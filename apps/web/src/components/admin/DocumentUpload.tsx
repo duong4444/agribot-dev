@@ -341,79 +341,6 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onUploadSuccess 
           )}
         </div>
 
-        {/* Category Selection */}
-        <div className="space-y-2">
-          <Label htmlFor="category">Danh mục</Label>
-          <select
-            id="category"
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            value={state.category}
-            onChange={(e) => setState(prev => ({ ...prev, category: e.target.value as DocumentCategory }))}
-            disabled={state.uploading}
-          >
-            {CATEGORIES.map(cat => (
-              <option key={cat.value} value={cat.value}>
-                {cat.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Tags Input */}
-        <div className="space-y-2">
-          <Label htmlFor="tags">Tags</Label>
-          <div className="flex gap-2">
-            <Input
-              id="tags"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
-              placeholder="Nhập tag và nhấn Enter"
-              disabled={state.uploading}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleAddTag}
-              disabled={state.uploading}
-            >
-              Thêm
-            </Button>
-          </div>
-          {state.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-2">
-              {state.tags.map(tag => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 rounded-full text-sm"
-                >
-                  {tag}
-                  <button
-                    onClick={() => handleRemoveTag(tag)}
-                    className="hover:text-green-600"
-                    disabled={state.uploading}
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Notes */}
-        <div className="space-y-2">
-          <Label htmlFor="notes">Ghi chú (tùy chọn)</Label>
-          <textarea
-            id="notes"
-            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            value={state.notes}
-            onChange={(e) => setState(prev => ({ ...prev, notes: e.target.value }))}
-            placeholder="Thêm ghi chú về tài liệu..."
-            disabled={state.uploading}
-          />
-        </div>
-
         {/* Error/Success Messages */}
         {state.error && (
           <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg text-red-800 dark:text-red-200">
@@ -425,7 +352,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onUploadSuccess 
         {state.success && (
           <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg text-green-800 dark:text-green-200">
             <CheckCircle className="h-5 w-5 flex-shrink-0" />
-            <p className="text-sm">{state.successMessage || 'Tài liệu đã được upload thành công!'}</p>
+            <p className="text-sm">{'Tài liệu đã được upload thành công!'}</p>
           </div>
         )}
 

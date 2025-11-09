@@ -39,8 +39,8 @@ export const MessageContent: React.FC<MessageContentProps> = ({
             ul: ({node, ...props}) => <ul className="space-y-1" {...props} />,
             li: ({node, ...props}) => (
               <div className="flex items-start">
-                <span className="text-agri-green-600 dark:text-agri-green-400 mr-2 mt-1">•</span>
-                <span className="flex-1 text-sm">{props.children}</span>
+                <span className="text-agri-green-600 dark:text-agri-green-400 mr-2 leading-relaxed">•</span>
+                <span className="flex-1 text-sm leading-relaxed">{props.children}</span>
               </div>
             ),
           }}

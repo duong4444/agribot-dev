@@ -22,7 +22,7 @@ export const DEFAULT_AI_CONFIG: AIConfig = {
   // LLM settings
   llmModel: 'gemini-2.0-flash-exp',
   llmTemperature: 0.7,
-  llmMaxTokens: 1000,
+  llmMaxTokens: 4096,
   
   // Embedding settings
   embeddingModel: 'sentence-transformers/paraphrase-multilingual-mpnet-base-v2',
