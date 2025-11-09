@@ -56,12 +56,43 @@ export class CropKnowledgeFTSService {
     },
   ): Promise<ExactMatchResult> {
     const startTime = Date.now();
-    const normalized = normalizeText(query);
+    this.logger.log(`🔍 Searching for: "${query}"`);
 
-    this.logger.log(`🔍 Layer 1 FTS: "${query}"`);
+    // Layer 1: Heading-based Search (High-precision)
+    const headingMatchResults = await this.searchByHeadings(query, options?.cropFilter);
 
+    if (headingMatchResults) {
+      const processingTime = Date.now() - startTime;
+      this.logger.log(
+        `✅ Layer 1 heading match found in ${processingTime}ms`,
+      );
+
+      const topMatch = headingMatchResults[0];
+
+      return {
+        found: true,
+        content: this.formatMultipleAnswers(headingMatchResults),
+        source: {
+          documentId: topMatch.chunkId,
+          filename: topMatch.loaiCay + '.md',
+          chunkIndex: 0, // Not applicable for multi-chunk
+        },
+        confidence: 1.0, // Heading match is always high confidence
+        metadata: {
+          loai_cay: topMatch.loaiCay,
+          chu_de_lon: topMatch.chuDeLon,
+          tieu_de_chunk: topMatch.tieuDeChunk,
+          match_type: 'heading_match',
+          matched_chunks: headingMatchResults.length,
+          processingTime,
+        },
+      };
+    }
+
+    this.logger.debug('No heading match, falling back to Layer 2 FTS...');
+
+    // Layer 2: Full-Text Search (Fallback for general queries)
     try {
-      // Execute weighted FTS search
       const results = await this.executeFTSSearch(
         query,
         userId,
@@ -75,25 +106,20 @@ export class CropKnowledgeFTSService {
         return { found: false, confidence: 0 };
       }
 
-      // Get top match
       const topMatch = results[0];
-      
-      // Calculate confidence
       const confidence = this.calculateConfidence(topMatch, query);
-
       const processingTime = Date.now() - startTime;
 
       this.logger.debug(
-        `Top match: ${topMatch.loaiCay} - ${topMatch.tieuDeChunk} ` +
+        `FTS top match: ${topMatch.loaiCay} - ${topMatch.tieuDeChunk} ` +
         `(rank: ${topMatch.rank.toFixed(4)}, confidence: ${confidence.toFixed(3)})`,
       );
 
-      // Check threshold
       const threshold = options?.threshold || this.CONFIDENCE_THRESHOLD;
       
       if (confidence >= threshold) {
         this.logger.log(
-          `✅ Layer 1 exact match found (confidence: ${confidence.toFixed(3)}) in ${processingTime}ms`,
+          `✅ Layer 2 FTS match found (confidence: ${confidence.toFixed(3)}) in ${processingTime}ms`,
         );
 
         return {
@@ -110,13 +136,14 @@ export class CropKnowledgeFTSService {
             chu_de_lon: topMatch.chuDeLon,
             tieu_de_chunk: topMatch.tieuDeChunk,
             rank: topMatch.rank,
+            match_type: 'fts_match',
             processingTime,
           },
         };
       }
 
       this.logger.debug(
-        `❌ Confidence ${confidence.toFixed(3)} below threshold ${threshold}`,
+        `❌ FTS confidence ${confidence.toFixed(3)} below threshold ${threshold}`,
       );
 
       return {
@@ -357,6 +384,36 @@ export class CropKnowledgeFTSService {
   }
 
   /**
+   * Format a list of answers for a main topic match
+   */
+  private formatMultipleAnswers(results: SearchResult[]): string {
+    if (!results || results.length === 0) {
+      return '';
+    }
+
+    // If only one result, use the single format
+    if (results.length === 1) {
+      return this.formatAnswer(results[0]);
+    }
+
+    const parts: string[] = [];
+    const firstResult = results[0];
+
+    // Main header for the entire topic
+    parts.push(`**${firstResult.loaiCay} - ${firstResult.chuDeLon}**\n\n`);
+
+    // Append each sub-chunk
+    results.forEach(result => {
+      // Sub-header for the chunk
+      parts.push(`**${result.tieuDeChunk}**\n`);
+      // Content
+      parts.push(result.noiDung + '\n\n');
+    });
+
+    return parts.join('');
+  }
+
+  /**
    * Search by exact crop name and topic
    */
   async searchByCropAndTopic(
@@ -579,5 +636,154 @@ export class CropKnowledgeFTSService {
     });
 
     return output;
+  }
+
+  /**
+   * Search by headings (Layer 1)
+   * @returns SearchResult[] if a match is found, otherwise null
+   */
+  private async searchByHeadings(
+    query: string,
+    cropFilter?: string,
+  ): Promise<SearchResult[] | null> {
+    const normalizedQuery = normalizeText(query);
+    const queryWords = normalizedQuery.split(' ').filter(w => w.length > 2);
+
+    this.logger.log(`🔍 Heading search - Query: "${query}" → Normalized: "${normalizedQuery}"`);
+    this.logger.log(`📝 Query words (>2 chars): [${queryWords.join(', ')}]`);
+
+    // 1. Check for a match with a main topic (chu_de_lon)
+    // Strategy: Find all unique topics and score them
+    const queryBuilder = this.chunkRepo
+      .createQueryBuilder('chunk')
+      .where('chunk.status = :status', { status: 'active' });
+    
+    if (cropFilter) {
+      // Use LOWER for case-insensitive match instead of normalize_vietnamese_text
+      queryBuilder.andWhere('LOWER(chunk.loai_cay) LIKE LOWER(:cropFilter)', {
+        cropFilter: `%${cropFilter}%`
+      });
+    }
+    
+    const allChunks = await queryBuilder.getMany();
+
+    this.logger.log(`📚 Found ${allChunks.length} total chunks to analyze`);
+
+    // Get unique topics with their match scores
+    const topicScores = new Map<string, { loaiCay: string; chuDeLon: string; score: number; matchedWords: string[] }>();
+
+    for (const chunk of allChunks) {
+      const topicKey = `${chunk.loaiCay}::${chunk.chuDeLon}`;
+      
+      // Skip if already processed this topic
+      if (topicScores.has(topicKey)) continue;
+
+      const normalizedTopic = normalizeText(chunk.chuDeLon);
+      // Extract significant words (ignore numbers and short words)
+      const topicWords = normalizedTopic
+        .split(' ')
+        .filter(w => w.length > 2 && !/^\d+$/.test(w)); // Ignore pure numbers like "4"
+      
+      this.logger.log(`🔎 Analyzing topic: "${chunk.chuDeLon}" → normalized: "${normalizedTopic}" → words: [${topicWords.join(', ')}]`);
+
+      // Calculate match score
+      const matchedWords: string[] = [];
+      let matchCount = 0;
+      
+      for (const topicWord of topicWords) {
+        const isMatched = queryWords.some(qw => qw.includes(topicWord) || topicWord.includes(qw));
+        if (isMatched) {
+          matchCount++;
+          matchedWords.push(topicWord);
+        }
+      }
+
+      // Score = percentage of topic words matched
+      const score = topicWords.length > 0 ? matchCount / topicWords.length : 0;
+
+      if (score > 0) {
+        topicScores.set(topicKey, {
+          loaiCay: chunk.loaiCay,
+          chuDeLon: chunk.chuDeLon,
+          score,
+          matchedWords,
+        });
+        
+        this.logger.log(
+          `📊 Topic: "${chunk.chuDeLon}" | Score: ${(score * 100).toFixed(0)}% | ` +
+          `Matched: [${matchedWords.join(', ')}] / [${topicWords.join(', ')}]`
+        );
+      }
+    }
+
+    // Find best matching topic (score >= 0.7 means at least 70% of topic words matched)
+    const HEADING_MATCH_THRESHOLD = 0.7; // 70% match threshold
+    let bestMatch: { loaiCay: string; chuDeLon: string; score: number } | null = null;
+    
+    for (const [_, topicData] of topicScores) {
+      if (topicData.score >= HEADING_MATCH_THRESHOLD) {
+        if (!bestMatch || topicData.score > bestMatch.score || 
+            (topicData.score === bestMatch.score && topicData.chuDeLon.length < bestMatch.chuDeLon.length)) {
+          // Prefer higher score, or shorter topic names if score is equal (more specific)
+          bestMatch = topicData;
+        }
+      }
+    }
+
+    if (bestMatch) {
+      this.logger.log(`✅ Found main topic match: "${bestMatch.chuDeLon}" (${(bestMatch.score * 100).toFixed(0)}% match)`);
+      
+      // Return all chunks for that main topic, ordered correctly
+      const chunks = await this.chunkRepo
+        .createQueryBuilder('chunk')
+        .where('chunk.loai_cay = :loaiCay', { loaiCay: bestMatch.loaiCay })
+        .andWhere('chunk.chu_de_lon = :chuDeLon', { chuDeLon: bestMatch.chuDeLon })
+        .orderBy('chunk.thuTu', 'ASC')
+        .getMany();
+      
+      this.logger.log(`📦 Returning ${chunks.length} chunks for topic "${bestMatch.chuDeLon}"`);
+      
+      return chunks.map(c => ({
+        chunkId: c.chunkId,
+        loaiCay: c.loaiCay,
+        chuDeLon: c.chuDeLon,
+        tieuDeChunk: c.tieuDeChunk,
+        noiDung: c.noiDung,
+        metadata: c.metadata,
+        rank: 1.0,
+      }));
+    }
+    
+    this.logger.log(`❌ No main topic match found (no topic with score >= ${(HEADING_MATCH_THRESHOLD * 100).toFixed(0)}%)`);
+
+    // 2. If no main topic match, check for a sub-topic match (tieu_de_chunk)
+    const subTopicQueryBuilder = this.chunkRepo
+      .createQueryBuilder('chunk')
+      .where('LOWER(chunk.tieu_de_chunk) = LOWER(:normalizedQuery)', { normalizedQuery });
+    
+    if (cropFilter) {
+      subTopicQueryBuilder.andWhere('LOWER(chunk.loai_cay) LIKE LOWER(:cropFilter)', {
+        cropFilter: `%${cropFilter}%`
+      });
+    }
+    
+    const subTopicMatch = await subTopicQueryBuilder.getOne();
+
+    if (subTopicMatch) {
+      this.logger.debug(`Found sub-topic match: "${subTopicMatch.tieuDeChunk}"`);
+      // Return just this single chunk
+      return [{
+        chunkId: subTopicMatch.chunkId,
+        loaiCay: subTopicMatch.loaiCay,
+        chuDeLon: subTopicMatch.chuDeLon,
+        tieuDeChunk: subTopicMatch.tieuDeChunk,
+        noiDung: subTopicMatch.noiDung,
+        metadata: subTopicMatch.metadata,
+        rank: 1.0, // Assign a default high rank for heading match
+      }];
+    }
+
+    // 3. No heading match found
+    return null;
   }
 }
