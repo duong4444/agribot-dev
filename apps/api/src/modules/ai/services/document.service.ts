@@ -2,10 +2,10 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, In } from 'typeorm';
 import { Document, DocumentStatus, DocumentCategory } from '../entities/document.entity';
-import { DocumentChunk } from '../entities/document-chunk.entity';
+// REMOVED: import { DocumentChunk } from '../entities/document-chunk.entity';
 import { CreateDocumentDto, UpdateDocumentDto, DocumentQueryDto, ChunkQueryDto } from '../dto/document.dto';
 import { TextExtractionService } from './text-extraction.service';
-import { ChunkingService } from './chunking.service';
+// REMOVED: import { ChunkingService } from './chunking.service';
 import * as fs from 'fs';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
@@ -18,10 +18,9 @@ export class DocumentService {
   constructor(
     @InjectRepository(Document)
     private readonly documentRepo: Repository<Document>,
-    @InjectRepository(DocumentChunk)
-    private readonly chunkRepo: Repository<DocumentChunk>,
+    // REMOVED: @InjectRepository(DocumentChunk) private readonly chunkRepo
     private readonly textExtraction: TextExtractionService,
-    private readonly chunking: ChunkingService,
+    // REMOVED: private readonly chunking: ChunkingService,
   ) {
     // Tạo thư mục upload nếu chưa có
     if (!fs.existsSync(this.uploadDir)) {
@@ -118,22 +117,19 @@ export class DocumentService {
       // 2. Cập nhật rawText
       await this.documentRepo.update(documentId, { rawText });
 
-      // 3. Tạo chunks
-      const chunks = await this.chunking.createChunks(rawText, documentId);
-      this.logger.log(`Đã tạo ${chunks.length} chunks`);
-
-      if (chunks.length === 0) {
-        throw new Error('No chunks created from text');
-      }
-
-      // 4. Cập nhật trạng thái thành công
-      const processingTime = Date.now() - startTime; // FIX: Calculate correctly
+      // REMOVED: Chunking logic (Layer 2 RAG disabled)
+      // 3. Cập nhật trạng thái thành công (without chunks)
+      const processingTime = Date.now() - startTime;
       await this.documentRepo.update(documentId, {
         processingStatus: DocumentStatus.COMPLETED,
         indexed: true,
-        chunkCount: chunks.length,
+        chunkCount: 0, // No chunks created in 2-layer architecture
         processedAt: new Date(),
       });
+
+      this.logger.log(
+        `✅ Document ${documentId} processed (text extracted only, no chunking) in ${processingTime}ms`
+      );
 
       this.logger.log(`✅ Hoàn thành xử lý document ${documentId} trong ${processingTime}ms`);
 
@@ -220,37 +216,11 @@ export class DocumentService {
   }
 
   /**
-   * Lấy chunks của tài liệu
+   * REMOVED: Get document chunks (Layer 2 RAG disabled)
    */
-  async getDocumentChunks(documentId: string, query: ChunkQueryDto): Promise<{
-    chunks: DocumentChunk[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
-    const { page = 1, limit = 20, search } = query;
-    
-    const queryBuilder = this.chunkRepo
-      .createQueryBuilder('chunk')
-      .where('chunk.documentId = :documentId', { documentId })
-      .orderBy('chunk.chunkIndex', 'ASC');
-
-    if (search) {
-      queryBuilder.andWhere('chunk.content ILIKE :search', { search: `%${search}%` });
-    }
-
-    const offset = (page - 1) * limit;
-    queryBuilder.skip(offset).take(limit);
-
-    const [chunks, total] = await queryBuilder.getManyAndCount();
-
-    return {
-      chunks,
-      total,
-      page,
-      limit,
-    };
-  }
+  // async getDocumentChunks(documentId: string, query: ChunkQueryDto) {
+  //   throw new BadRequestException('Document chunks feature is disabled in 2-layer architecture');
+  // }
 
   /**
    * Cập nhật tài liệu
@@ -280,26 +250,23 @@ export class DocumentService {
       this.logger.warn(`Không thể xóa file: ${document.filepath}`, error);
     }
 
-    // Xóa chunks trước (do foreign key constraint)
-    await this.chunkRepo.delete({ documentId: id });
-    
+    // REMOVED: Chunk deletion (no chunks in 2-layer architecture)
     // Xóa document
     await this.documentRepo.delete(id);
     
-    this.logger.log(`Đã xóa document và chunks: ${id}`);
+    this.logger.log(`Đã xóa document: ${id}`);
     return true;
   }
 
   /**
-   * Xử lý lại tài liệu
+   * REMOVED: Reprocess document (Layer 2 RAG disabled)
+   * In 2-layer architecture, documents only need text extraction, no chunking
    */
   async reprocess(id: string): Promise<Document | null> {
     const document = await this.findById(id);
     if (!document) return null;
 
-    // Xóa chunks cũ
-    await this.chunkRepo.delete({ documentId: id });
-
+    // REMOVED: Chunk deletion (no chunks created)
     // Cập nhật trạng thái
     await this.documentRepo.update(id, {
       processingStatus: DocumentStatus.PROCESSING,
@@ -307,7 +274,7 @@ export class DocumentService {
       chunkCount: 0,
     });
 
-    // Xử lý lại
+    // Xử lý lại (text extraction only)
     this.processDocumentAsync(id, document.filepath);
 
     return this.findById(id);
@@ -344,7 +311,7 @@ export class DocumentService {
         .addSelect('COUNT(*)', 'count')
         .groupBy('document.category')
         .getRawMany(),
-      this.chunkRepo.count(),
+      0, // REMOVED: this.chunkRepo.count() - no chunks in 2-layer architecture
       this.documentRepo
         .createQueryBuilder('document')
         .select('SUM(document.size)', 'totalSize')

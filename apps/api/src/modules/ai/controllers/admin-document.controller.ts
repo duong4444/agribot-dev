@@ -130,26 +130,26 @@ export class AdminDocumentController {
   }
 
   /**
-   * Lấy danh sách chunks của tài liệu
+   * REMOVED: Lấy danh sách chunks của tài liệu (Layer 2 RAG disabled)
    */
-  @Get(':id/chunks')
-  @ApiOperation({ summary: 'Lấy danh sách chunks của tài liệu' })
-  @ApiResponse({ status: 200, description: 'Danh sách chunks' })
-  async getDocumentChunks(
-    @Param('id') id: string,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 20,
-  ) {
-    const chunks = await this.documentService.getDocumentChunks(id, {
-      page,
-      limit,
-    });
-
-    return {
-      success: true,
-      data: chunks,
-    };
-  }
+  // @Get(':id/chunks')
+  // @ApiOperation({ summary: 'Lấy danh sách chunks của tài liệu' })
+  // @ApiResponse({ status: 200, description: 'Danh sách chunks' })
+  // async getDocumentChunks(
+  //   @Param('id') id: string,
+  //   @Query('page') page: number = 1,
+  //   @Query('limit') limit: number = 20,
+  // ) {
+  //   const chunks = await this.documentService.getDocumentChunks(id, {
+  //     page,
+  //     limit,
+  //   });
+  //
+  //   return {
+  //     success: true,
+  //     data: chunks,
+  //   };
+  // }
 
   /**
    * Cập nhật thông tin tài liệu

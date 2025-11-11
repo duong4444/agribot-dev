@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ExactMatchResult, Entity } from '../types';
-import { ExactMatchEnhancedService } from './exact-match-enhanced.service';
+// REMOVED: import { ExactMatchEnhancedService } from './exact-match-enhanced.service';
 import { SearchCacheService, CacheStats } from './search-cache.service';
 import { QueryPreprocessorService } from './query-preprocessor.service';
 import { CropKnowledgeFTSService } from './crop-knowledge-fts.service';
@@ -29,7 +29,7 @@ export class ExactMatchV2Service {
   private readonly maxMetricsSize = 100;
 
   constructor(
-    private readonly enhancedService: ExactMatchEnhancedService,
+    // REMOVED: private readonly enhancedService: ExactMatchEnhancedService,
     private readonly cacheService: SearchCacheService,
     private readonly queryPreprocessor: QueryPreprocessorService,
     private readonly cropKnowledgeFTS: CropKnowledgeFTSService,
@@ -126,24 +126,16 @@ export class ExactMatchV2Service {
       if (cropResult.found) {
         result = cropResult;
         method = 'crop_fts';
-      } else if (options.useExpansion) {
-        // Fallback: Try with query expansion (use cleaned query)
-        console.log('chạy vào đây vì truyền expansion');
-
-        result = await this.enhancedService.searchWithExpansion(searchQuery, userId);
-        method = 'expansion';
       } else {
-        // Fallback: Standard FTS search (use cleaned query)
-        console.log('logic chính của FTS');
-
-        console.log(
-          '_exactMatchV2_ đi gọi findExactMatch của exact-match-enhanced',
-        );
-
-        result = await this.enhancedService.findExactMatch(searchQuery, userId, {
-          useFuzzyFallback: options.useFuzzyFallback ?? true,
-        });
-        method = (result.confidence || 0) < 0.5 ? 'fuzzy' : 'fts';
+        // REMOVED: Legacy fallback to ExactMatchEnhancedService
+        // In 2-layer architecture, if CropKnowledgeFTS fails, return not found
+        // System will fall back to Layer 2 (LLM) in AIOrchestrator
+        console.log('⚠️ Crop Knowledge FTS did not find results, will fallback to LLM');
+        result = {
+          found: false,
+          confidence: 0,
+        };
+        method = 'crop_fts';
       }
 
       // Step 3: Cache the result (if found or high confidence)
@@ -292,18 +284,18 @@ export class ExactMatchV2Service {
   }
 
   /**
-   * Get search statistics
+   * REMOVED: Get search statistics (ExactMatchEnhancedService removed)
    */
-  async getSearchStats(userId?: string) {
-    return this.enhancedService.getSearchStats(userId);
-  }
+  // async getSearchStats(userId?: string) {
+  //   return this.enhancedService.getSearchStats(userId);
+  // }
 
   /**
-   * Refresh materialized view
+   * REMOVED: Refresh materialized view (ExactMatchEnhancedService removed)
    */
-  async refreshStats(): Promise<void> {
-    await this.enhancedService.refreshSearchStats();
-  }
+  // async refreshStats(): Promise<void> {
+  //   await this.enhancedService.refreshSearchStats();
+  // }
 
   /**
    * Health check
@@ -312,25 +304,18 @@ export class ExactMatchV2Service {
     status: 'healthy' | 'degraded' | 'unhealthy';
     cache: any;
     analytics: any;
-    searchStats: any;
   }> {
     try {
-      const searchStats = await this.getSearchStats();
       const cacheStats = this.getCacheStats();
       const analytics = this.getAnalytics();
 
-      const status =
-        searchStats.indexedChunks > 0
-          ? 'healthy'
-          : searchStats.totalChunks > 0
-            ? 'degraded'
-            : 'unhealthy';
+      // Simplified health check for 2-layer architecture
+      const status = cacheStats.hitRate > 0 ? 'healthy' : 'degraded';
 
       return {
         status,
         cache: cacheStats,
         analytics,
-        searchStats,
       };
     } catch (error) {
       this.logger.error('Health check failed:', error);
@@ -338,7 +323,6 @@ export class ExactMatchV2Service {
         status: 'unhealthy',
         cache: null,
         analytics: null,
-        searchStats: null,
       };
     }
   }

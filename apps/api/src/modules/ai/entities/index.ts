@@ -1,5 +1,5 @@
 export * from './document.entity';
-export * from './document-chunk.entity';
+// REMOVED: export * from './document-chunk.entity'; - Layer 2 RAG disabled
 
 
 

@@ -1,6 +1,7 @@
 /**
  * AI Module Types - Refactored Architecture
- * 3-Layer Processing: Exact → RAG → LLM Fallback + Action Router
+ * 2-Layer Processing: Exact FTS → LLM Fallback + Action Router
+ * (Previously 3-layer with RAG, now simplified to 2-layer)
  */
 
 // ========================================
@@ -59,8 +60,8 @@ export interface IntentClassificationResult {
 
 export enum ProcessingLayer {
   EXACT_MATCH = 'layer_1_exact',
-  RAG = 'layer_2_rag',
-  LLM_FALLBACK = 'layer_3_llm',
+  // REMOVED: RAG = 'layer_2_rag', - Layer 2 RAG disabled
+  LLM_FALLBACK = 'layer_2_llm', // Changed from layer_3 to layer_2
   ACTION = 'action_router',
 }
 
@@ -78,40 +79,40 @@ export interface ExactMatchResult {
   metadata?: any; // Additional metadata for debugging
 }
 
-// Layer 2: RAG
-export interface RAGContext {
-  chunks: DocumentChunk[];
-  totalRetrieved: number;
-  query: string;
-  embeddings?: number[];
-}
+// REMOVED: Layer 2 RAG (2-layer architecture)
+// export interface RAGContext {
+//   chunks: DocumentChunk[];
+//   totalRetrieved: number;
+//   query: string;
+//   embeddings?: number[];
+// }
+//
+// export interface DocumentChunk {
+//   id: string;
+//   content: string;
+//   metadata: {
+//     documentId: string;
+//     filename: string;
+//     pageNumber?: number;
+//     chunkIndex: number;
+//     timestamp?: Date;
+//   };
+//   score: number;
+// }
+//
+// export interface RAGResult {
+//   found: boolean;
+//   answer?: string;
+//   context: RAGContext;
+//   confidence: number;
+//   sources: Array<{
+//     documentId: string;
+//     filename: string;
+//     relevanceScore: number;
+//   }>;
+// }
 
-export interface DocumentChunk {
-  id: string;
-  content: string;
-  metadata: {
-    documentId: string;
-    filename: string;
-    pageNumber?: number;
-    chunkIndex: number;
-    timestamp?: Date;
-  };
-  score: number;
-}
-
-export interface RAGResult {
-  found: boolean;
-  answer?: string;
-  context: RAGContext;
-  confidence: number;
-  sources: Array<{
-    documentId: string;
-    filename: string;
-    relevanceScore: number;
-  }>;
-}
-
-// Layer 3: Pure LLM
+// Layer 2: Pure LLM (formerly Layer 3)
 export interface LLMResult {
   answer: string;
   model: string;
@@ -160,7 +161,7 @@ export interface AIResponse {
   
   // Layer-specific data
   exactMatch?: ExactMatchResult;
-  ragResult?: RAGResult;
+  // REMOVED: ragResult?: RAGResult; - Layer 2 RAG disabled
   llmResult?: LLMResult;
   
   // Action-specific data
@@ -196,7 +197,7 @@ export interface Document {
   
   // Content
   rawText?: string;
-  chunks?: DocumentChunk[];
+  // REMOVED: chunks?: DocumentChunk[]; - Layer 2 RAG disabled
   
   // Metadata
   userId: string;
@@ -220,24 +221,24 @@ export interface Document {
 // ========================================
 
 export interface AIConfig {
-  // Layer thresholds
+  // Layer thresholds (2-layer architecture)
   exactMatchThreshold: number;      // 0.9
-  ragConfidenceThreshold: number;   // 0.7
+  // REMOVED: ragConfidenceThreshold: number; - Layer 2 RAG disabled
   llmFallbackThreshold: number;     // 0.5
   
-  // RAG settings
-  ragTopK: number;                  // 5
-  chunkSize: number;                // 500 tokens
-  chunkOverlap: number;             // 50 tokens
+  // REMOVED: RAG settings (Layer 2 RAG disabled)
+  // ragTopK: number;                  // 5
+  // chunkSize: number;                // 500 tokens
+  // chunkOverlap: number;             // 50 tokens
   
   // LLM settings
   llmModel: string;                 // 'gemini-2.0-flash'
   llmTemperature: number;           // 0.7
   llmMaxTokens: number;             // 1000
   
-  // Embedding settings
-  embeddingModel: string;           // 'sentence-transformers/paraphrase-multilingual-mpnet-base-v2'
-  embeddingDimension: number;       // 768
+  // REMOVED: Embedding settings (Layer 2 RAG disabled)
+  // embeddingModel: string;           // 'sentence-transformers/paraphrase-multilingual-mpnet-base-v2'
+  // embeddingDimension: number;       // 768
   
   // Performance
   maxResponseTime: number;          // 5000 ms

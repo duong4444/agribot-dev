@@ -154,16 +154,17 @@ export class LLMFallbackService {
   }
 
   /**
-   * Check if should use LLM fallback
+   * REMOVED: Check if should use LLM fallback (Layer 2 RAG disabled)
+   * In 2-layer architecture, fallback is direct from Layer 1 to Layer 2 (LLM)
    */
-  shouldUseFallback(
-    exactMatchFound: boolean,
-    ragConfidence: number
-  ): boolean {
-    if (exactMatchFound) return false;
-    if (ragConfidence >= DEFAULT_AI_CONFIG.ragConfidenceThreshold) return false;
-    return true;
-  }
+  // shouldUseFallback(
+  //   exactMatchFound: boolean,
+  //   ragConfidence: number
+  // ): boolean {
+  //   if (exactMatchFound) return false;
+  //   if (ragConfidence >= DEFAULT_AI_CONFIG.ragConfidenceThreshold) return false;
+  //   return true;
+  // }
 
   /**
    * Generate simple confirmation message

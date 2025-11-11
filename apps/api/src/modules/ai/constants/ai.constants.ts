@@ -9,24 +9,24 @@ import { AIConfig } from '../types/ai.types';
 // ========================================
 
 export const DEFAULT_AI_CONFIG: AIConfig = {
-  // Layer thresholds
+  // Layer thresholds (2-layer architecture)
   exactMatchThreshold: 0.7, // Lowered from 0.9 for better FTS matching
-  ragConfidenceThreshold: 0.7,
+  // REMOVED: ragConfidenceThreshold: 0.7, - Layer 2 RAG disabled
   llmFallbackThreshold: 0.5,
   
-  // RAG settings
-  ragTopK: 5,
-  chunkSize: 500,
-  chunkOverlap: 50,
+  // REMOVED: RAG settings (Layer 2 RAG disabled)
+  // ragTopK: 5,
+  // chunkSize: 500,
+  // chunkOverlap: 50,
   
   // LLM settings
   llmModel: 'gemini-2.0-flash-exp',
   llmTemperature: 0.7,
   llmMaxTokens: 4096,
   
-  // Embedding settings
-  embeddingModel: 'sentence-transformers/paraphrase-multilingual-mpnet-base-v2',
-  embeddingDimension: 768,
+  // REMOVED: Embedding settings (Layer 2 RAG disabled)
+  // embeddingModel: 'sentence-transformers/paraphrase-multilingual-mpnet-base-v2',
+  // embeddingDimension: 768,
   
   // Performance
   maxResponseTime: 5000,

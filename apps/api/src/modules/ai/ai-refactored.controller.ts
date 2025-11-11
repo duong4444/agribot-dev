@@ -108,7 +108,8 @@ export class AIRefactoredController {
       intent: result.intent,
       confidence: result.confidence,
       layer: result.processingLayer,
-      entities: result.ragResult?.context.chunks.map(c => c.metadata) || [],
+      // REMOVED: entities from ragResult (Layer 2 RAG disabled)
+      entities: [],
     };
   }
 
