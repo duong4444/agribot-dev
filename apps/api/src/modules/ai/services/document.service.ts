@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like, In } from 'typeorm';
 import { Document, DocumentStatus, DocumentCategory } from '../entities/document.entity';
 // REMOVED: import { DocumentChunk } from '../entities/document-chunk.entity';
+import { CropKnowledgeChunk } from '../entities/crop-knowledge-chunk.entity';
 import { CreateDocumentDto, UpdateDocumentDto, DocumentQueryDto, ChunkQueryDto } from '../dto/document.dto';
 import { TextExtractionService } from './text-extraction.service';
 // REMOVED: import { ChunkingService } from './chunking.service';
@@ -19,6 +20,8 @@ export class DocumentService {
     @InjectRepository(Document)
     private readonly documentRepo: Repository<Document>,
     // REMOVED: @InjectRepository(DocumentChunk) private readonly chunkRepo
+    @InjectRepository(CropKnowledgeChunk)
+    private readonly cropKnowledgeChunkRepo: Repository<CropKnowledgeChunk>,
     private readonly textExtraction: TextExtractionService,
     // REMOVED: private readonly chunking: ChunkingService,
   ) {
@@ -311,7 +314,7 @@ export class DocumentService {
         .addSelect('COUNT(*)', 'count')
         .groupBy('document.category')
         .getRawMany(),
-      0, // REMOVED: this.chunkRepo.count() - no chunks in 2-layer architecture
+      this.cropKnowledgeChunkRepo.count(), // Count from Layer 1 FTS chunks (crop_knowledge_chunks)
       this.documentRepo
         .createQueryBuilder('document')
         .select('SUM(document.size)', 'totalSize')
@@ -319,12 +322,14 @@ export class DocumentService {
     ]);
 
     const byStatus = statusStats.reduce((acc, item) => {
-      acc[item.status] = parseInt(item.count);
+      // Convert lowercase status to UPPERCASE to match frontend enum
+      acc[item.status.toUpperCase()] = parseInt(item.count);
       return acc;
     }, {});
 
     const byCategory = categoryStats.reduce((acc, item) => {
-      acc[item.category] = parseInt(item.count);
+      // Convert to UPPERCASE for consistency (frontend may expect UPPERCASE keys)
+      acc[item.category.toUpperCase()] = parseInt(item.count);
       return acc;
     }, {});
 

@@ -13,7 +13,7 @@ interface DocumentStatsData {
     FAILED?: number;
   };
   byCategory: Record<string, number>;
-  totalChunks: number;
+  totalChunks: number; // From crop_knowledge_chunks (Layer 1 FTS)
   avgChunksPerDocument: number;
   totalSize: number;
 }
@@ -97,7 +97,7 @@ export const DocumentStats: React.FC = () => {
       bgColor: 'bg-yellow-100 dark:bg-yellow-900',
     },
     {
-      title: 'Tổng chunks',
+      title: 'Tổng chunks (Layer 1)',
       value: stats.totalChunks,
       icon: Layers,
       color: 'text-purple-600',

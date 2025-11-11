@@ -39,7 +39,7 @@ interface Document {
   language: string;
   processingStatus: DocumentStatus;
   indexed: boolean;
-  chunkCount: number;
+  chunkCount: number; // May be 0 in 2-layer architecture (old data might have values)
   createdAt: string;
   updatedAt: string;
 }
@@ -321,7 +321,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({ refreshTrigger }) =>
                         {doc.chunkCount > 0 ? (
                           <span className="text-green-600 font-medium">{doc.chunkCount}</span>
                         ) : (
-                          <span className="text-gray-400">-</span>
+                          <span className="text-gray-400">0</span>
                         )}
                       </TableCell>
                       <TableCell>{formatFileSize(doc.size)}</TableCell>
