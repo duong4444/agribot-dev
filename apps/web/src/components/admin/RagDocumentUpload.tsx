@@ -247,53 +247,6 @@ export const RagDocumentUpload: React.FC<RagDocumentUploadProps> = ({ onUploadSu
           )}
         </div>
 
-        {/* Category */}
-        <div className="space-y-2">
-          <Label>Danh mục</Label>
-          <select
-            value={state.category}
-            onChange={(e) => setState(prev => ({ ...prev, category: e.target.value }))}
-            className="w-full px-3 py-2 border rounded-md dark:bg-gray-800 dark:border-gray-700"
-          >
-            {CATEGORIES.map(cat => (
-              <option key={cat.value} value={cat.value}>
-                {cat.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Tags */}
-        <div className="space-y-2">
-          <Label>Tags (tùy chọn)</Label>
-          <div className="flex space-x-2">
-            <Input
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleAddTag()}
-              placeholder="Nhập tag..."
-            />
-            <Button onClick={handleAddTag} size="sm">
-              Thêm
-            </Button>
-          </div>
-          {state.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-2">
-              {state.tags.map(tag => (
-                <span
-                  key={tag}
-                  className="px-2 py-1 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-md text-sm flex items-center space-x-1"
-                >
-                  <span>{tag}</span>
-                  <button onClick={() => handleRemoveTag(tag)}>
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* Error Message */}
         {state.error && (
           <div className="flex items-center space-x-2 text-red-600 dark:text-red-400 text-sm">
@@ -328,16 +281,6 @@ export const RagDocumentUpload: React.FC<RagDocumentUploadProps> = ({ onUploadSu
             </>
           )}
         </Button>
-
-        {/* Info */}
-        <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
-          <p>ℹ️ File sẽ được xử lý tự động:</p>
-          <ul className="list-disc list-inside ml-2 space-y-1">
-            <li>Chunking (sentence-based, 500 chars)</li>
-            <li>Generate embeddings (768 dims)</li>
-            <li>Save to vector database</li>
-          </ul>
-        </div>
       </CardContent>
     </Card>
   );

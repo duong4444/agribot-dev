@@ -7,7 +7,7 @@ import { AuthGuard } from '@/components/auth/auth-guard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { FileText, Users, BarChart3, Settings, LogOut, Shield, Leaf } from 'lucide-react';
+import { FileText, Users, BarChart3, Settings, LogOut, Shield, Leaf, Database } from 'lucide-react';
 import Link from 'next/link';
 
 const AdminPage = () => {
@@ -42,6 +42,14 @@ const AdminPage = () => {
       href: '/admin/documents',
       color: 'text-green-600',
       bgColor: 'bg-green-100 dark:bg-green-900',
+    },
+    {
+      title: 'RAG Documents',
+      description: 'Quản lý tài liệu RAG với vector embeddings cho Layer 2',
+      icon: Database,
+      href: '/admin/rag-documents',
+      color: 'text-indigo-600',
+      bgColor: 'bg-indigo-100 dark:bg-indigo-900',
     },
     {
       title: 'Quản lý Người dùng',

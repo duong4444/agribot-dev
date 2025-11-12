@@ -97,22 +97,6 @@ const AdminRagDocumentsPage = () => {
             <p className="text-gray-600 dark:text-gray-400">
               Upload file Text (.txt) cho Vector Search với AI Embeddings
             </p>
-            <div className="mt-2 flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-              <span className="flex items-center">
-                <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                Semantic Search
-              </span>
-              <span>•</span>
-              <span className="flex items-center">
-                <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
-                Vietnamese Embeddings
-              </span>
-              <span>•</span>
-              <span className="flex items-center">
-                <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
-                LLM Synthesis
-              </span>
-            </div>
           </div>
 
           {/* Stats */}
