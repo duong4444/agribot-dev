@@ -9,24 +9,26 @@ import { AIConfig } from '../types/ai.types';
 // ========================================
 
 export const DEFAULT_AI_CONFIG: AIConfig = {
-  // Layer thresholds (2-layer architecture)
-  exactMatchThreshold: 0.7, // Lowered from 0.9 for better FTS matching
-  // REMOVED: ragConfidenceThreshold: 0.7, - Layer 2 RAG disabled
-  llmFallbackThreshold: 0.5,
+  // Layer thresholds (3-layer architecture)
+  exactMatchThreshold: 0.9, // Layer 1 FTS threshold
+  ragConfidenceThreshold: 0.5, // Layer 2 RAG threshold (lowered from 0.7)
+  llmFallbackThreshold: 0.5, // Layer 3 LLM threshold
   
-  // REMOVED: RAG settings (Layer 2 RAG disabled)
-  // ragTopK: 5,
-  // chunkSize: 500,
-  // chunkOverlap: 50,
+  // RAG settings (Layer 2 RAG enabled)
+  ragTopK: 5,
+  ragSimilarityThreshold: 0.5, // Lowered from 0.7 - Vietnamese embeddings typically score 0.5-0.65
+  chunkSize: 500, // characters
+  chunkOverlap: 1, // sentences
   
   // LLM settings
   llmModel: 'gemini-2.0-flash-exp',
   llmTemperature: 0.7,
   llmMaxTokens: 4096,
   
-  // REMOVED: Embedding settings (Layer 2 RAG disabled)
-  // embeddingModel: 'sentence-transformers/paraphrase-multilingual-mpnet-base-v2',
-  // embeddingDimension: 768,
+  // Embedding settings (Layer 2 RAG enabled)
+  embeddingModel: 'dangvantuan/vietnamese-document-embedding',
+  embeddingDimension: 768,
+  embeddingBatchSize: 32,
   
   // Performance
   maxResponseTime: 5000,

@@ -1,0 +1,11 @@
+sentence-transformers>=2.3.0
+huggingface-hub>=0.20.0
+fastapi==0.104.1
+uvicorn==0.24.0
+pydantic==2.5.0
+# PyTorch with CUDA support (choose one based on your CUDA version)
+# For CUDA 11.8: torch>=2.0.0+cu118
+# For CUDA 12.1: torch>=2.0.0+cu121
+# For CPU only: torch>=2.0.0
+torch>=2.0.0+cu118
+transformers>=4.35.0

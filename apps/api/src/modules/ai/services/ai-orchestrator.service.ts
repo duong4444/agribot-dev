@@ -11,7 +11,7 @@ import { DEFAULT_AI_CONFIG, ERROR_MESSAGES } from '../constants';
 // Services
 import { IntentClassifierService } from './intent-classifier.service';
 import { ExactMatchV2Service } from './exact-match-v2.service';
-// REMOVED: RAGService - Layer 2 RAG disabled
+import { RAGService } from './rag.service'; // Layer 2 RAG enabled
 import { LLMFallbackService } from './llm-fallback.service';
 import { ActionRouterService, ActionContext } from './action-router.service';
 
@@ -28,7 +28,7 @@ export class AIOrchestrator {
   constructor(
     private readonly intentClassifier: IntentClassifierService,
     private readonly exactMatch: ExactMatchV2Service,
-    // REMOVED: private readonly rag: RAGService,
+    private readonly rag: RAGService, // Layer 2 RAG enabled
     private readonly llmFallback: LLMFallbackService,
     private readonly actionRouter: ActionRouterService,
   ) {}
@@ -39,7 +39,7 @@ export class AIOrchestrator {
    * Step 2: Route based on intent:
    *   - UNKNOWN → Direct LLM (skip layers for efficiency)
    *   - ACTION → Action Router (database/IoT)
-   *   - KNOWLEDGE → 2-Layer (Exact FTS → LLM Fallback)
+   *   - KNOWLEDGE → 3-Layer (Exact FTS → RAG → LLM Fallback)
    */
   async process(request: ProcessRequest): Promise<AIResponse> {
     const startTime = Date.now();
@@ -172,7 +172,10 @@ export class AIOrchestrator {
   }
 
   /**
-   * Process knowledge intent through 3 layers
+   * Process knowledge intent through 3 layers:
+   * Layer 1: Exact Match (FTS)
+   * Layer 2: RAG (Vector Search + LLM Synthesis)
+   * Layer 3: LLM Fallback (Pure LLM)
    */
   private async processKnowledgeIntent(
     intentResult: IntentClassificationResult,
@@ -218,23 +221,60 @@ export class AIOrchestrator {
     }
 
     // ========================================
-    // REMOVED: Layer 2 RAG
-    // Previously: Vector Search + Hybrid Search + LLM Synthesis
-    // Now: Direct fallback to LLM (2-layer architecture)
+    // Layer 2: RAG (Retrieval-Augmented Generation)
     // ========================================
-
-    // Layer 2: LLM Fallback (formerly Layer 3)
     console.log(
-      '..................................LAYER2 FALLBACK LLM (formerly Layer 3)...............................',
+      '..................................LAYER 2: RAG...............................',
     );
 
-    this.logger.debug('Attempting Layer 2: LLM Fallback (direct from Layer 1)');
+    this.logger.debug('Layer 1 failed, attempting Layer 2: RAG');
+    const ragResult = await this.rag.retrieve(query, {
+      userId: user.id,
+      topK: DEFAULT_AI_CONFIG.ragTopK,
+      threshold: DEFAULT_AI_CONFIG.ragSimilarityThreshold,
+    });
+    console.log('ragResult_layer2_RAG: ', ragResult);
+
+    if (ragResult.confidence >= DEFAULT_AI_CONFIG.ragConfidenceThreshold) {
+      this.logger.log('✓ Layer 2 (RAG) succeeded');
+      console.log('PROCESSING LAYER2 RAG');
+
+      return {
+        success: true,
+        message: ragResult.answer,
+        intent: intentResult.intent,
+        processingLayer: ProcessingLayer.RAG,
+        confidence: ragResult.confidence,
+        responseTime: Date.now() - startTime,
+        ragResult,
+        sources: ragResult.sources.map(s => ({
+          type: 'rag_document' as const,
+          reference: s.documentName,
+          confidence: s.similarity,
+          excerpt: s.content.substring(0, 200) + '...',
+        })),
+        metadata: {
+          retrievalTime: ragResult.retrievalTime,
+          synthesisTime: ragResult.synthesisTime,
+          chunksUsed: ragResult.sources.length,
+        },
+      };
+    }
+
+    // ========================================
+    // Layer 3: LLM Fallback
+    // ========================================
+    console.log(
+      '..................................LAYER 3: LLM FALLBACK...............................',
+    );
+
+    this.logger.debug('Layer 2 RAG failed, attempting Layer 3: LLM Fallback');
     const llmResult = await this.llmFallback.generateResponse(query, {
-      reason: 'Layer 1 FTS failed - no exact match found',
+      reason: 'Layer 1 FTS and Layer 2 RAG failed - no relevant documents found',
     });
     console.log('llmResult_layer3_LLM_FALLBACK: ', llmResult);
 
-    this.logger.log('✓ Layer 2 (LLM Fallback) completed');
+    this.logger.log('✓ Layer 3 (LLM Fallback) completed');
 
     return {
       success: true,
@@ -391,8 +431,8 @@ export class AIOrchestrator {
   getProcessingSummary(response: AIResponse): string {
     const layerName = {
       [ProcessingLayer.EXACT_MATCH]: 'Layer 1: Exact Match (FTS)',
-      // REMOVED: [ProcessingLayer.RAG]: 'RAG' - Layer 2 disabled
-      [ProcessingLayer.LLM_FALLBACK]: 'Layer 2: LLM Fallback',
+      [ProcessingLayer.RAG]: 'Layer 2: RAG (Vector Search + LLM Synthesis)',
+      [ProcessingLayer.LLM_FALLBACK]: 'Layer 3: LLM Fallback',
       [ProcessingLayer.ACTION]: 'Action Router',
     }[response.processingLayer];
 

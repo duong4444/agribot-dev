@@ -1,0 +1,141 @@
+"use client";
+
+import React, { useState } from 'react';
+import { AuthGuard } from '@/components/auth/auth-guard';
+import { RagDocumentUpload } from '@/components/admin/RagDocumentUpload';
+import { RagDocumentList } from '@/components/admin/RagDocumentList';
+import { RagDocumentStats } from '@/components/admin/RagDocumentStats';
+import { Button } from '@/components/ui/button';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { LogOut, Shield, ArrowLeft, Sparkles } from 'lucide-react';
+import Link from 'next/link';
+
+const AdminRagDocumentsPage = () => {
+  const { data: session } = useSession();
+  const router = useRouter();
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Redirect non-admin users to dashboard
+  React.useEffect(() => {
+    if (session && session.user?.role !== 'ADMIN') {
+      router.push('/dashboard');
+    }
+  }, [session, router]);
+
+  // Show loading while checking
+  if (!session || session.user?.role !== 'ADMIN') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
+
+  const handleUploadSuccess = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
+
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: '/' });
+  };
+
+  return (
+    <AuthGuard>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        {/* Admin Header */}
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <Link href="/admin">
+                  <Button variant="ghost" size="icon">
+                    <ArrowLeft className="h-5 w-5" />
+                  </Button>
+                </Link>
+                <div className="flex items-center space-x-2">
+                  <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg">
+                    <Sparkles className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h1 className="text-xl font-bold text-gray-900 dark:text-white">AgriBot Admin</h1>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">RAG Documents (Layer 2)</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-4">
+                <ThemeToggle />
+                <div className="hidden sm:block text-sm text-gray-600 dark:text-gray-400">
+                  {session.user?.name || session.user?.email}
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={handleSignOut}
+                  className="flex items-center space-x-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span className="hidden sm:inline">Đăng xuất</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <div className="container mx-auto px-4 py-8">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center space-x-3 mb-2">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                Quản lý RAG Documents
+              </h1>
+              <span className="px-3 py-1 text-xs font-semibold bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full">
+                Layer 2
+              </span>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400">
+              Upload file Text (.txt) cho Vector Search với AI Embeddings
+            </p>
+            <div className="mt-2 flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+              <span className="flex items-center">
+                <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                Semantic Search
+              </span>
+              <span>•</span>
+              <span className="flex items-center">
+                <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                Vietnamese Embeddings
+              </span>
+              <span>•</span>
+              <span className="flex items-center">
+                <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
+                LLM Synthesis
+              </span>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="mb-8">
+            <RagDocumentStats refreshTrigger={refreshTrigger} />
+          </div>
+
+          {/* Main Content */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Upload Section */}
+            <div className="lg:col-span-1">
+              <RagDocumentUpload onUploadSuccess={handleUploadSuccess} />
+            </div>
+
+            {/* List Section */}
+            <div className="lg:col-span-2">
+              <RagDocumentList refreshTrigger={refreshTrigger} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </AuthGuard>
+  );
+};
+
+export default AdminRagDocumentsPage;

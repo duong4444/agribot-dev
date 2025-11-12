@@ -6,6 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Document } from './entities';
 // REMOVED: DocumentChunk - table dropped from database
 import { CropKnowledgeChunk } from './entities/crop-knowledge-chunk.entity';
+import { RagDocument, RagChunk } from './entities';
 
 // Existing services
 import { GeminiService } from './gemini.service';
@@ -15,14 +16,18 @@ import {
   PreprocessingService,
   EntityExtractorService,
   IntentClassifierService,
-  // REMOVED: EmbeddingService - Layer 2 RAG disabled
-  // REMOVED: VectorSearchService - Layer 2 RAG disabled
-  // REMOVED: RAGService - Layer 2 RAG disabled
   LLMFallbackService,
   ActionRouterService,
   AIOrchestrator,
   PythonAIClientService,
 } from './services';
+
+// Layer 2 RAG Services
+import { EmbeddingService } from './services/embedding.service';
+import { ChunkingService } from './services/chunking.service';
+import { VectorStoreService } from './services/vector-store.service';
+import { RAGService } from './services/rag.service';
+import { RagDocumentService } from './services/rag-document.service';
 
 // Layer 1 Enhanced Services
 // REMOVED: import { ExactMatchEnhancedService } from './services/exact-match-enhanced.service';
@@ -37,7 +42,6 @@ import { CropKnowledgeFTSService } from './services/crop-knowledge-fts.service';
 // Document Management Services
 import { DocumentService } from './services/document.service';
 import { TextExtractionService } from './services/text-extraction.service';
-// REMOVED: ChunkingService - Layer 2 RAG disabled
 
 // Guards
 import { AdminGuard } from './guards/admin.guard';
@@ -47,19 +51,21 @@ import { FarmModule } from '../farm/farm.module';
 import { AIRefactoredController } from './ai-refactored.controller';
 import { AdminDocumentController } from './controllers/admin-document.controller';
 import { AdminCropKnowledgeController } from './controllers/admin-crop-knowledge.controller';
+import { AdminRagDocumentController } from './controllers/admin-rag-document.controller';
 import { PublicDebugController } from './controllers/public-debug.controller';
 
 @Module({
   imports: [
     ConfigModule,
     // REMOVED: DocumentChunk from entities (table dropped)
-    TypeOrmModule.forFeature([Document, CropKnowledgeChunk]),
+    TypeOrmModule.forFeature([Document, CropKnowledgeChunk, RagDocument, RagChunk]),
     FarmModule,
   ],
   controllers: [
     AIRefactoredController, 
     AdminDocumentController, 
     AdminCropKnowledgeController,
+    AdminRagDocumentController, // Layer 2 RAG
     PublicDebugController, // For testing only
   ],
   providers: [
@@ -73,12 +79,16 @@ import { PublicDebugController } from './controllers/public-debug.controller';
     PreprocessingService,
     EntityExtractorService,
     IntentClassifierService,
-    // REMOVED: EmbeddingService - Layer 2 RAG disabled
-    // REMOVED: VectorSearchService - Layer 2 RAG disabled
-    // REMOVED: RAGService - Layer 2 RAG disabled
     LLMFallbackService,
     ActionRouterService,
     AIOrchestrator,
+    
+    // Layer 2 RAG Services
+    EmbeddingService,
+    ChunkingService,
+    VectorStoreService,
+    RAGService,
+    RagDocumentService,
 
     // Layer 1 Enhanced Services (FTS + Caching + Query Preprocessing)
     QueryPreprocessorService,
@@ -94,7 +104,6 @@ import { PublicDebugController } from './controllers/public-debug.controller';
     // Document Management Services
     DocumentService,
     TextExtractionService,
-    // REMOVED: ChunkingService - Layer 2 RAG disabled
 
     // Guards
     AdminGuard,
@@ -104,7 +113,7 @@ import { PublicDebugController } from './controllers/public-debug.controller';
     AIOrchestrator,
     IntentClassifierService,
     ExactMatchV2Service,
-    // REMOVED: RAGService - Layer 2 RAG disabled
+    RAGService, // Layer 2 RAG enabled
     ActionRouterService,
     CropKnowledgeFTSService,
     CropKnowledgeService,

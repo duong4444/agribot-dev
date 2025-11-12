@@ -60,8 +60,8 @@ export interface IntentClassificationResult {
 
 export enum ProcessingLayer {
   EXACT_MATCH = 'layer_1_exact',
-  // REMOVED: RAG = 'layer_2_rag', - Layer 2 RAG disabled
-  LLM_FALLBACK = 'layer_2_llm', // Changed from layer_3 to layer_2
+  RAG = 'layer_2_rag', // Layer 2 RAG enabled
+  LLM_FALLBACK = 'layer_3_llm', // Layer 3 LLM Fallback
   ACTION = 'action_router',
 }
 
@@ -79,40 +79,22 @@ export interface ExactMatchResult {
   metadata?: any; // Additional metadata for debugging
 }
 
-// REMOVED: Layer 2 RAG (2-layer architecture)
-// export interface RAGContext {
-//   chunks: DocumentChunk[];
-//   totalRetrieved: number;
-//   query: string;
-//   embeddings?: number[];
-// }
-//
-// export interface DocumentChunk {
-//   id: string;
-//   content: string;
-//   metadata: {
-//     documentId: string;
-//     filename: string;
-//     pageNumber?: number;
-//     chunkIndex: number;
-//     timestamp?: Date;
-//   };
-//   score: number;
-// }
-//
-// export interface RAGResult {
-//   found: boolean;
-//   answer?: string;
-//   context: RAGContext;
-//   confidence: number;
-//   sources: Array<{
-//     documentId: string;
-//     filename: string;
-//     relevanceScore: number;
-//   }>;
-// }
+// Layer 2: RAG (Retrieval-Augmented Generation)
+export interface RAGResult {
+  answer: string;
+  confidence: number;
+  sources: Array<{
+    id: string;
+    content: string;
+    similarity: number;
+    documentName: string;
+    chunkIndex: number;
+  }>;
+  retrievalTime: number;
+  synthesisTime: number;
+}
 
-// Layer 2: Pure LLM (formerly Layer 3)
+// Layer 3: Pure LLM Fallback
 export interface LLMResult {
   answer: string;
   model: string;
@@ -161,7 +143,7 @@ export interface AIResponse {
   
   // Layer-specific data
   exactMatch?: ExactMatchResult;
-  // REMOVED: ragResult?: RAGResult; - Layer 2 RAG disabled
+  ragResult?: RAGResult; // Layer 2 RAG enabled
   llmResult?: LLMResult;
   
   // Action-specific data
@@ -170,10 +152,18 @@ export interface AIResponse {
   
   // Sources & citations
   sources?: Array<{
-    type: 'document' | 'database' | 'llm';
+    type: 'document' | 'rag_document' | 'database' | 'llm';
     reference: string;
     confidence?: number;
+    excerpt?: string;
   }>;
+  
+  // Metadata
+  metadata?: {
+    retrievalTime?: number;
+    synthesisTime?: number;
+    chunksUsed?: number;
+  };
   
   // Error handling
   error?: {
@@ -221,24 +211,26 @@ export interface Document {
 // ========================================
 
 export interface AIConfig {
-  // Layer thresholds (2-layer architecture)
+  // Layer thresholds (3-layer architecture)
   exactMatchThreshold: number;      // 0.9
-  // REMOVED: ragConfidenceThreshold: number; - Layer 2 RAG disabled
+  ragConfidenceThreshold: number;   // 0.7 - Layer 2 RAG enabled
   llmFallbackThreshold: number;     // 0.5
   
-  // REMOVED: RAG settings (Layer 2 RAG disabled)
-  // ragTopK: number;                  // 5
-  // chunkSize: number;                // 500 tokens
-  // chunkOverlap: number;             // 50 tokens
+  // RAG settings (Layer 2 RAG enabled)
+  ragTopK: number;                  // 5
+  ragSimilarityThreshold: number;   // 0.7
+  chunkSize: number;                // 500 characters
+  chunkOverlap: number;             // 1 sentence
   
   // LLM settings
   llmModel: string;                 // 'gemini-2.0-flash'
   llmTemperature: number;           // 0.7
   llmMaxTokens: number;             // 1000
   
-  // REMOVED: Embedding settings (Layer 2 RAG disabled)
-  // embeddingModel: string;           // 'sentence-transformers/paraphrase-multilingual-mpnet-base-v2'
-  // embeddingDimension: number;       // 768
+  // Embedding settings (Layer 2 RAG enabled)
+  embeddingModel: string;           // 'dangvantuan/vietnamese-document-embedding'
+  embeddingDimension: number;       // 768
+  embeddingBatchSize: number;       // 32
   
   // Performance
   maxResponseTime: number;          // 5000 ms
