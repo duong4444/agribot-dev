@@ -46,10 +46,11 @@ export class VectorStoreService {
 
       const params: any[] = [embeddingStr, options.threshold];
 
-      if (options.userId) {
-        sql += ` AND d.user_id = $3`;
-        params.push(options.userId);
-      }
+      // Note: RAG documents are global knowledge base - no user filtering needed
+      // if (options.userId) {
+      //   sql += ` AND d.user_id = $3`;
+      //   params.push(options.userId);
+      // }
 
       sql += `
         ORDER BY similarity DESC
@@ -58,10 +59,37 @@ export class VectorStoreService {
       params.push(options.topK);
 
       this.logger.debug(`Executing similarity search with threshold ${options.threshold}`);
+      this.logger.debug(`SQL Query: ${sql}`);
+      this.logger.debug(`Parameters: ${JSON.stringify(params.slice(0, 2))} + embedding + ${params.slice(2)}`);
       
       const results = await this.ragChunkRepo.query(sql, params);
 
       this.logger.debug(`Found ${results.length} similar chunks`);
+      
+      // Debug: If no results, try without threshold
+      if (results.length === 0) {
+        this.logger.debug('No results found, trying without threshold...');
+        const debugSql = `
+          SELECT 
+            c.id,
+            c.content,
+            c.chunk_index as "chunkIndex",
+            c.rag_document_id as "documentId",
+            c.created_at as "createdAt",
+            d.original_name as "documentName",
+            1 - (c.embedding::vector <=> $1::vector) as similarity
+          FROM rag_chunks c
+          LEFT JOIN rag_documents d ON c.rag_document_id = d.id
+          ORDER BY similarity DESC
+          LIMIT 3
+        `;
+        
+        const debugResults = await this.ragChunkRepo.query(debugSql, [embeddingStr]);
+        this.logger.debug(`Debug - Top 3 similarities: ${JSON.stringify(debugResults.map(r => ({
+          similarity: parseFloat(r.similarity).toFixed(4),
+          contentPreview: r.content.substring(0, 50) + '...'
+        })))}`);
+      }
 
       // Map results to RagChunk objects with similarity
       return results.map(row => {

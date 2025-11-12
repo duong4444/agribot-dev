@@ -49,9 +49,13 @@ export class RAGService {
     this.logger.debug(`Query embedding dimensions: ${queryEmbedding.length}`);
     this.logger.debug(`First 5 values: [${queryEmbedding.slice(0, 5).join(', ')}]`);
     
+    // Dynamic threshold based on query complexity
+    const dynamicThreshold = this.calculateDynamicThreshold(query);
+    const finalThreshold = options.threshold || dynamicThreshold;
+    
     const chunks = await this.vectorStore.similaritySearch(queryEmbedding, {
       topK: options.topK || 5,
-      threshold: options.threshold || 0.3, // Lowered for testing
+      threshold: finalThreshold,
       userId: options.userId,
     });
 
@@ -131,6 +135,30 @@ ${query}
     });
 
     return response.answer;
+  }
+
+  /**
+   * Calculate dynamic threshold based on query characteristics
+   */
+  private calculateDynamicThreshold(query: string): number {
+    const baseThreshold = 0.35;
+    
+    // Short specific queries need higher precision
+    if (query.length < 30) {
+      return Math.min(baseThreshold + 0.1, 0.5); // 0.45 max
+    }
+    
+    // Complex analytical queries can use lower threshold  
+    if (query.includes('so sánh') || query.includes('phân tích') || query.includes('mối quan hệ')) {
+      return Math.max(baseThreshold - 0.1, 0.25); // 0.25 min
+    }
+    
+    // Technical term queries need higher precision
+    if (query.includes('hoạt chất') || query.includes('kỹ thuật') || query.includes('nguyên tắc')) {
+      return Math.min(baseThreshold + 0.05, 0.45);
+    }
+    
+    return baseThreshold;
   }
 
   private calculateConfidence(chunks: RagChunk[], answer: string): number {
