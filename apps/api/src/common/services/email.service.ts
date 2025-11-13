@@ -45,108 +45,144 @@ export class EmailService {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Đặt lại mật khẩu - AgriBot</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
         <style>
+            :root {
+                --brand-primary: #22c55e;
+                --brand-secondary: #16a34a;
+                --light-bg: #f9fafb;
+                --light-container: #ffffff;
+                --light-text: #111827;
+                --light-text-secondary: #4b5563;
+                --light-border: #e5e7eb;
+                --dark-bg: #0d1117;
+                --dark-container: #161b22;
+                --dark-text: #e6edf3;
+                --dark-text-secondary: #8b949e;
+                --dark-border: #30363d;
+            }
             body {
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
                 line-height: 1.6;
-                color: #333;
+                margin: 0;
+                padding: 20px;
+                background-color: var(--light-bg);
+                color: var(--light-text);
+            }
+            .wrapper {
                 max-width: 600px;
                 margin: 0 auto;
-                padding: 20px;
-                background-color: #f4f4f4;
             }
             .container {
-                background-color: #ffffff;
+                background-color: var(--light-container);
                 padding: 30px;
-                border-radius: 10px;
-                box-shadow: 0 0 10px rgba(0,0,0,0.1);
+                border-radius: 12px;
+                border: 1px solid var(--light-border);
             }
             .header {
                 text-align: center;
-                margin-bottom: 30px;
+                margin-bottom: 24px;
+                padding-bottom: 24px;
+                border-bottom: 1px solid var(--light-border);
             }
             .logo {
-                color: #22c55e;
-                font-size: 28px;
-                font-weight: bold;
-                margin-bottom: 10px;
+                color: var(--brand-primary);
+                font-size: 32px;
+                font-weight: 700;
+                margin-bottom: 8px;
             }
             .title {
-                color: #1f2937;
                 font-size: 24px;
-                margin-bottom: 20px;
+                font-weight: 600;
+                margin: 0;
             }
-            .content {
-                margin-bottom: 30px;
+            .content p {
+                margin: 0 0 16px;
+            }
+            .button-wrapper {
+                text-align: center;
+                margin: 32px 0;
             }
             .button {
                 display: inline-block;
-                background-color: #22c55e;
-                color: white;
-                padding: 12px 30px;
+                background: linear-gradient(to right, #34d399, #22c55e);
+                color: white !important; /* Important for dark mode */
+                padding: 14px 32px;
                 text-decoration: none;
-                border-radius: 5px;
-                font-weight: bold;
-                margin: 20px 0;
+                border-radius: 8px;
+                font-weight: 600;
+                border: none;
+                box-shadow: 0 4px 15px rgba(34, 197, 94, 0.2);
+                transition: all 0.3s ease;
             }
             .button:hover {
-                background-color: #16a34a;
+                transform: translateY(-2px);
+                box-shadow: 0 6px 20px rgba(34, 197, 94, 0.3);
+            }
+            .link-wrapper {
+                word-break: break-all;
+                background-color: #f3f4f6;
+                padding: 12px;
+                border-radius: 8px;
+                font-family: 'Courier New', Courier, monospace;
+                font-size: 14px;
             }
             .footer {
-                margin-top: 30px;
-                padding-top: 20px;
-                border-top: 1px solid #e5e7eb;
+                margin-top: 32px;
                 font-size: 14px;
-                color: #6b7280;
+                color: var(--light-text-secondary);
                 text-align: center;
             }
-            .warning {
-                background-color: #fef3c7;
-                border: 1px solid #f59e0b;
-                border-radius: 5px;
-                padding: 15px;
-                margin: 20px 0;
-                color: #92400e;
+            /* Dark Mode Styles */
+            @media (prefers-color-scheme: dark) {
+                body {
+                    background-color: var(--dark-bg);
+                    color: var(--dark-text);
+                }
+                .container {
+                    background-color: var(--dark-container);
+                    border-color: var(--dark-border);
+                }
+                .header {
+                    border-color: var(--dark-border);
+                }
+                .footer {
+                    color: var(--dark-text-secondary);
+                }
+                .link-wrapper {
+                    background-color: #21262d;
+                    color: var(--dark-text-secondary);
+                }
             }
         </style>
     </head>
     <body>
-        <div class="container">
-            <div class="header">
-                <div class="logo">🌱 AgriBot</div>
-                <h1 class="title">Đặt lại mật khẩu</h1>
-            </div>
-            
-            <div class="content">
-                <p>Xin chào <strong>${userName}</strong>,</p>
-                
-                <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản AgriBot của bạn.</p>
-                
-                <p>Để đặt lại mật khẩu, vui lòng nhấp vào nút bên dưới:</p>
-                
-                <div style="text-align: center;">
-                    <a href="${resetLink}" class="button">Đặt lại mật khẩu</a>
+        <div class="wrapper">
+            <div class="container">
+                <div class="header">
+                    <div class="logo">🌱 AgriBot</div>
+                    <h1 class="title">Yêu cầu đặt lại mật khẩu</h1>
                 </div>
                 
-                <div class="warning">
-                    <strong>⚠️ Lưu ý quan trọng:</strong>
-                    <ul>
-                        <li>Link này chỉ có hiệu lực trong <strong>1 giờ</strong></li>
-                        <li>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này</li>
-                        <li>Để bảo mật, không chia sẻ link này với bất kỳ ai</li>
-                    </ul>
+                <div class="content">
+                    <p>Xin chào <strong>${userName}</strong>,</p>
+                    <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản AgriBot của bạn. Để hoàn tất, vui lòng nhấp vào nút bên dưới.</p>
+                    
+                    <div class="button-wrapper">
+                        <a href="${resetLink}" class="button">Đặt lại mật khẩu</a>
+                    </div>
+                    
+                    <p>Liên kết này sẽ hết hạn sau <strong>1 giờ</strong>. Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này một cách an toàn.</p>
+                    
+                    <p>Nếu gặp sự cố với nút bấm, hãy sao chép và dán liên kết sau vào trình duyệt của bạn:</p>
+                    <p class="link-wrapper">${resetLink}</p>
                 </div>
-                
-                <p>Nếu nút không hoạt động, bạn có thể sao chép và dán link sau vào trình duyệt:</p>
-                <p style="word-break: break-all; background-color: #f3f4f6; padding: 10px; border-radius: 5px; font-family: monospace;">
-                    ${resetLink}
-                </p>
             </div>
             
             <div class="footer">
-                <p>Email này được gửi tự động từ hệ thống AgriBot.</p>
-                <p>Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi.</p>
-                <p>© 2025 AgriBot. Tất cả quyền được bảo lưu.</p>
+                <p>© ${new Date().getFullYear()} AgriBot. All rights reserved.</p>
             </div>
         </div>
     </body>
