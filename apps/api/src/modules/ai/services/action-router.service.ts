@@ -47,9 +47,6 @@ export class ActionRouterService {
         case IntentType.FINANCIAL_QUERY:
           return await this.handleFinancialQuery(user, entities, query);
 
-        case IntentType.ANALYTICS_QUERY:
-          return await this.handleAnalyticsQuery(user, entities, query);
-
         case IntentType.SENSOR_QUERY:
           return await this.handleSensorQuery(user, entities, query);
 
@@ -234,63 +231,6 @@ export class ActionRouterService {
     }
   }
 
-  /**
-   * Handle analytics queries
-   */
-  private async handleAnalyticsQuery(
-    user: User,
-    entities: Entity[],
-    query: string
-  ): Promise<ActionResult> {
-    try {
-      const farms = await this.farmService.getFarmsByUser(user);
-
-      if (farms.length === 0) {
-        return {
-          success: true,
-          message: 'Bạn chưa có nông trại nào.',
-        };
-      }
-
-      // Get analytics for all farms
-      const analyticsData: any[] = [];
-      for (const farm of farms) {
-        const analytics = await this.farmService.getFarmAnalytics(farm.id, user);
-        analyticsData.push({
-          farmName: farm.name,
-          ...analytics,
-        });
-      }
-
-      const explanation = await this.llmFallback.generateWithContext(
-        query,
-        analyticsData
-      );
-
-      return {
-        success: true,
-        message: explanation,
-        businessData: {
-          success: true,
-          data: analyticsData,
-          query,
-          visualization: {
-            type: 'chart',
-            config: {
-              type: 'bar',
-              data: analyticsData,
-            },
-          },
-        },
-      };
-    } catch (error) {
-      this.logger.error('Error handling analytics query:', error);
-      return {
-        success: false,
-        message: 'Không thể truy vấn dữ liệu phân tích.',
-      };
-    }
-  }
 
   /**
    * Handle farm queries

@@ -115,12 +115,6 @@ export class IntentClassifierService {
       return IntentType.FINANCIAL_QUERY;
     }
 
-    // 3. Analytics Query
-    if (
-      this.matchesPatterns(normalizedQuery, INTENT_PATTERNS.ANALYTICS_QUERY)
-    ) {
-      return IntentType.ANALYTICS_QUERY;
-    }
 
     // 4. Sensor Query
     if (this.matchesPatterns(normalizedQuery, INTENT_PATTERNS.SENSOR_QUERY)) {
@@ -179,8 +173,6 @@ export class IntentClassifierService {
     switch (intent) {
       case IntentType.FINANCIAL_QUERY:
         return INTENT_PATTERNS.FINANCIAL_QUERY;
-      case IntentType.ANALYTICS_QUERY:
-        return INTENT_PATTERNS.ANALYTICS_QUERY;
       case IntentType.DEVICE_CONTROL:
         return INTENT_PATTERNS.DEVICE_CONTROL;
       case IntentType.SENSOR_QUERY:
@@ -198,7 +190,6 @@ export class IntentClassifierService {
   getIntentCategory(intent: IntentType): 'knowledge' | 'action' {
     const actionIntents = [
       IntentType.FINANCIAL_QUERY,
-      IntentType.ANALYTICS_QUERY,
       IntentType.SENSOR_QUERY,
       IntentType.DEVICE_CONTROL,
     ];
@@ -212,7 +203,6 @@ export class IntentClassifierService {
   requiresDatabase(intent: IntentType): boolean {
     return [
       IntentType.FINANCIAL_QUERY,
-      IntentType.ANALYTICS_QUERY,
       IntentType.SENSOR_QUERY,
     ].includes(intent);
   }

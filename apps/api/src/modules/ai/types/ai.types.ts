@@ -14,7 +14,6 @@ export enum IntentType {
   
   // Business queries
   FINANCIAL_QUERY = 'financial_query',      // Hỏi về tài chính
-  ANALYTICS_QUERY = 'analytics_query',      // Yêu cầu phân tích
   
   // IoT Actions
   DEVICE_CONTROL = 'device_control',        // Điều khiển thiết bị IoT

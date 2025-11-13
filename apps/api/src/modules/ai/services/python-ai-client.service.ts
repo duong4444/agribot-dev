@@ -150,7 +150,6 @@ export class PythonAIClientService {
     const intentMap: Record<string, IntentType> = {
       'knowledge_query': IntentType.KNOWLEDGE_QUERY,
       'financial_query': IntentType.FINANCIAL_QUERY,
-      'analytics_query': IntentType.ANALYTICS_QUERY,
       'device_control': IntentType.DEVICE_CONTROL,
       'sensor_query': IntentType.SENSOR_QUERY,
       'unknown': IntentType.UNKNOWN,

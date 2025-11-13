@@ -22,10 +22,9 @@ class IntentClassifier:
     INTENT_LABELS = [
         "knowledge_query",      # 0 - Hỏi đáp kiến thức nông nghiệp
         "financial_query",      # 1 - Hỏi về tài chính
-        "analytics_query",      # 2 - Yêu cầu phân tích
-        "device_control",       # 3 - Điều khiển thiết bị IoT
-        "sensor_query",         # 4 - Hỏi dữ liệu cảm biến
-        "unknown",              # 5 - Không xác định
+        "device_control",       # 2 - Điều khiển thiết bị IoT
+        "sensor_query",         # 3 - Hỏi dữ liệu cảm biến
+        "unknown",              # 4 - Không xác định
     ]
     
     def __init__(self, model_name: str = "vinai/phobert-base"):
@@ -168,7 +167,6 @@ class IntentClassifier:
         financial_keywords = ['doanh thu', 'thu nhập', 'lợi nhuận', 'chi phí', 'tiền', 'giá', 'bao nhiêu tiền', 'tổng tiền', 'giá trị']
         device_keywords = ['bật', 'tắt', 'điều khiển', 'control', 'máy', 'thiết bị', 'hệ thống']
         sensor_keywords = ['nhiệt độ', 'độ ẩm', 'cảm biến', 'sensor', 'đo', 'giám sát']
-        analytics_keywords = ['phân tích', 'thống kê', 'báo cáo', 'biểu đồ', 'chart', 'analytics']
         
         # Check patterns with priority
         if any(word in text_lower for word in financial_keywords):
@@ -179,9 +177,6 @@ class IntentClassifier:
             confidence = 0.9
         elif any(word in text_lower for word in sensor_keywords):
             intent = 'sensor_query'
-            confidence = 0.9
-        elif any(word in text_lower for word in analytics_keywords):
-            intent = 'analytics_query'
             confidence = 0.9
         else:
             intent = 'knowledge_query'

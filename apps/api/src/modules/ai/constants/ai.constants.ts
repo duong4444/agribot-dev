@@ -73,15 +73,6 @@ export const INTENT_PATTERNS = {
     /giám\s*sát/i,
   ],
   
-  // Analytics
-  ANALYTICS_QUERY: [
-    /phân\s*tích/i,
-    /báo\s*cáo/i,
-    /thống\s*kê/i,
-    /xu\s*hướng/i,
-    /biểu\s*đồ/i,
-    /so\s*sánh/i,
-  ],
   
   // Knowledge queries (default nếu không match các pattern trên)
   KNOWLEDGE_QUERY: [

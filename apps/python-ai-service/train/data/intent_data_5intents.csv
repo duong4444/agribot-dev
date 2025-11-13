@@ -1,0 +1,260 @@
+text,label
+"Cách trồng lúa nước?",knowledge_query
+"Bệnh đạo ôn trên lúa là gì?",knowledge_query
+"Phương pháp ủ phân compost?",knowledge_query
+"Khi nào nên bón phân NPK cho cây cà phê?",knowledge_query
+"Kỹ thuật tưới nhỏ giọt cho rau màu?",knowledge_query
+"Sâu đục thân hại ngô xử lý thế nào?",knowledge_query
+"Các loại thuốc trừ sâu sinh học phổ biến?",knowledge_query
+"Cách cải tạo đất bị nhiễm phèn?",knowledge_query
+"Giống ngô lai F1 có ưu điểm gì?",knowledge_query
+"Thời vụ trồng khoai lang ở miền Trung?",knowledge_query
+"Bệnh rỉ sắt trên cây cà phê nhận biết ra sao?",knowledge_query
+"Làm thế nào để tăng độ pH cho đất?",knowledge_query
+"Quy trình trồng nấm rơm?",knowledge_query
+"Bệnh chổi rồng trên nhãn?",knowledge_query
+"Cách phòng trừ rệp sáp cho cây có múi?",knowledge_query
+"Trồng xen canh là gì?",knowledge_query
+"Lợi ích của việc trồng cây họ đậu?",knowledge_query
+"Phân biệt phân hữu cơ và phân vô cơ?",knowledge_query
+"Bệnh héo xanh trên cây cà chua?",knowledge_query
+"Thời điểm thu hoạch sầu riêng thích hợp?",knowledge_query
+"Cách nhân giống cây tiêu bằng hom?",knowledge_query
+"Đất bazan hợp với cây gì?",knowledge_query
+"Làm sao để diệt ốc bươu vàng?",knowledge_query
+"Bệnh xoăn lá trên cây ớt?",knowledge_query
+"Mô hình VAC là gì?",knowledge_query
+"Cách bón vôi cho đất?",knowledge_query
+"Chu kỳ sinh trưởng của cây lúa?",knowledge_query
+"Bọ trĩ hại dưa hấu?",knowledge_query
+"Trồng cây gì để cải tạo đất bạc màu?",knowledge_query
+"Phòng bệnh thán thư cho xoài?",knowledge_query
+"Cách làm bẫy pheromone?",knowledge_query
+"Hiện tượng thối rễ trên cây sầu riêng?",knowledge_query
+"Kỹ thuật trồng gừng trong bao?",knowledge_query
+"Nuôi trùn quế có lợi ích gì?",knowledge_query
+"Bệnh Greening trên cây có múi?",knowledge_query
+"Cách chăm sóc cây hồ tiêu mùa khô?",knowledge_query
+"Giống bưởi da xanh trồng ở đâu tốt nhất?",knowledge_query
+"Làm đất trồng rau sạch tại nhà?",knowledge_query
+"Phân lân có tác dụng gì?",knowledge_query
+"Các loại sâu bệnh thường gặp trên rau cải?",knowledge_query
+"Kỹ thuật tỉa cành cho cây bơ?",knowledge_query
+"Tại sao cần bón lót?",knowledge_query
+"Bệnh đốm lá trên cây thanh long?",knowledge_query
+"Trồng rau aquaponics là gì?",knowledge_query
+"Biện pháp canh tác nào giúp giữ ẩm cho đất?",knowledge_query
+"Nhện đỏ hại cây cam?",knowledge_query
+"Cách xử lý hạt giống trước khi gieo?",knowledge_query
+"Phân kali giúp gì cho cây?",knowledge_query
+"Mật độ trồng cây sắn hợp lý?",knowledge_query
+"Trồng lúa theo tiêu chuẩn VietGAP?",knowledge_query
+"Dấu hiệu của lúa thiếu kali?",knowledge_query
+"Dấu hiệu thiếu đạm trên cây lúa?",knowledge_query
+"Triệu chứng thiếu lân ở cây ngô?",knowledge_query
+"Biểu hiện thiếu kali trên lá cây?",knowledge_query
+"Nhận biết cây thiếu nitơ?",knowledge_query
+"Dấu hiệu thiếu dinh dưỡng trên lúa?",knowledge_query
+"Cây bị vàng lá do thiếu chất gì?",knowledge_query
+"Triệu chứng thiếu magie trên cà chua?",knowledge_query
+"Biểu hiện thiếu sắt ở cây trồng?",knowledge_query
+"Dấu hiệu thiếu chất trên cây?",knowledge_query
+"Lúa thiếu kali có biểu hiện gì?",knowledge_query
+"Nhận biết cây thiếu dinh dưỡng?",knowledge_query
+"Triệu chứng cây thiếu phân?",knowledge_query
+"Tổng doanh thu tháng này là bao nhiêu?",financial_query
+"Chi phí mua phân bón quý 1?",financial_query
+"Lợi nhuận của vụ mùa vừa rồi?",financial_query
+"Xem báo cáo tài chính tháng 9.",financial_query
+"Tiền thuốc trừ sâu đã chi bao nhiêu?",financial_query
+"Tổng chi phí nhân công tháng 8?",financial_query
+"Doanh thu dự kiến tháng sau?",financial_query
+"Chi phí cho giống cây trồng năm nay?",financial_query
+"Tính lợi nhuận của khu A.",financial_query
+"Tổng thu nhập từ bán cam?",financial_query
+"Báo cáo chi phí theo từng hạng mục.",financial_query
+"Tháng 7 lỗ hay lãi?",financial_query
+"So sánh doanh thu tháng này với tháng trước.",financial_query
+"Tiền điện nước cho nông trại tháng này?",financial_query
+"Chi phí lớn nhất trong tháng là gì?",financial_query
+"Lợi nhuận gộp của vụ lúa ST25?",financial_query
+"Tổng tiền đã thu từ khách hàng X?",financial_query
+"Chi phí vật tư nông nghiệp tuần này?",financial_query
+"Xem lại các khoản chi ngày hôm qua.",financial_query
+"Tiền xăng dầu cho máy cày hết mấy?",financial_query
+"Tổng kết thu chi 6 tháng đầu năm.",financial_query
+"Dự toán chi phí cho vụ mùa tới?",financial_query
+"Tiền bán rau sạch hôm nay?",financial_query
+"Xem lợi nhuận của cây sầu riêng.",financial_query
+"Chi phí cố định hàng tháng là bao nhiêu?",financial_query
+"Báo cáo dòng tiền.",financial_query
+"Kiểm tra các khoản nợ nhà cung cấp.",financial_query
+"Chi phí đầu tư ban đầu cho nhà kính?",financial_query
+"Tiền lãi vay ngân hàng tháng này?",financial_query
+"Doanh thu từ vườn ổi là bao nhiêu?",financial_query
+"Xem chi tiết chi phí ngày 10/10.",financial_query
+"Lợi nhuận ròng của năm 2024?",financial_query
+"Thống kê tiền bán nông sản.",financial_query
+"Các khoản chi đột xuất trong tháng?",financial_query
+"Tiền mua thức ăn chăn nuôi?",financial_query
+"Chi phí sửa chữa máy bơm nước?",financial_query
+"Tổng thu nhập của tôi năm nay?",financial_query
+"Báo cáo thuế tháng này?",financial_query
+"Xem công nợ của đại lý B.",financial_query
+"Số dư tài khoản hiện tại?",financial_query
+"Liệt kê các chi phí của khu B.",financial_query
+"Doanh thu bán dưa hấu vụ Tết?",financial_query
+"Tiền nào chưa thanh toán?",financial_query
+"Dự kiến hòa vốn khi nào?",financial_query
+"Xem báo cáo lỗ lãi.",financial_query
+"Chi phí nào cao bất thường không?",financial_query
+"Tổng tiền điện tháng này?",financial_query
+"Cho xem chi phí hạt giống.",financial_query
+"Lợi nhuận thu được từ 1 hecta lúa?",financial_query
+"Bật máy bơm ở khu A trong 15 phút.",device_control
+"Tưới nước cho luống B2 ngay bây giờ.",device_control
+"Tắt hệ thống tưới ở nhà màng số 1.",device_control
+"Mở van nước số 3.",device_control
+"Hẹn giờ bật đèn lúc 6h tối cho vườn ươm.",device_control
+"Tắt quạt thông gió ở kho lạnh.",device_control
+"Điều khiển bơm nước 5 phút nữa ở khu C.",device_control
+"Bật máy bơm 1.",device_control
+"Tắt máy bơm 2.",device_control
+"Tưới cho vườn cam 20 phút.",device_control
+"Mở van xả nước.",device_control
+"Tắt tất cả các máy bơm.",device_control
+"Bật đèn ở khu vực ươm giống.",device_control
+"Giảm thời gian tưới ở khu A xuống 5 phút.",device_control
+"Dừng hệ thống tưới khẩn cấp.",device_control
+"Kích hoạt chế độ tưới tự động cho khu B.",device_control
+"Tắt chế độ tưới tự động.",device_control
+"Mở máy phun sương 10 phút.",device_control
+"Tắt đèn nhà kính.",device_control
+"Bật quạt thông gió khu C.",device_control
+"Điều chỉnh van số 4 mở 50%.",device_control
+"Tưới nước cho luống rau cải.",device_control
+"Ngừng tưới ở khu D.",device_control
+"Hãy bật máy bơm ở khu F.",device_control
+"Chạy máy bơm 1 trong 30 phút.",device_control
+"Hẹn 5 giờ sáng mai tưới khu A.",device_control
+"Bật hệ thống châm phân.",device_control
+"Tắt hệ thống châm phân.",device_control
+"Mở rèm che nắng nhà kính.",device_control
+"Đóng rèm che nắng nhà kính.",device_control
+"Bật hệ thống sưởi cho vườn ươm.",device_control
+"Tắt máy sưởi.",device_control
+"Điều khiển van tưới số 5.",device_control
+"Bật cho tôi máy bơm.",device_control
+"Tắt đèn đi.",device_control
+"Hãy tưới nước cho tôi.",device_control
+"Cho máy bơm 3 chạy 10 phút.",device_control
+"Dừng tưới ở luống B1.",device_control
+"Kích hoạt van xả lũ.",device_control
+"Bật đèn sưởi cho cây con.",device_control
+"Tắt quạt ở khu A.",device_control
+"Mở máy bơm nước tưới cây.",device_control
+"Tắt hệ thống chiếu sáng.",device_control
+"Bật van điện từ số 2.",device_control
+"Tắt van điện từ số 2.",device_control
+"Tưới nước 10 phút cho khu G.",device_control
+"Đóng van nước số 1.",device_control
+"Bật máy bơm tổng.",device_control
+"Tắt máy bơm tổng.",device_control
+"Độ ẩm đất hiện tại là bao nhiêu?",sensor_query
+"Nhiệt độ ở khu B đang là mấy độ?",sensor_query
+"Kiểm tra ánh sáng ở vườn ươm.",sensor_query
+"Cho xem dữ liệu cảm biến của khu A.",sensor_query
+"Độ ẩm đất có thấp quá không?",sensor_query
+"Nhiệt độ hôm nay thế nào?",sensor_query
+"Ánh sáng có đủ cho cây không?",sensor_query
+"Nồng độ CO2 trong nhà kính là bao nhiêu?",sensor_query
+"Độ pH của đất ở luống 5?",sensor_query
+"Cảm biến độ ẩm khu C báo bao nhiêu?",sensor_query
+"Kiểm tra nhiệt độ kho lạnh.",sensor_query
+"Độ dẫn điện của đất (EC) ở khu A?",sensor_query
+"Cường độ ánh sáng hiện tại?",sensor_query
+"Nhiệt độ ngoài trời là bao nhiêu?",sensor_query
+"Cho xem dữ liệu nhiệt độ 3 giờ qua.",sensor_query
+"Độ ẩm không khí trong nhà màng?",sensor_query
+"Lượng mưa hôm nay đo được bao nhiêu?",sensor_query
+"Tốc độ gió hiện tại?",sensor_query
+"Cảm biến nào đang báo động?",sensor_query
+"Kiểm tra tất cả cảm biến ở khu B.",sensor_query
+"Nhiệt độ đất ở luống 3?",sensor_query
+"Độ ẩm đất ở khu vực trồng cam?",sensor_query
+"Cho xem chỉ số ánh sáng PAR.",sensor_query
+"Nhiệt độ nước tưới là bao nhiêu?",sensor_query
+"Cảm biến độ ẩm lá có ướt không?",sensor_query
+"Kiểm tra cảm biến khí gas trong kho.",sensor_query
+"Nồng độ O2 trong hồ cá (nếu có)?",sensor_query
+"Mực nước trong bể chứa còn bao nhiêu?",sensor_query
+"Cho xem dữ liệu cảm biến của luống B2.",sensor_query
+"Độ ẩm đất trung bình của nông trại?",sensor_query
+"Nhiệt độ cao nhất hôm nay là mấy giờ?",sensor_query
+"Dữ liệu cảm biến pH có ổn không?",sensor_query
+"Kiểm tra cảm biến ở khu vực mới.",sensor_query
+"Giá trị cảm biến EC là gì?",sensor_query
+"So sánh độ ẩm giữa khu A và khu B.",sensor_query
+"Nhiệt độ có đang tăng không?",sensor_query
+"Cảm biến ánh sáng báo bao nhiêu lux?",sensor_query
+"Tình trạng pin của cảm biến không dây?",sensor_query
+"Dữ liệu cảm biến độ ẩm gần nhất?",sensor_query
+"Lấy cho tôi nhiệt độ khu C.",sensor_query
+"Độ ẩm đất khu A bao nhiêu phần trăm?",sensor_query
+"Xem nhiệt độ nhà màng.",sensor_query
+"Dữ liệu cảm biến 1 giờ trước?",sensor_query
+"Nồng độ dinh dưỡng trong dung dịch thủy canh?",sensor_query
+"Cảm biến mưa có hoạt động không?",sensor_query
+"Kiểm tra cảm biến nhiệt độ số 5.",sensor_query
+"Độ ẩm đất có cao quá không?",sensor_query
+"Xem biểu đồ nhiệt độ hôm nay.",sensor_query
+"Cảm biến nào đang offline?",sensor_query
+"Giá vàng hôm nay thế nào?",unknown
+"Thời tiết ngày mai ra sao?",unknown
+"Bạn là ai?",unknown
+"Kể cho tôi một câu chuyện cười.",unknown
+"Chào bạn.",unknown
+"Tạm biệt.",unknown
+"Thủ đô của Pháp là gì?",unknown
+"Công thức tính diện tích hình tròn?",unknown
+"Hôm nay là thứ mấy?",unknown
+"Đặt cho tôi một chiếc bánh pizza.",unknown
+"Tổng thống Mỹ hiện tại là ai?",unknown
+"Bitcoin giá bao nhiêu?",unknown
+"Mấy giờ rồi?",unknown
+"Đổi 100 USD sang VND.",unknown
+"Một cộng một bằng mấy?",unknown
+"Bài hát đang hot hiện nay?",unknown
+"Chỉ đường đến hồ Hoàn Kiếm.",unknown
+"Cảm ơn bạn.",unknown
+"Tôi nên ăn gì tối nay?",unknown
+"Tại sao bầu trời màu xanh?",unknown
+"Đội bóng nào vô địch World Cup 2022?",unknown
+"Con mèo kêu như thế nào?",unknown
+"Tìm cho tôi một nhà hàng gần đây.",unknown
+"Lịch sử Việt Nam?",unknown
+"Bạn có thông minh không?",unknown
+"Tôi buồn quá.",unknown
+"Chúc ngủ ngon.",unknown
+"Dịch 'hello' sang tiếng Việt.",unknown
+"Ai đã viết 'Truyện Kiều'?",unknown
+"Tỷ giá hối đoái hôm nay?",unknown
+"Học lập trình bắt đầu từ đâu?",unknown
+"Làm thế nào để giảm cân?",unknown
+"Bạn có thể hát không?",unknown
+"Ô tô điện hoạt động như thế nào?",unknown
+"Đồng Eiffel ở đâu?",unknown
+"Chúc mừng sinh nhật.",unknown
+"Tôi có thể giúp gì cho bạn?",unknown
+"Tin tức mới nhất hôm nay?",unknown
+"Mặt trăng quay quanh Trái Đất mất bao lâu?",unknown
+"Mua cổ phiếu nào tốt?",unknown
+"Con chó của tôi bị ốm.",unknown
+"OK.",unknown
+"Tuyệt vời!",unknown
+"Tôi không hiểu.",unknown
+"Nói lại lần nữa.",unknown
+"Bạn có biết bơi không?",unknown
+"Món phở nấu như thế nào?",unknown
+"Đang có phim gì hay ở rạp?",unknown
+"Trái Đất hình gì?",unknown
