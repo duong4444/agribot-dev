@@ -122,24 +122,64 @@ NOISE_WORDS = {
 
 TEMPLATES = {
     "knowledge_query": [
+        # Câu hỏi cơ bản về kỹ thuật nông nghiệp
         "Cách {action} {crop}?",
         "{crop} bị {disease} xử lý thế nào?",
         "Kỹ thuật {technique} cho {crop}?",
         "Làm sao để {action} {crop}?",
         "{fertilizer} có tác dụng gì?",
         "Quy trình {action} {crop}?",
-        "Thời vụ {action} {crop} ở {region}?",
         "Phương pháp {technique} là gì?",
         "Bệnh {disease} trên {crop} nhận biết như thế nào?",
         "Lợi ích của {technique}?",
+        
+        # Thời vụ và mật độ trồng (thường bị nhầm với analytics)
+        "Thời vụ {action} {crop} ở {region}?",
+        "Mật độ trồng {crop} thích hợp?",
+        "Thời vụ và mật độ của {crop}?",
+        "Mật độ trồng {crop} ở {region}?",
+        "Khoảng cách trồng {crop}?",
+        "Thời điểm trồng {crop} nào tốt nhất?",
+        
+        # Gợi ý cây trồng theo mùa
         "{season} nên trồng cây gì?",
         "Gợi ý cây trồng cho {season}?",
         "Cây trồng nào phù hợp với {season}?",
         "{season} ở {region} nên trồng {crop} nào?",
         "Cây gì phù hợp trồng vào {season}?",
+        
+        # Giá trị kinh tế và thông tin về cây trồng (thường bị nhầm với financial/analytics)
+        "Cho tôi thông tin về giá trị kinh tế cây {crop}",
+        "Giá trị kinh tế của {crop} như thế nào?",
+        "Thông tin về giá trị kinh tế {crop}",
+        "{crop} có giá trị kinh tế cao không?",
+        "Lợi ích kinh tế khi trồng {crop}?",
+        
+        # Quy trình canh tác (thường bị nhầm với sensor_query)
+        "Quy trình canh tác {crop} có mấy giai đoạn?",
+        "Các giai đoạn canh tác {crop}?",
+        "{crop} trồng theo quy trình nào?",
+        "Chu trình sinh trưởng của {crop}?",
+        
+        # So sánh bệnh và triệu chứng (thường bị nhầm với analytics)
+        "So sánh triệu chứng bệnh {disease} và bệnh {disease2} trên {crop}",
+        "Điểm khác biệt giữa bệnh {disease} và {disease2}",
+        "Phân biệt bệnh {disease} với {disease2}",
+        
+        # Tác dụng và công dụng (thường bị nhầm với financial_query)
+        "Tác dụng của {crop}",
+        "Công dụng {crop} trong y học",
+        "{crop} có tác dụng gì?",
+        "Lợi ích sức khỏe của {crop}?",
+        
+        # Câu hỏi về vụ mùa (thường bị nhầm với analytics)
+        "Vụ {crop} nào có năng suất cao nhất ở {region}?",
+        "Vụ nào trồng {crop} tốt nhất?",
+        "Mùa vụ {crop} ở {region}?",
     ],
     
     "financial_query": [
+        # Chỉ các câu hỏi thực sự về tài chính cụ thể
         "Tổng {metric} {period} là bao nhiêu?",
         "Chi phí {category} {period}?",
         "Xem báo cáo {report_type} {period}.",
@@ -147,22 +187,12 @@ TEMPLATES = {
         "Lợi nhuận của {item} {period}?",
         "Tính {metric} của {item}.",
         "Cho xem {metric} {period}.",
-        "Kiểm tra {item} {period}.",
+        "Kiểm tra chi phí {category} {period}.",
         "{period} lỗ hay lãi?",
-        "So sánh {metric} {period1} với {period2}.",
-    ],
-    
-    "analytics_query": [
-        "Thống kê {metric} {period}.",
-        "Phân tích {metric} của {item}.",
-        "Biểu đồ {metric} theo {dimension}.",
-        "Xu hướng {metric} {period}.",
-        "So sánh {metric} giữa {item1} và {item2}.",
-        "Báo cáo tổng hợp {metric}.",
-        "Dự báo {metric} {period}.",
-        "Hiệu suất {item} như thế nào?",
-        "Ranking các {item} theo {metric}.",
-        "Dashboard cho {area}.",
+        "So sánh doanh thu {period1} với {period2}.",
+        "Báo cáo tài chính {period}",
+        "Thu nhập từ {crop} {period}",
+        "Chi tiêu {period} bao nhiêu?",
     ],
     
     "device_control": [
@@ -179,16 +209,23 @@ TEMPLATES = {
     ],
     
     "sensor_query": [
+        # Chỉ các câu hỏi thực sự về dữ liệu cảm biến cụ thể
         "Nhiệt độ hiện tại là bao nhiêu?",
         "Xem số liệu {sensor} {period}.",
         "{sensor} ở {area} là mấy?",
-        "Lịch sử {metric} của {area}?",
+        "Lịch sử {sensor} của {area}?",
         "Cảnh báo về {sensor}.",
         "Giá trị {sensor} có bình thường không?",
         "So sánh {sensor} giữa {area1} và {area2}.",
         "Biểu đồ {sensor} {period}.",
         "{sensor} cao nhất/thấp nhất {period}?",
         "Xu hướng {sensor} {period}.",
+        "Dữ liệu {sensor} hôm nay",
+        "Cảm biến {sensor} báo gì?",
+        "Kiểm tra {sensor} ở {area}",
+        "Đo {sensor} hiện tại",
+        "Thống kê {sensor} {period}",
+        "Số đo {sensor} {area} bao nhiêu?",
     ],
     
     "unknown": [
@@ -240,10 +277,16 @@ ENTITIES = {
         "lở cổ rễ", "nấm hồng", "nứt thân", "xì mủ", "chổi rồng",
         "xoăn lá", "virus vàng lá", "Greening", "vàng lá gân xanh",
         "sâu đục thân", "sâu cuốn lá", "sâu tơ", "sâu xanh", "sâu khoang",
-        "sâu đục quả", "sâu vẽ bùa",
+        "sâu đục quả", "sâu vẽ bùa", "bệnh loét",
         "rầy nâu", "rầy xanh", "rệp sáp", "rệp muội", "bọ trĩ",
         "bọ phấn trắng", "bọ xít", "bọ nhảy", "ruồi vàng", "nhện đỏ",
         "ốc bươu vàng", "tuyến trùng", "chuột"
+    ],
+    
+    "disease2": [
+        "khô vằn", "thán thư", "phấn trắng", "rỉ sắt", "sương mai", 
+        "đốm nâu", "thối rễ", "nấm hồng", "xoăn lá", "Greening",
+        "bệnh loét", "virus vàng lá", "chổi rồng", "đạo ôn"
     ],
     
     "action": [
@@ -728,12 +771,20 @@ def generate_augmented_data(
     
     logger.info("\n🔄 Starting data augmentation...")
     
-    # Tính toán lại target_count
-    # Lấy số lượng mẫu trung bình nếu nó lớn hơn target
+    # Tính toán lại target_count với độ ưu tiên cho knowledge_query
     avg_samples = sum(len(s) for s in existing_data.values()) / len(existing_data)
-    target_count = max(config.target_samples, int(avg_samples))
-    logger.info(f"Balancing all intents to target ~{target_count} samples.")
+    base_target_count = max(config.target_samples, int(avg_samples))
     
+    # Tạo nhiều mẫu knowledge_query hơn vì đây là intent chính
+    def get_target_count_for_intent(intent: str) -> int:
+        if intent == "knowledge_query":
+            return int(base_target_count * 1.5)  # Tăng 50% cho knowledge_query
+        elif intent in ["financial_query", "sensor_query", "device_control"]:
+            return base_target_count
+        else:  # unknown
+            return int(base_target_count * 0.7)  # Giảm 30% cho unknown
+    
+    logger.info(f"Base target ~{base_target_count} samples, knowledge_query gets ~{get_target_count_for_intent('knowledge_query')} samples.")
     
     if config.enable_parallel and len(existing_data) > 1:
         # Parallel processing
@@ -745,7 +796,7 @@ def generate_augmented_data(
                     generate_for_intent,
                     intent,
                     samples,
-                    target_count,
+                    get_target_count_for_intent(intent),
                     config,
                     disable_tqdm=True # Tắt TQDM con khi chạy song song
                 ): intent
@@ -767,7 +818,7 @@ def generate_augmented_data(
                 _, augmented_samples = generate_for_intent(
                     intent,
                     samples,
-                    target_count,
+                    get_target_count_for_intent(intent),
                     config,
                     disable_tqdm=False # Bật TQDM con
                 )
