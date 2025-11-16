@@ -1,14 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ExactMatchResult, Entity } from '../types';
-// REMOVED: import { ExactMatchEnhancedService } from './exact-match-enhanced.service';
-import { SearchCacheService, CacheStats } from './search-cache.service';
 import { QueryPreprocessorService } from './query-preprocessor.service';
 import { CropKnowledgeFTSService } from './crop-knowledge-fts.service';
 
 /**
  * Exact Match V2 Service
  *
- * Combines Enhanced FTS with Caching Layer
+ * Layer 1 search using Crop Knowledge FTS (no caching)
  * This is the main service to use for Layer 1 searches
  */
 
@@ -18,8 +16,7 @@ interface SearchMetrics {
   found: boolean;
   confidence: number;
   processingTime: number;
-  cacheHit: boolean;
-  method: 'fts' | 'fuzzy' | 'expansion' | 'cache' | 'crop_fts';
+  method: 'fts' | 'fuzzy' | 'expansion' | 'crop_fts';
 }
 
 @Injectable()
@@ -29,23 +26,17 @@ export class ExactMatchV2Service {
   private readonly maxMetricsSize = 100;
 
   constructor(
-    // REMOVED: private readonly enhancedService: ExactMatchEnhancedService,
-    private readonly cacheService: SearchCacheService,
     private readonly queryPreprocessor: QueryPreprocessorService,
     private readonly cropKnowledgeFTS: CropKnowledgeFTSService,
-  ) {
-    // Schedule periodic cache cleanup
-    this.cacheService.scheduleCleanup(300000); // 5 minutes
-  }
+  ) {}
 
   /**
-   * Main search method with caching
+   * Main search method
    */
   async findExactMatch(
     query: string,
     userId?: string,
     options: {
-      skipCache?: boolean;
       useExpansion?: boolean;
       useFuzzyFallback?: boolean;
       entities?: Entity[]; // Entities from NER for better filtering
@@ -56,30 +47,7 @@ export class ExactMatchV2Service {
       'chạy vào findExactMatch của exact-match-v2.service do orchestrator gọi',
     );
 
-    // Step 1: Try cache first (unless skipCache is true)
-    console.log("options.skipCache: ", options.skipCache);
-    if (!options.skipCache) {
-      console.log('kiểm tra cache');
-      const cached = this.cacheService.get(query, userId);
-      if (cached) {
-        const processingTime = Date.now() - startTime;
-
-        this.recordMetric({
-          query,
-          userId,
-          found: cached.found,
-          confidence: cached.confidence || 0,
-          processingTime,
-          cacheHit: true,
-          method: 'cache',
-        });
-
-        this.logger.debug(`⚡ Cache hit - returned in ${processingTime}ms`);
-        return cached;
-      }
-    }
-
-    // Step 1.5: Preprocess query to remove noise words
+    // Step 1: Preprocess query to remove noise words
     const queryAnalysis = this.queryPreprocessor.analyzeQuery(query);
     let searchQuery = query;
     
@@ -88,7 +56,7 @@ export class ExactMatchV2Service {
       searchQuery = preprocessed.cleaned;
       
       this.logger.debug(
-        `🧹 Query preprocessed:\n` +
+        `!!!! Query preprocessed:\n` +
         `  Original: "${preprocessed.original}"\n` +
         `  Cleaned: "${preprocessed.cleaned}"\n` +
         `  Keywords: [${preprocessed.keywords.join(', ')}]\n` +
@@ -106,13 +74,12 @@ export class ExactMatchV2Service {
     const cropFilter = cropEntity?.value;
     
     if (cropFilter) {
-      this.logger.debug(`🌾 Detected crop filter from NER: "${cropFilter}"`);
+      this.logger.debug(`Detected crop filter from NER: "${cropFilter}"`);
     }
     
     try {
-      // Step 2.1: Try Crop Knowledge FTS first (new refactored Layer 1)
-      // Note: Pass undefined for userId to search all public crop knowledge (uploaded by admin)
-      console.log('🌱 Trying Crop Knowledge FTS first...');
+      // Try Crop Knowledge FTS (Layer 1)
+      console.log('Trying Crop Knowledge FTS...');
       const cropResult = await this.cropKnowledgeFTS.searchCropKnowledge(
         searchQuery,
         undefined, // Search all public knowledge, not filtered by user
@@ -122,15 +89,16 @@ export class ExactMatchV2Service {
           cropFilter, // Pass crop filter from NER
         },
       );
+      console.log("cropResult.found: ",cropResult.found);
+      
 
       if (cropResult.found) {
         result = cropResult;
         method = 'crop_fts';
       } else {
-        // REMOVED: Legacy fallback to ExactMatchEnhancedService
-        // In 2-layer architecture, if CropKnowledgeFTS fails, return not found
-        // System will fall back to Layer 2 (LLM) in AIOrchestrator
-        console.log('⚠️ Crop Knowledge FTS did not find results, will fallback to LLM');
+        // If CropKnowledgeFTS fails, return not found
+        // System will fall back to Layer 2 (RAG) or Layer 3 (LLM) in AIOrchestrator
+        console.log('Crop Knowledge FTS did not find results, will fallback to next layer');
         result = {
           found: false,
           confidence: 0,
@@ -138,13 +106,7 @@ export class ExactMatchV2Service {
         method = 'crop_fts';
       }
 
-      // Step 3: Cache the result (if found or high confidence)
-      if (result.found || (result.confidence || 0) > 0.3) {
-        const ttl = result.found ? 3600 : 1800; // 1 hour if found, 30 min otherwise
-        this.cacheService.set(query, result, userId, ttl);
-      }
-
-      // Step 4: Record metrics
+      // Record metrics
       const processingTime = Date.now() - startTime;
       this.recordMetric({
         query,
@@ -152,7 +114,6 @@ export class ExactMatchV2Service {
         found: result.found,
         confidence: result.confidence || 0,
         processingTime,
-        cacheHit: false,
         method,
       });
 
@@ -220,7 +181,6 @@ export class ExactMatchV2Service {
    */
   getAnalytics(): {
     totalSearches: number;
-    cacheHitRate: number;
     avgProcessingTime: number;
     avgConfidence: number;
     foundRate: number;
@@ -229,7 +189,6 @@ export class ExactMatchV2Service {
     if (this.searchMetrics.length === 0) {
       return {
         totalSearches: 0,
-        cacheHitRate: 0,
         avgProcessingTime: 0,
         avgConfidence: 0,
         foundRate: 0,
@@ -238,7 +197,6 @@ export class ExactMatchV2Service {
     }
 
     const total = this.searchMetrics.length;
-    const cacheHits = this.searchMetrics.filter((m) => m.cacheHit).length;
     const found = this.searchMetrics.filter((m) => m.found).length;
 
     const avgProcessingTime =
@@ -254,7 +212,6 @@ export class ExactMatchV2Service {
 
     return {
       totalSearches: total,
-      cacheHitRate: parseFloat(((cacheHits / total) * 100).toFixed(2)),
       avgProcessingTime: parseFloat(avgProcessingTime.toFixed(2)),
       avgConfidence: parseFloat(avgConfidence.toFixed(3)),
       foundRate: parseFloat(((found / total) * 100).toFixed(2)),
@@ -263,65 +220,24 @@ export class ExactMatchV2Service {
   }
 
   /**
-   * Get cache statistics
-   */
-  getCacheStats(): CacheStats {
-    return this.cacheService.getStats();
-  }
-
-  /**
-   * Clear cache
-   */
-  clearCache(): void {
-    this.cacheService.clear();
-  }
-
-  /**
-   * Invalidate cache for user
-   */
-  invalidateUserCache(userId: string): void {
-    this.cacheService.invalidateUser(userId);
-  }
-
-  /**
-   * REMOVED: Get search statistics (ExactMatchEnhancedService removed)
-   */
-  // async getSearchStats(userId?: string) {
-  //   return this.enhancedService.getSearchStats(userId);
-  // }
-
-  /**
-   * REMOVED: Refresh materialized view (ExactMatchEnhancedService removed)
-   */
-  // async refreshStats(): Promise<void> {
-  //   await this.enhancedService.refreshSearchStats();
-  // }
-
-  /**
    * Health check
    */
   async healthCheck(): Promise<{
     status: 'healthy' | 'degraded' | 'unhealthy';
-    cache: any;
     analytics: any;
   }> {
     try {
-      const cacheStats = this.getCacheStats();
       const analytics = this.getAnalytics();
-
-      // Simplified health check for 2-layer architecture
-      const status = cacheStats.hitRate > 0 ? 'healthy' : 'degraded';
+      const status = analytics.totalSearches > 0 ? 'healthy' : 'degraded';
 
       return {
         status,
-        cache: cacheStats,
         analytics,
       };
     } catch (error) {
       this.logger.error('Health check failed:', error);
       return {
         status: 'unhealthy',
-        cache: null,
         analytics: null,
       };
     }
@@ -332,7 +248,6 @@ export class ExactMatchV2Service {
    */
   resetMetrics(): void {
     this.searchMetrics = [];
-    this.cacheService.resetStats();
     this.logger.log('📊 All metrics reset');
   }
 }

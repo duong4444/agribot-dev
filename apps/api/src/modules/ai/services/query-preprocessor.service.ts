@@ -53,10 +53,11 @@ export class QueryPreprocessorService {
    * Output: "cách tưới nước lúa"
    */
   cleanQuery(query: string): string {
+    // ktra input rỗng
     if (!query || query.trim().length === 0) {
       return '';
     }
-
+    // chuẩn hoá lowercase và trim
     let cleaned = query.trim().toLowerCase();
     
     // Remove noise patterns
@@ -85,7 +86,7 @@ export class QueryPreprocessorService {
    * Output: ['cách', 'tưới', 'nước', 'lúa', 'mùa', 'khô']
    */
   extractKeywords(query: string): string[] {
-    const cleaned = this.cleanQuery(query);
+    const cleaned = this.cleanQuery(query); // loại bỏ từ gây nhiễu
     
     const keywords = cleaned
       .split(' ')
@@ -192,17 +193,24 @@ export class QueryPreprocessorService {
     complexity: 'simple' | 'medium' | 'complex';
     recommendPreprocessing: boolean;
   } {
-    const words = query.trim().split(/\s+/);
-    const keywords = this.extractKeywords(query);
-    const noiseWordCount = words.length - keywords.length;
+    const words = query.trim().split(/\s+/); // tách từ gốc chưa làm sạch
+    console.log("words: ",words);
     
+    const keywords = this.extractKeywords(query); //trích keywords đã làm sạch
+    console.log("keywords: ",keywords);
+    // tính số từ nhiễu
+    const noiseWordCount = words.length - keywords.length;
+    console.log("noiseWordCoint: ",noiseWordCount);
+    // có từ nhiễu không
     const hasNoiseWords = noiseWordCount > 0;
+    console.log("hasNoiseWords: ",hasNoiseWords);
     
     let complexity: 'simple' | 'medium' | 'complex' = 'simple';
     if (words.length > 10) complexity = 'complex';
     else if (words.length > 5) complexity = 'medium';
     
     const recommendPreprocessing = hasNoiseWords || complexity !== 'simple';
+    console.log("recommedProcessing: ",recommendPreprocessing);
     
     return {
       length: query.length,

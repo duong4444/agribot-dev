@@ -12,7 +12,7 @@ export class FixCropKnowledgeFTS1730900000001 implements MigrationInterface {
       DROP FUNCTION IF EXISTS normalize_vietnamese_text(text) CASCADE;
     `);
 
-    console.log('✅ Dropped old functions');
+    console.log('Dropped old functions');
 
     // 1. Create normalize function
     await queryRunner.query(`
@@ -28,7 +28,7 @@ export class FixCropKnowledgeFTS1730900000001 implements MigrationInterface {
       $$ LANGUAGE plpgsql IMMUTABLE;
     `);
 
-    console.log('✅ Created normalize_vietnamese_text');
+    console.log('Created normalize_vietnamese_text');
 
     // 2. Create tsvector generation function
     await queryRunner.query(`
@@ -65,7 +65,7 @@ export class FixCropKnowledgeFTS1730900000001 implements MigrationInterface {
       $$ LANGUAGE plpgsql IMMUTABLE;
     `);
 
-    console.log('✅ Created generate_crop_chunk_tsvector');
+    console.log('Created generate_crop_chunk_tsvector');
 
     // 3. Create trigger function
     await queryRunner.query(`
@@ -84,7 +84,7 @@ export class FixCropKnowledgeFTS1730900000001 implements MigrationInterface {
       $$ LANGUAGE plpgsql;
     `);
 
-    console.log('✅ Created update_crop_chunk_search_vector');
+    console.log('Created update_crop_chunk_search_vector');
 
     // 4. Recreate trigger
     await queryRunner.query(`
@@ -97,7 +97,7 @@ export class FixCropKnowledgeFTS1730900000001 implements MigrationInterface {
       EXECUTE FUNCTION update_crop_chunk_search_vector();
     `);
 
-    console.log('✅ Created trigger');
+    console.log('Created trigger');
 
     // 5. Create main search function with CORRECT return type
     await queryRunner.query(`
@@ -164,7 +164,7 @@ export class FixCropKnowledgeFTS1730900000001 implements MigrationInterface {
       $$ LANGUAGE plpgsql;
     `);
 
-    console.log('✅ Created search_crop_knowledge_fts');
+    console.log('Created search_crop_knowledge_fts');
 
     // 6. Update all existing chunks to regenerate search_vector
     await queryRunner.query(`
@@ -173,8 +173,8 @@ export class FixCropKnowledgeFTS1730900000001 implements MigrationInterface {
       WHERE status = 'active';
     `);
 
-    console.log('✅ Updated all chunks to regenerate search_vector');
-    console.log('🎉 Crop Knowledge FTS fix completed!');
+    console.log('Updated all chunks to regenerate search_vector');
+    console.log('Crop Knowledge FTS fix completed!');
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

@@ -56,15 +56,16 @@ export class CropKnowledgeFTSService {
     },
   ): Promise<ExactMatchResult> {
     const startTime = Date.now();
-    this.logger.log(`🔍 Searching for: "${query}"`);
+    this.logger.log(`Searching for: "${query}"`);
 
     // Layer 1: Heading-based Search (High-precision)
     const headingMatchResults = await this.searchByHeadings(query, options?.cropFilter);
-
+    console.log("kqua trả về của searchByHeadings: ",headingMatchResults);
+    
     if (headingMatchResults) {
       const processingTime = Date.now() - startTime;
       this.logger.log(
-        `✅ Layer 1 heading match found in ${processingTime}ms`,
+        `Layer 1 heading match found in ${processingTime}ms`,
       );
 
       const topMatch = headingMatchResults[0];
@@ -102,12 +103,13 @@ export class CropKnowledgeFTSService {
       );
 
       if (results.length === 0) {
-        this.logger.debug('❌ No FTS results found');
+        this.logger.debug('No FTS results found');
         return { found: false, confidence: 0 };
       }
 
       const topMatch = results[0];
       const confidence = this.calculateConfidence(topMatch, query);
+      console.log("confidence của FTS: ",confidence);
       const processingTime = Date.now() - startTime;
 
       this.logger.debug(
@@ -116,10 +118,12 @@ export class CropKnowledgeFTSService {
       );
 
       const threshold = options?.threshold || this.CONFIDENCE_THRESHOLD;
+      console.log("threshold của FTS: ",threshold);
+      
       
       if (confidence >= threshold) {
         this.logger.log(
-          `✅ Layer 2 FTS match found (confidence: ${confidence.toFixed(3)}) in ${processingTime}ms`,
+          `Layer 2 FTS match found (confidence: ${confidence.toFixed(3)}) in ${processingTime}ms`,
         );
 
         return {
@@ -177,6 +181,12 @@ export class CropKnowledgeFTSService {
       this.logger.debug(
         `Executing FTS: query="${query}", userId=${userId}, limit=${limit}, minRank=${minRank}, cropFilter=${cropFilter || 'none'}`,
       );
+      console.log("limit trong FTS",limit);
+      console.log("minRank trong FTS",minRank);
+      console.log("cropFilter trong FTS",cropFilter);
+      console.log("query trong FTS",query);
+      console.log("userId trong FTS",userId);
+      
 
       const results = await this.chunkRepo.query(
         `
@@ -193,6 +203,8 @@ export class CropKnowledgeFTSService {
         `,
         [query, userId || null, limit, minRank, cropFilter || null],
       );
+      console.log("results trong FTS!heading: ",results);
+      
 
       this.logger.debug(`FTS returned ${results.length} results`);
       return results;
@@ -219,7 +231,7 @@ export class CropKnowledgeFTSService {
     userId?: string,
     limit: number = 10,
   ): Promise<SearchResult[]> {
-    this.logger.log(`🔄 Fallback search activated for: "${query}"`);
+    this.logger.log(`Fallback search activated for: "${query}"`);
     
     const normalized = normalizeText(query);
     const keywords = normalized.split(' ').filter(w => w.length > 2);
@@ -391,6 +403,11 @@ export class CropKnowledgeFTSService {
       return '';
     }
 
+    console.log("result: ",results);
+    
+    console.log("result.length: ",results.length);
+    
+
     // If only one result, use the single format
     if (results.length === 1) {
       return this.formatAnswer(results[0]);
@@ -401,6 +418,8 @@ export class CropKnowledgeFTSService {
 
     // Main header for the entire topic
     parts.push(`**${firstResult.loaiCay} - ${firstResult.chuDeLon}**\n\n`);
+    console.log("parts: ",parts);
+    
 
     // Append each sub-chunk
     results.forEach(result => {
@@ -648,7 +667,7 @@ export class CropKnowledgeFTSService {
   ): Promise<SearchResult[] | null> {
     const normalizedQuery = normalizeText(query);
     const queryWords = normalizedQuery.split(' ').filter(w => w.length > 2);
-
+    // [cho, tôi, thông, tin, cây, phê]
     this.logger.log(`🔍 Heading search - Query: "${query}" → Normalized: "${normalizedQuery}"`);
     this.logger.log(`📝 Query words (>2 chars): [${queryWords.join(', ')}]`);
 
@@ -657,7 +676,9 @@ export class CropKnowledgeFTSService {
     const queryBuilder = this.chunkRepo
       .createQueryBuilder('chunk')
       .where('chunk.status = :status', { status: 'active' });
-    
+    // SELECT * FROM crop_knowledge_chunks WHERE status = 'active'
+    console.log("queryBuilder_searchByHeading_chuaCropFilter: ",queryBuilder);
+    //WHERE status = 'active' AND LOWER(loai_cay) LIKE LOWER('%cà phê%')
     if (cropFilter) {
       // Use LOWER for case-insensitive match instead of normalize_vietnamese_text
       queryBuilder.andWhere('LOWER(chunk.loai_cay) LIKE LOWER(:cropFilter)', {
@@ -666,6 +687,7 @@ export class CropKnowledgeFTSService {
     }
     
     const allChunks = await queryBuilder.getMany();
+    // lấy tất cả chunk của cây cà phê
 
     this.logger.log(`📚 Found ${allChunks.length} total chunks to analyze`);
 
@@ -674,6 +696,8 @@ export class CropKnowledgeFTSService {
 
     for (const chunk of allChunks) {
       const topicKey = `${chunk.loaiCay}::${chunk.chuDeLon}`;
+      // ex: Cà Phê::1. Thông tin chung về Cây Cà Phê
+      console.log("topicKey: ",topicKey);
       
       // Skip if already processed this topic
       if (topicScores.has(topicKey)) continue;
@@ -689,7 +713,8 @@ export class CropKnowledgeFTSService {
       // Calculate match score
       const matchedWords: string[] = [];
       let matchCount = 0;
-      
+      // [phòng, trừ, sâu, bệnh, hại, chính]
+      // [cho, tôi, thông, tin, cây, phê]
       for (const topicWord of topicWords) {
         const isMatched = queryWords.some(qw => qw.includes(topicWord) || topicWord.includes(qw));
         if (isMatched) {
@@ -699,6 +724,7 @@ export class CropKnowledgeFTSService {
       }
 
       // Score = percentage of topic words matched
+      // SỐ TỪ (topicWords MATCH VS queryWord) / tổng số topicWord
       const score = topicWords.length > 0 ? matchCount / topicWords.length : 0;
 
       if (score > 0) {
@@ -740,6 +766,10 @@ export class CropKnowledgeFTSService {
         .andWhere('chunk.chu_de_lon = :chuDeLon', { chuDeLon: bestMatch.chuDeLon })
         .orderBy('chunk.thuTu', 'ASC')
         .getMany();
+      // SELECT * FROM crop_knowledge_chunks AS chunk
+      // WHERE chunk.loai_cay = 'Cà Phê'
+      // AND chunk.chu_de_lon = '5. Phòng trừ Sâu bệnh hại chính'
+      // ORDER BY chunk.thu_tu ASC
       
       this.logger.log(`📦 Returning ${chunks.length} chunks for topic "${bestMatch.chuDeLon}"`);
       
@@ -761,6 +791,9 @@ export class CropKnowledgeFTSService {
       .createQueryBuilder('chunk')
       .where('LOWER(chunk.tieu_de_chunk) = LOWER(:normalizedQuery)', { normalizedQuery });
     
+    // SELECT * FROM crop_knowledge_chunks AS chunk
+    // WHERE LOWER(chunk.tieu_de_chunk) = LOWER('nguon goc va phan loai ca phe')
+    // AND LOWER(chunk.loai_cay) LIKE LOWER('%cà phê%')
     if (cropFilter) {
       subTopicQueryBuilder.andWhere('LOWER(chunk.loai_cay) LIKE LOWER(:cropFilter)', {
         cropFilter: `%${cropFilter}%`
@@ -768,6 +801,8 @@ export class CropKnowledgeFTSService {
     }
     
     const subTopicMatch = await subTopicQueryBuilder.getOne();
+    console.log("subTopicMatch: ",subTopicMatch);
+    
 
     if (subTopicMatch) {
       this.logger.debug(`Found sub-topic match: "${subTopicMatch.tieuDeChunk}"`);

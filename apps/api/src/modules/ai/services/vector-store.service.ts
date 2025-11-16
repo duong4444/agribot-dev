@@ -27,7 +27,9 @@ export class VectorStoreService {
   ): Promise<RagChunk[]> {
     try {
       // Convert embedding array to pgvector format string
+      // pgvector yêu cầu format string đặc biệt
       const embeddingStr = `[${queryEmbedding.join(',')}]`;
+      console.log("embeddingStr: ",embeddingStr);
       
       // Build raw SQL query for better control
       let sql = `
@@ -46,12 +48,6 @@ export class VectorStoreService {
 
       const params: any[] = [embeddingStr, options.threshold];
 
-      // Note: RAG documents are global knowledge base - no user filtering needed
-      // if (options.userId) {
-      //   sql += ` AND d.user_id = $3`;
-      //   params.push(options.userId);
-      // }
-
       sql += `
         ORDER BY similarity DESC
         LIMIT $${params.length + 1}
@@ -61,7 +57,15 @@ export class VectorStoreService {
       this.logger.debug(`Executing similarity search with threshold ${options.threshold}`);
       this.logger.debug(`SQL Query: ${sql}`);
       this.logger.debug(`Parameters: ${JSON.stringify(params.slice(0, 2))} + embedding + ${params.slice(2)}`);
-      
+      // SELECT ...
+      // FROM rag_chunks c
+      // LEFT JOIN rag_documents d ON c.rag_document_id = d.id
+      // WHERE 1 - (c.embedding::vector <=> $1::vector) >= $2
+      // ORDER BY similarity DESC
+      // LIMIT $3
+      // $1 = "[0.1,0.2,...,0.768]"
+      // $2 = 0.35
+      // $3 = 5
       const results = await this.ragChunkRepo.query(sql, params);
 
       this.logger.debug(`Found ${results.length} similar chunks`);

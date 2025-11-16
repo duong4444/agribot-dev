@@ -29,9 +29,6 @@ import { VectorStoreService } from './services/vector-store.service';
 import { RAGService } from './services/rag.service';
 import { RagDocumentService } from './services/rag-document.service';
 
-// Layer 1 Enhanced Services
-// REMOVED: import { ExactMatchEnhancedService } from './services/exact-match-enhanced.service';
-import { SearchCacheService } from './services/search-cache.service';
 import { ExactMatchV2Service } from './services/exact-match-v2.service';
 import { QueryPreprocessorService } from './services/query-preprocessor.service';
 // Crop Knowledge Services (Refactored Layer 1)
@@ -57,7 +54,6 @@ import { PublicDebugController } from './controllers/public-debug.controller';
 @Module({
   imports: [
     ConfigModule,
-    // REMOVED: DocumentChunk from entities (table dropped)
     TypeOrmModule.forFeature([Document, CropKnowledgeChunk, RagDocument, RagChunk]),
     FarmModule,
   ],
@@ -65,7 +61,7 @@ import { PublicDebugController } from './controllers/public-debug.controller';
     AIRefactoredController, 
     AdminDocumentController, 
     AdminCropKnowledgeController,
-    AdminRagDocumentController, // Layer 2 RAG
+    AdminRagDocumentController, 
     PublicDebugController, // For testing only
   ],
   providers: [
@@ -90,10 +86,8 @@ import { PublicDebugController } from './controllers/public-debug.controller';
     RAGService,
     RagDocumentService,
 
-    // Layer 1 Enhanced Services (FTS + Caching + Query Preprocessing)
+    // Layer 1 Enhanced Services (FTS + Query Preprocessing, no caching)
     QueryPreprocessorService,
-    SearchCacheService,
-    // REMOVED: ExactMatchEnhancedService - uses DocumentChunk (deleted)
     ExactMatchV2Service,
     
     // Crop Knowledge Services (Refactored Layer 1)
@@ -113,7 +107,7 @@ import { PublicDebugController } from './controllers/public-debug.controller';
     AIOrchestrator,
     IntentClassifierService,
     ExactMatchV2Service,
-    RAGService, // Layer 2 RAG enabled
+    RAGService, 
     ActionRouterService,
     CropKnowledgeFTSService,
     CropKnowledgeService,

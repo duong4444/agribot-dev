@@ -51,7 +51,11 @@ export class RAGService {
     
     // Dynamic threshold based on query complexity
     const dynamicThreshold = this.calculateDynamicThreshold(query);
+    console.log("options.threshold: ", options.threshold);
+    console.log("dynamicThreshold: ", dynamicThreshold);
+    
     const finalThreshold = options.threshold || dynamicThreshold;
+    console.log("finalThreshold: ", finalThreshold);
     
     const chunks = await this.vectorStore.similaritySearch(queryEmbedding, {
       topK: options.topK || 5,
@@ -59,20 +63,51 @@ export class RAGService {
       userId: options.userId,
     });
 
+    const retrievalTime = Date.now() - startTime;
+
+    // STEP 2.5: Early exit if no chunks or low quality
     if (chunks.length === 0) {
+      this.logger.log('❌ No chunks found - returning low confidence');
       return {
         answer: 'Xin lỗi, tôi không tìm thấy thông tin liên quan trong tài liệu.',
         confidence: 0,
         sources: [],
-        retrievalTime: Date.now() - startTime,
+        retrievalTime,
         synthesisTime: 0,
       };
     }
 
-    const retrievalTime = Date.now() - startTime;
+    // Check average similarity BEFORE calling LLM
+    const avgSimilarity = chunks.reduce((sum, c) => sum + (c.similarity || 0), 0) / chunks.length;
+    const minRequiredSimilarity = 0.45; // Threshold for meaningful retrieval
+    
+    if (avgSimilarity < minRequiredSimilarity) {
+      this.logger.log(
+        `Low average similarity (${avgSimilarity.toFixed(3)} < ${minRequiredSimilarity}) - ` +
+        `skipping LLM synthesis to save cost`
+      );
+      
+      return {
+        answer: `Tài liệu hiện có không chứa thông tin liên quan đến "${query}". ` +
+                `Vui lòng thử câu hỏi khác hoặc cung cấp thêm tài liệu.`,
+        confidence: 0.2, // Low confidence to trigger Layer 3 fallback
+        sources: chunks.map((chunk, idx) => ({
+          id: chunk.id,
+          content: chunk.content,
+          similarity: chunk.similarity || 0,
+          documentName: chunk.ragDocument?.originalName || 'Unknown',
+          chunkIndex: chunk.chunkIndex,
+        })),
+        retrievalTime,
+        synthesisTime: 0,
+      };
+    }
 
-    // STEP 3: Synthesize answer (no reranking)
-    this.logger.log(`Synthesizing answer from ${chunks.length} chunks`);
+    // STEP 3: Synthesize answer (only if similarity is good enough)
+    this.logger.log(
+      `Good average similarity (${avgSimilarity.toFixed(3)}) - ` +
+      `synthesizing answer from ${chunks.length} chunks`
+    );
     const synthesisStart = Date.now();
     const answer = await this.synthesizeAnswer(query, chunks);
     const synthesisTime = Date.now() - synthesisStart;
@@ -164,7 +199,7 @@ ${query}
   private calculateConfidence(chunks: RagChunk[], answer: string): number {
     if (chunks.length === 0) return 0;
 
-    // 1. Average similarity
+    // 1. Average similarity (most important factor)
     const avgSimilarity = chunks.reduce((sum, c) => sum + (c.similarity || 0), 0) / chunks.length;
 
     // 2. Number of chunks
@@ -178,12 +213,38 @@ ${query}
     const hasCitations = /\[Nguồn \d+\]/.test(answer);
     const citationScore = hasCitations ? 1 : 0.5;
 
+    // 5. Check if answer indicates "no information found" (as backup check)
+    const noInfoPatterns = [
+      /không\s+(có|tìm\s+thấy|cung\s+cấp)\s+thông\s+tin/i,
+      /rất\s+tiếc.*không/i,
+      /tài\s+liệu.*không.*đủ/i,
+      /không\s+đề\s+cập/i,
+      /chưa\s+có\s+thông\s+tin/i,
+    ];
+    
+    const hasNoInfo = noInfoPatterns.some(pattern => pattern.test(answer));
+    
+    if (hasNoInfo) {
+      this.logger.debug('Answer indicates no relevant information - lowering confidence');
+      // Still return low confidence but not as aggressive since we already checked similarity
+      return Math.min(avgSimilarity * 0.5, 0.3);
+    }
+
     // Weighted average
     const confidence =
       avgSimilarity * 0.4 +
       countScore * 0.2 +
       lengthScore * 0.2 +
       citationScore * 0.2;
+
+    this.logger.debug(
+      `Confidence breakdown: ` +
+      `similarity=${avgSimilarity.toFixed(3)} (${(avgSimilarity * 0.4).toFixed(3)}), ` +
+      `count=${countScore.toFixed(3)} (${(countScore * 0.2).toFixed(3)}), ` +
+      `length=${lengthScore.toFixed(3)} (${(lengthScore * 0.2).toFixed(3)}), ` +
+      `citation=${citationScore.toFixed(3)} (${(citationScore * 0.2).toFixed(3)}) ` +
+      `→ total=${confidence.toFixed(3)}`
+    );
 
     return Math.min(confidence, 1);
   }

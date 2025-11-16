@@ -225,8 +225,9 @@ export class ChatService {
   ): Promise<{ content: string; intent: string; confidence: number }> {
     try {
       console.log("user_prompt: ", userMessage);
+      console.log("direct đến Orchest để xử lý");
       
-      // Use new AI Orchestrator
+      // 
       const aiResponse = await this.aiOrchestrator.process({
         query: userMessage,
         user: user,

@@ -8,10 +8,9 @@ import {
 } from '../types';
 import { DEFAULT_AI_CONFIG, ERROR_MESSAGES } from '../constants';
 
-// Services
 import { IntentClassifierService } from './intent-classifier.service';
 import { ExactMatchV2Service } from './exact-match-v2.service';
-import { RAGService } from './rag.service'; // Layer 2 RAG enabled
+import { RAGService } from './rag.service';
 import { LLMFallbackService } from './llm-fallback.service';
 import { ActionRouterService, ActionContext } from './action-router.service';
 
@@ -28,7 +27,7 @@ export class AIOrchestrator {
   constructor(
     private readonly intentClassifier: IntentClassifierService,
     private readonly exactMatch: ExactMatchV2Service,
-    private readonly rag: RAGService, // Layer 2 RAG enabled
+    private readonly rag: RAGService, 
     private readonly llmFallback: LLMFallbackService,
     private readonly actionRouter: ActionRouterService,
   ) {}
@@ -79,7 +78,7 @@ export class AIOrchestrator {
           '======================UNKNOWN_INTENT=======================',
         );
         this.logger.log(
-          '⚠️ Unknown intent detected, validating query scope',
+          'Unknown intent detected, validating query scope',
         );
 
         // Validate if query is agriculture-related or acceptable
@@ -87,7 +86,7 @@ export class AIOrchestrator {
         
         if (!validationResult.isValid) {
           // Reject off-topic or spam queries
-          this.logger.warn(`❌ Query rejected: ${validationResult.reason}`);
+          this.logger.warn(`Query rejected: ${validationResult.reason}`);
           console.log("PROMPT REJECTED: ", validationResult.reason);
           
           return {
@@ -106,7 +105,7 @@ export class AIOrchestrator {
         }
 
         // Allow only greetings, thanks, and agriculture-related unknowns
-        console.log('✅ Query validated, using direct LLM');
+        console.log('Query validated, using direct LLM');
         const llmResult = await this.llmFallback.generateResponse(query, {
           reason: 'Unknown intent - greeting or agriculture-related query',
         });
@@ -190,10 +189,11 @@ export class AIOrchestrator {
       '.............................TRY LAYER1_FTS..................................................',
     );
     const exactResult = await this.exactMatch.findExactMatch(query, user.id, {
-      entities: intentResult.entities, // Pass entities from NER for filtering
+      entities: intentResult.entities, // truyền entities từ NER để lọc
     });
     console.log('_orchestrator_ exactResult_layer1_FTS: ', exactResult);
-
+    console.log("exactResult.confidence: ",exactResult.confidence);
+    
     // Check if exact match is confident enough
     if (
       exactResult.found &&
@@ -231,11 +231,11 @@ export class AIOrchestrator {
     const ragResult = await this.rag.retrieve(query, {
       userId: user.id,
       topK: DEFAULT_AI_CONFIG.ragTopK,
-      threshold: DEFAULT_AI_CONFIG.ragSimilarityThreshold,
+      threshold: DEFAULT_AI_CONFIG.ragSimilarityThreshold, // 0.35
     });
     console.log('ragResult_layer2_RAG: ', ragResult);
 
-    if (ragResult.confidence >= DEFAULT_AI_CONFIG.ragConfidenceThreshold) {
+    if (ragResult.confidence >= DEFAULT_AI_CONFIG.ragConfidenceThreshold) { // 0.5
       this.logger.log('✓ Layer 2 (RAG) succeeded');
       console.log('PROCESSING LAYER2 RAG');
 
@@ -274,7 +274,7 @@ export class AIOrchestrator {
     });
     console.log('llmResult_layer3_LLM_FALLBACK: ', llmResult);
 
-    this.logger.log('✓ Layer 3 (LLM Fallback) completed');
+    this.logger.log('Layer 3 (LLM Fallback) completed');
 
     return {
       success: true,
