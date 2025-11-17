@@ -70,21 +70,25 @@ export const RagDocumentUpload: React.FC<RagDocumentUploadProps> = ({ onUploadSu
   }, []);
 
   const handleFile = (file: File) => {
-    // Validate file type (.txt only)
-    if (!file.name.endsWith('.txt')) {
+    // Validate file type (.txt and .pdf)
+    const validExtensions = ['.txt', '.pdf'];
+    const isValidType = validExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+    
+    if (!isValidType) {
       setState(prev => ({
         ...prev,
-        error: 'Chỉ chấp nhận file .txt',
+        error: 'Chỉ chấp nhận file .txt hoặc .pdf',
         file: null,
       }));
       return;
     }
 
-    // Validate file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
+    // Validate file size (max 50MB for PDF, 10MB for txt)
+    const maxSize = file.name.toLowerCase().endsWith('.pdf') ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+    if (file.size > maxSize) {
       setState(prev => ({
         ...prev,
-        error: 'File quá lớn (tối đa 10MB)',
+        error: `File quá lớn (tối đa ${file.name.toLowerCase().endsWith('.pdf') ? '50MB' : '10MB'})`,
         file: null,
       }));
       return;
@@ -191,7 +195,7 @@ export const RagDocumentUpload: React.FC<RagDocumentUploadProps> = ({ onUploadSu
           <span>Upload RAG Document</span>
         </CardTitle>
         <CardDescription>
-          Upload file .txt để tạo embeddings cho semantic search
+          Upload file .txt hoặc .pdf để tạo embeddings cho semantic search
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -235,13 +239,13 @@ export const RagDocumentUpload: React.FC<RagDocumentUploadProps> = ({ onUploadSu
                 </Button>
                 <input
                   type="file"
-                  accept=".txt"
+                  accept=".txt,.pdf"
                   onChange={handleFileInput}
                   className="hidden"
                 />
               </label>
               <p className="text-xs text-gray-500">
-                Chỉ chấp nhận file .txt (tối đa 10MB)
+                Chấp nhận file .txt (10MB) hoặc .pdf (50MB)
               </p>
             </div>
           )}

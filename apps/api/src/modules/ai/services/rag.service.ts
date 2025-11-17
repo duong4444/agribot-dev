@@ -154,11 +154,15 @@ ${query}
 
 === YÊU CẦU ===
 1. Trả lời bằng tiếng Việt, rõ ràng và chi tiết
-2. CHỈ sử dụng thông tin từ các tài liệu trên
-3. Trích dẫn nguồn bằng [Nguồn X] sau mỗi thông tin quan trọng
-4. Nếu tài liệu không đủ thông tin, hãy nói rõ phần nào còn thiếu
-5. Cấu trúc câu trả lời dễ đọc (dùng bullet points nếu phù hợp)
-6. KHÔNG bịa đặt thông tin không có trong tài liệu
+2. ĐỌC KỸ câu hỏi và CHỈ trả lời ĐÚNG về chủ đề được hỏi
+3. Nếu câu hỏi về một loại sâu/bệnh CỤ THỂ, CHỈ trả lời về loại đó, KHÔNG trả lời về các loại khác
+4. Nếu tài liệu KHÔNG có thông tin về chủ đề CỤ THỂ được hỏi, hãy nói rõ "Tài liệu không có thông tin về [chủ đề cụ thể]"
+5. Trích dẫn nguồn bằng [Nguồn X] sau mỗi thông tin quan trọng
+6. Cấu trúc câu trả lời dễ đọc (dùng bullet points nếu phù hợp)
+
+VÍ DỤ:
+- Nếu hỏi về "sâu đục thân" mà tài liệu chỉ có "câu cấu" → Trả lời: "Tài liệu không có thông tin về sâu đục thân"
+- Nếu hỏi về "bệnh vàng lá" mà tài liệu chỉ có "bệnh đốm lá" → Trả lời: "Tài liệu không có thông tin về bệnh vàng lá"
 
 === TRẢ LỜI ===
 `.trim();

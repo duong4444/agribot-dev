@@ -16,7 +16,7 @@ export const DEFAULT_AI_CONFIG: AIConfig = {
   
   // RAG settings (Layer 2 RAG enabled)
   ragTopK: 5,
-  ragSimilarityThreshold: 0.35, // Optimized based on Vietnamese embeddings performance (0.48-0.88 range)
+  ragSimilarityThreshold: 0.45, // Increased for better precision (trade-off: may miss some relevant docs)
   chunkSize: 500, // characters
   chunkOverlap: 1, // sentences
   

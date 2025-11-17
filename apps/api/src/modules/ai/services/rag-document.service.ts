@@ -5,6 +5,7 @@ import { RagDocument, RagDocumentStatus } from '../entities/rag-document.entity'
 import { RagChunk } from '../entities/rag-chunk.entity';
 import { ChunkingService } from './chunking.service';
 import { EmbeddingService } from './embedding.service';
+import { TextExtractionService } from './text-extraction.service';
 import * as fs from 'fs';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
@@ -26,6 +27,7 @@ export class RagDocumentService {
     private readonly ragChunkRepo: Repository<RagChunk>,
     private readonly chunkingService: ChunkingService,
     private readonly embeddingService: EmbeddingService,
+    private readonly textExtractionService: TextExtractionService,
   ) {
     if (!fs.existsSync(this.uploadDir)) {
       fs.mkdirSync(this.uploadDir, { recursive: true });
@@ -40,9 +42,10 @@ export class RagDocumentService {
     dto: CreateRagDocumentDto,
     userId: string,
   ): Promise<RagDocument> {
-    // Validate file type (.txt only)
-    if (file.mimetype !== 'text/plain') {
-      throw new BadRequestException('Only .txt files are supported');
+    // Validate file type (.txt and .pdf)
+    const allowedMimeTypes = ['text/plain', 'application/pdf'];
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException('Only .txt and .pdf files are supported');
     }
 
     this.logger.log(`Uploading RAG document: ${file.originalname}`);
@@ -52,8 +55,15 @@ export class RagDocumentService {
     const filepath = path.join(this.uploadDir, filename);
     fs.writeFileSync(filepath, file.buffer);
 
-    // 2. Read content
-    const content = file.buffer.toString('utf-8');
+    // 2. Extract content based on file type
+    let content: string;
+    if (file.mimetype === 'application/pdf') {
+      this.logger.log('Extracting text from PDF...');
+      content = await this.textExtractionService.extractText(filepath);
+    } else {
+      // Text file
+      content = file.buffer.toString('utf-8');
+    }
 
     // 3. Create document record
     const document = this.ragDocumentRepo.create({

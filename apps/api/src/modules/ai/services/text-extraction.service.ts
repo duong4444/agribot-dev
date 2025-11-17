@@ -1,10 +1,13 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
+import FormData from 'form-data';
+import axios from 'axios';
 
 @Injectable()
 export class TextExtractionService {
   private readonly logger = new Logger(TextExtractionService.name);
+  private readonly pdfServiceUrl = process.env.PDF_EXTRACTION_SERVICE_URL || 'http://localhost:8002';
 
   /**
    * Extract text từ file dựa trên MIME type
@@ -37,35 +40,58 @@ export class TextExtractionService {
   }
 
   /**
-   * Extract text từ PDF sử dụng pdf-parse
+   * Extract text từ PDF sử dụng Python microservice
+   * Hỗ trợ cả text-based PDF và scanned PDF
    */
   private async extractFromPDF(filepath: string): Promise<string> {
     try {
-      // Import dynamic để tránh lỗi nếu package chưa cài
-      // pdf-parse v2.4.5 là ESM module, export function trực tiếp
-      const pdfParseModule = await import('pdf-parse');
-      // Type assertion để xử lý ESM module
-      const pdfParse = pdfParseModule as any;
+      this.logger.log(`Calling PDF extraction service for: ${filepath}`);
       
-      const dataBuffer = fs.readFileSync(filepath);
-      const data = await pdfParse(dataBuffer);
+      // Create form data
+      const formData = new FormData();
+      formData.append('file', fs.createReadStream(filepath));
       
-      this.logger.log(`Extracted ${data.text.length} characters from PDF`);
-      return data.text;
+      // Call Python microservice
+      const response = await axios.post(
+        `${this.pdfServiceUrl}/extract`,
+        formData,
+        {
+          headers: formData.getHeaders(),
+          timeout: 300000, // 5 minutes timeout for large PDFs
+        }
+      );
+      
+      const result = response.data;
+      
+      this.logger.log(
+        `PDF extracted successfully: method=${result.method}, ` +
+        `pages=${result.page_count}, time=${result.processing_time.toFixed(2)}s`
+      );
+      
+      // Log metadata
+      if (result.metadata.images_skipped) {
+        this.logger.log(`Images skipped: ${result.metadata.images_skipped}`);
+      }
+      
+      if (result.metadata.avg_confidence) {
+        this.logger.log(`OCR confidence: ${(result.metadata.avg_confidence * 100).toFixed(2)}%`);
+      }
+      
+      return result.text;
+      
     } catch (error) {
-      // Fallback: Thử dùng pdf2pic + OCR hoặc trả về lỗi
-      this.logger.warn('pdf-parse failed, trying fallback method');
-      return await this.extractPDFWithFallback(filepath);
+      if (error.code === 'ECONNREFUSED') {
+        this.logger.error('PDF extraction service is not running!');
+        throw new BadRequestException(
+          'PDF extraction service không khả dụng. Vui lòng liên hệ admin.'
+        );
+      }
+      
+      this.logger.error(`Error calling PDF extraction service:`, error);
+      throw new BadRequestException(
+        `Lỗi xử lý PDF: ${error.response?.data?.detail || error.message}`
+      );
     }
-  }
-
-  /**
-   * Fallback method cho PDF (có thể implement OCR sau)
-   */
-  private async extractPDFWithFallback(filepath: string): Promise<string> {
-    // TODO: Implement OCR với Tesseract.js hoặc Google Vision API
-    // Hiện tại trả về thông báo
-    return `[PDF Content] - File: ${path.basename(filepath)}\n\nNội dung PDF cần được xử lý bằng OCR. Vui lòng implement OCR service để extract text từ PDF này.`;
   }
 
   /**
