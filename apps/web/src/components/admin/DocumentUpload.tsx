@@ -216,7 +216,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ onUploadSuccess 
       const result = await response.json();
 
       if (result.success && result.data) {
-        const msg = `✅ Upload thành công! Tạo ${result.data.chunksCreated} chunks cho ${result.data.cropType}`;
+        const msg = `Upload thành công! Tạo ${result.data.chunksCreated} chunks cho ${result.data.cropType}`;
         setState(prev => ({
           ...prev,
           uploading: false,

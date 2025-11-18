@@ -29,7 +29,7 @@ export class VectorStoreService {
       // Convert embedding array to pgvector format string
       // pgvector yêu cầu format string đặc biệt
       const embeddingStr = `[${queryEmbedding.join(',')}]`;
-      console.log("embeddingStr: ",embeddingStr);
+      // console.log("embeddingStr: ",embeddingStr);
       
       // Build raw SQL query for better control
       let sql = `
@@ -56,7 +56,7 @@ export class VectorStoreService {
 
       this.logger.debug(`Executing similarity search with threshold ${options.threshold}`);
       this.logger.debug(`SQL Query: ${sql}`);
-      this.logger.debug(`Parameters: ${JSON.stringify(params.slice(0, 2))} + embedding + ${params.slice(2)}`);
+      // this.logger.debug(`Parameters: ${JSON.stringify(params.slice(0, 2))} + embedding + ${params.slice(2)}`);
       // SELECT ...
       // FROM rag_chunks c
       // LEFT JOIN rag_documents d ON c.rag_document_id = d.id

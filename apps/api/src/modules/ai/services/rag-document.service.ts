@@ -104,9 +104,9 @@ export class RagDocumentService {
       // STEP 1: Chunking
       this.logger.log('Chunking document...');
       const chunks = await this.chunkingService.chunkDocument(content, {
-        maxChunkSize: 500,
-        overlapSentences: 1,
-        minChunkSize: 100,
+        maxChunkSize: 2000, // Increased for long-context model (8096 tokens support)
+        overlapSentences: 5, // High overlap (25% of ~20 sentences per chunk) for maximum context preservation
+        minChunkSize: 200,
       });
 
       this.logger.log(`Created ${chunks.length} chunks`);

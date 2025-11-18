@@ -4,6 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Trash2, FileText, Loader2, CheckCircle, Clock, XCircle, Sparkles } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useSession } from 'next-auth/react';
 import { format } from 'date-fns';
 
@@ -28,6 +36,8 @@ export const RagDocumentList: React.FC<RagDocumentListProps> = ({ refreshTrigger
   const [documents, setDocuments] = useState<RagDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedDoc, setSelectedDoc] = useState<RagDocument | null>(null);
 
   const fetchDocuments = async () => {
     try {
@@ -54,9 +64,12 @@ export const RagDocumentList: React.FC<RagDocumentListProps> = ({ refreshTrigger
     }
   }, [session, refreshTrigger]);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Bạn có chắc muốn xóa document này?')) return;
+  const openDeleteDialog = (doc: RagDocument) => {
+    setSelectedDoc(doc);
+    setDeleteDialogOpen(true);
+  };
 
+  const handleDelete = async (id: string) => {
     setDeleting(id);
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/rag-documents/${id}`, {
@@ -73,6 +86,8 @@ export const RagDocumentList: React.FC<RagDocumentListProps> = ({ refreshTrigger
       console.error('Error deleting document:', error);
     } finally {
       setDeleting(null);
+      setDeleteDialogOpen(false);
+      setSelectedDoc(null);
     }
   };
 
@@ -178,7 +193,7 @@ export const RagDocumentList: React.FC<RagDocumentListProps> = ({ refreshTrigger
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleDelete(doc.id)}
+                  onClick={() => openDeleteDialog(doc)}
                   disabled={deleting === doc.id}
                   className="ml-4 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                 >
@@ -193,6 +208,53 @@ export const RagDocumentList: React.FC<RagDocumentListProps> = ({ refreshTrigger
           </div>
         )}
       </CardContent>
+      <Dialog
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          setDeleteDialogOpen(open);
+          if (!open) {
+            setSelectedDoc(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xóa document</DialogTitle>
+            <DialogDescription>
+              Bạn có chắc muốn xóa{' '}
+              <span className="font-semibold">{selectedDoc?.originalName}</span>
+              ? Hành động này không thể hoàn tác.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteDialogOpen(false);
+                setSelectedDoc(null);
+              }}
+              disabled={!!deleting}
+            >
+              Hủy
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (selectedDoc) {
+                  handleDelete(selectedDoc.id);
+                }
+              }}
+              disabled={!selectedDoc || !!deleting}
+            >
+              {deleting && deleting === selectedDoc?.id ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                'Xóa'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

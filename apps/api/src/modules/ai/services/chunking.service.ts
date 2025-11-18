@@ -1,9 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 export interface ChunkingConfig {
-  maxChunkSize: number; // characters
+  maxChunkSize: number; // characters (not tokens - for Vietnamese: ~4 chars = 1 token)
   overlapSentences: number; // number of sentences to overlap
-  minChunkSize: number; // minimum chunk size
+  minChunkSize: number; // minimum chunk size in characters
+  maxTokens?: number; // optional: max tokens per chunk (overrides maxChunkSize if set)
 }
 
 export interface Chunk {
@@ -23,11 +24,18 @@ export class ChunkingService {
   async chunkDocument(
     content: string,
     config: ChunkingConfig = {
-      maxChunkSize: 500,
-      overlapSentences: 1,
-      minChunkSize: 100,
+      maxChunkSize: 2000,
+      overlapSentences: 5,
+      minChunkSize: 200,
     },
   ): Promise<Chunk[]> {
+    return this.sentenceBasedChunking(content, config);
+  }
+
+  /**
+   * Sentence-based chunking implementation
+   */
+  private sentenceBasedChunking(content: string, config: ChunkingConfig): Chunk[] {
     // 1. Normalize text
     const normalized = content
       .replace(/\r\n/g, '\n')

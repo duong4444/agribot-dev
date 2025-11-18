@@ -212,11 +212,11 @@ export interface Document {
 export interface AIConfig {
   // Layer thresholds (3-layer architecture)
   exactMatchThreshold: number;      // 0.9
-  ragConfidenceThreshold: number;   // 0.7 - Layer 2 RAG enabled
+  ragConfidenceThreshold: number;   // 0.5
   llmFallbackThreshold: number;     // 0.5
   
   // RAG settings (Layer 2 RAG enabled)
-  ragTopK: number;                  // 5
+  ragTopK: number;                  // 10
   ragSimilarityThreshold: number;   // 0.7
   chunkSize: number;                // 500 characters
   chunkOverlap: number;             // 1 sentence

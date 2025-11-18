@@ -51,11 +51,11 @@ export class RAGService {
     
     // Dynamic threshold based on query complexity
     const dynamicThreshold = this.calculateDynamicThreshold(query);
-    console.log("options.threshold: ", options.threshold);
-    console.log("dynamicThreshold: ", dynamicThreshold);
+    console.log("1.options.threshold: ", options.threshold);
+    console.log("2.dynamicThreshold: ", dynamicThreshold);
     
     const finalThreshold = options.threshold || dynamicThreshold;
-    console.log("finalThreshold: ", finalThreshold);
+    console.log("3.finalThreshold: ", finalThreshold);
     
     const chunks = await this.vectorStore.similaritySearch(queryEmbedding, {
       topK: options.topK || 5,
@@ -67,7 +67,7 @@ export class RAGService {
 
     // STEP 2.5: Early exit if no chunks or low quality
     if (chunks.length === 0) {
-      this.logger.log('❌ No chunks found - returning low confidence');
+      this.logger.log('No chunks found - returning low confidence');
       return {
         answer: 'Xin lỗi, tôi không tìm thấy thông tin liên quan trong tài liệu.',
         confidence: 0,
@@ -79,6 +79,8 @@ export class RAGService {
 
     // Check average similarity BEFORE calling LLM
     const avgSimilarity = chunks.reduce((sum, c) => sum + (c.similarity || 0), 0) / chunks.length;
+    console.log("avgSimilarity: ",avgSimilarity);
+    
     const minRequiredSimilarity = 0.45; // Threshold for meaningful retrieval
     
     if (avgSimilarity < minRequiredSimilarity) {
@@ -86,6 +88,7 @@ export class RAGService {
         `Low average similarity (${avgSimilarity.toFixed(3)} < ${minRequiredSimilarity}) - ` +
         `skipping LLM synthesis to save cost`
       );
+      console.log("TBC CHUNKS < 0.45 FALLBACK THẲNG LLM");
       
       return {
         answer: `Tài liệu hiện có không chứa thông tin liên quan đến "${query}". ` +
@@ -108,12 +111,16 @@ export class RAGService {
       `Good average similarity (${avgSimilarity.toFixed(3)}) - ` +
       `synthesizing answer from ${chunks.length} chunks`
     );
+    console.log("ĐÃ PASS NGƯỠNG TRUNG BÌNH CỘNG NÊN GỌI LLM");
+    
     const synthesisStart = Date.now();
     const answer = await this.synthesizeAnswer(query, chunks);
     const synthesisTime = Date.now() - synthesisStart;
 
     // STEP 4: Calculate confidence
     const confidence = this.calculateConfidence(chunks, answer);
+    console.log("CONFIDENCE SAU KHI ĐÃ GỌI LLM VÌ PASS NGƯỠNG TBC: ",confidence);
+    
 
     return {
       answer,
@@ -152,17 +159,30 @@ ${context}
 === CÂU HỎI ===
 ${query}
 
-=== YÊU CẦU ===
-1. Trả lời bằng tiếng Việt, rõ ràng và chi tiết
-2. ĐỌC KỸ câu hỏi và CHỈ trả lời ĐÚNG về chủ đề được hỏi
-3. Nếu câu hỏi về một loại sâu/bệnh CỤ THỂ, CHỈ trả lời về loại đó, KHÔNG trả lời về các loại khác
-4. Nếu tài liệu KHÔNG có thông tin về chủ đề CỤ THỂ được hỏi, hãy nói rõ "Tài liệu không có thông tin về [chủ đề cụ thể]"
-5. Trích dẫn nguồn bằng [Nguồn X] sau mỗi thông tin quan trọng
-6. Cấu trúc câu trả lời dễ đọc (dùng bullet points nếu phù hợp)
+=== LƯU Ý QUAN TRỌNG ===
+Các tài liệu trên được tìm kiếm bằng semantic search (tìm kiếm theo ngữ nghĩa), do đó:
+- Một số tài liệu có thể KHÔNG TRỰC TIẾP liên quan đến câu hỏi
+- Một số tài liệu có thể nói về chủ đề TƯƠNG TỰ nhưng KHÔNG PHẢI chủ đề được hỏi
+- Bạn CẦN CHỌN LỌC và CHỈ SỬ DỤNG thông tin ĐÚNG với câu hỏi
 
-VÍ DỤ:
-- Nếu hỏi về "sâu đục thân" mà tài liệu chỉ có "câu cấu" → Trả lời: "Tài liệu không có thông tin về sâu đục thân"
-- Nếu hỏi về "bệnh vàng lá" mà tài liệu chỉ có "bệnh đốm lá" → Trả lời: "Tài liệu không có thông tin về bệnh vàng lá"
+=== YÊU CẦU ===
+1. ĐỌC KỸ câu hỏi để xác định CHÍNH XÁC chủ đề được hỏi
+2. KIỂM TRA từng tài liệu xem có THỰC SỰ nói về chủ đề đó không
+3. CHỈ SỬ DỤNG thông tin từ các tài liệu ĐÚNG chủ đề, BỎ QUA các tài liệu không liên quan
+4. Nếu câu hỏi về một loại thông tin CỤ THỂ:
+   - CHỈ trả lời về loại đó
+   - KHÔNG trả lời về các loại thông tin khác dù chúng có trong tài liệu
+5. Nếu KHÔNG có tài liệu nào thực sự nói về chủ đề được hỏi:
+   - Nói rõ: "Tài liệu không có thông tin về [chủ đề cụ thể]"
+   - KHÔNG tổng hợp thông tin từ các chủ đề khác
+6. Trích dẫn nguồn bằng [Nguồn X] cho mỗi thông tin được sử dụng
+7. Trả lời bằng tiếng Việt, rõ ràng, có cấu trúc (dùng bullet points nếu phù hợp)
+
+=== VÍ DỤ CHỌN LỌC ===
+Câu hỏi: "Biện pháp phòng trừ sâu đục thân"
+- Nguồn 1: Nói về "sâu đục thân" → SỬ DỤNG
+- Nguồn 2: Nói về "câu cấu" → BỎ QUA (không phải sâu đục thân)
+- Nguồn 3: Nói chung về "phòng trừ sâu bệnh" → BỎ QUA (quá chung chung)
 
 === TRẢ LỜI ===
 `.trim();

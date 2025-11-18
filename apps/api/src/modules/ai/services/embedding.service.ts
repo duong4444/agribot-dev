@@ -42,7 +42,7 @@ export class EmbeddingService implements OnModuleInit {
       });
       
       const embedding = response.data.embeddings[0];
-      console.log("embedding: ",embedding);
+      // console.log("embedding: ",embedding);
       
       this.logger.debug(`Generated embedding with ${embedding.length} dimensions`);
       this.logger.debug(`First 5 values: [${embedding.slice(0, 5).join(', ')}]`);

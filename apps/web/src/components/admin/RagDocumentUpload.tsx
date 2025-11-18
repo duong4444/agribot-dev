@@ -156,7 +156,7 @@ export const RagDocumentUpload: React.FC<RagDocumentUploadProps> = ({ onUploadSu
         ...prev,
         uploading: false,
         success: true,
-        successMessage: `✅ Upload thành công! Document đang được xử lý...`,
+        successMessage: `Upload thành công! Document đang được xử lý...`,
         file: null,
         tags: [],
         progress: 100,

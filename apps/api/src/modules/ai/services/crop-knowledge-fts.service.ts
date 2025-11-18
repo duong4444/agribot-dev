@@ -677,7 +677,7 @@ export class CropKnowledgeFTSService {
       .createQueryBuilder('chunk')
       .where('chunk.status = :status', { status: 'active' });
     // SELECT * FROM crop_knowledge_chunks WHERE status = 'active'
-    console.log("queryBuilder_searchByHeading_chuaCropFilter: ",queryBuilder);
+    // console.log("queryBuilder_searchByHeading_chuaCropFilter: ",queryBuilder);
     //WHERE status = 'active' AND LOWER(loai_cay) LIKE LOWER('%cà phê%')
     if (cropFilter) {
       // Use LOWER for case-insensitive match instead of normalize_vietnamese_text

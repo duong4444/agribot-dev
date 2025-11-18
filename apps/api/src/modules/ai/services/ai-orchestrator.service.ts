@@ -231,10 +231,13 @@ export class AIOrchestrator {
     const ragResult = await this.rag.retrieve(query, {
       userId: user.id,
       topK: DEFAULT_AI_CONFIG.ragTopK,
-      threshold: DEFAULT_AI_CONFIG.ragSimilarityThreshold, // 0.35
+      threshold: DEFAULT_AI_CONFIG.ragSimilarityThreshold, // 0.4
     });
     console.log('ragResult_layer2_RAG: ', ragResult);
-
+    console.log("RESULT TỪ RAG: ",ragResult.confidence);
+    
+    console.log("RAG_CONFIDENCE_THRESHOLD: ",DEFAULT_AI_CONFIG.ragConfidenceThreshold);
+    
     if (ragResult.confidence >= DEFAULT_AI_CONFIG.ragConfidenceThreshold) { // 0.5
       this.logger.log('✓ Layer 2 (RAG) succeeded');
       console.log('PROCESSING LAYER2 RAG');
