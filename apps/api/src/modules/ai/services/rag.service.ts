@@ -10,6 +10,14 @@ export interface RAGRetrievalOptions {
   threshold?: number;
 }
 
+interface FootnoteReference {
+  number: string;
+  source: string;
+  originalName: string;
+  chunkIndex: number;
+  similarity: number;
+}
+
 export interface RAGResult {
   answer: string;
   confidence: number;
@@ -141,11 +149,25 @@ export class RAGService {
     query: string,
     chunks: RagChunk[],
   ): Promise<string> {
-    // Build context from chunks
+    // Create footnote mapping for academic-style citations
+    const footnoteMapping = chunks.map<FootnoteReference>((chunk, idx) => {
+      const source = chunk.ragDocument?.originalName || 'Unknown';
+      const friendlySourceName = this.formatSourceName(source);
+      const footnoteNumber = this.getFootnoteSymbol(idx + 1);
+      return {
+        number: footnoteNumber,
+        source: friendlySourceName,
+        originalName: source,
+        chunkIndex: chunk.chunkIndex,
+        similarity: chunk.similarity || 0,
+      };
+    });
+
+    // Build context with footnote references
     const context = chunks
       .map((chunk, idx) => {
-        const source = chunk.ragDocument?.originalName || 'Unknown';
-        return `[Nguồn ${idx + 1}] (${source})\n${chunk.content}`;
+        const footnoteNumber = footnoteMapping[idx].number;
+        return `[Tài liệu ${footnoteNumber}: ${footnoteMapping[idx].source}]\n${chunk.content}`;
       })
       .join('\n\n---\n\n');
 
@@ -164,6 +186,7 @@ Các tài liệu trên được tìm kiếm bằng semantic search (tìm kiếm 
 - Một số tài liệu có thể KHÔNG TRỰC TIẾP liên quan đến câu hỏi
 - Một số tài liệu có thể nói về chủ đề TƯƠNG TỰ nhưng KHÔNG PHẢI chủ đề được hỏi
 - Bạn CẦN CHỌN LỌC và CHỈ SỬ DỤNG thông tin ĐÚNG với câu hỏi
+- CHÚ Ý TUYỆT ĐỐI KHÔNG CỐ GẮNG HIỂN THỊ DẠNG BẢNG
 
 === YÊU CẦU ===
 1. ĐỌC KỸ câu hỏi để xác định CHÍNH XÁC chủ đề được hỏi
@@ -175,14 +198,19 @@ Các tài liệu trên được tìm kiếm bằng semantic search (tìm kiếm 
 5. Nếu KHÔNG có tài liệu nào thực sự nói về chủ đề được hỏi:
    - Nói rõ: "Tài liệu không có thông tin về [chủ đề cụ thể]"
    - KHÔNG tổng hợp thông tin từ các chủ đề khác
-6. Trích dẫn nguồn bằng [Nguồn X] cho mỗi thông tin được sử dụng
-7. Trả lời bằng tiếng Việt, rõ ràng, có cấu trúc (dùng bullet points nếu phù hợp)
+6. **ĐỊNH DẠNG**: Trả lời dạng Markdown với cấu trúc rõ ràng:
+   - Dùng tiêu đề phụ (ví dụ: "## Thông tin chung", "## Tác dụng")
+   - Dùng bullet "-" để liệt kê, mỗi bullet cách nhau một dòng
+   - Giữ câu ngắn gọn, 1 ý chính mỗi dòng
+7. **XỬ LÝ BẢNG OCR**: Khi gặp nội dung giống bảng bị méo do OCR (nhiều cột, khoảng trắng, số liệu):
+   - CHỈ ĐƯỢC DÙNG dạng bullet "-" để liệt kê, mỗi bullet cách nhau một dòng
+8. **FOOTNOTE CITATIONS**: Sử dụng superscript numbers cho trích dẫn academic-style:
+   - VÍ DỤ: "Sâm Ngọc Linh là loài đặc hữu của Việt Nam¹"
+   - VÍ DỤ: "Phân bố tại dãy núi Ngọc Linh²"
+   - SỬ DỤNG: ¹, ², ³, ⁴, ⁵ (superscript numbers)
+9. KHÔNG tự thêm mục "Nguồn tham khảo" ở cuối - hệ thống sẽ tự bổ sung
 
-=== VÍ DỤ CHỌN LỌC ===
-Câu hỏi: "Biện pháp phòng trừ sâu đục thân"
-- Nguồn 1: Nói về "sâu đục thân" → SỬ DỤNG
-- Nguồn 2: Nói về "câu cấu" → BỎ QUA (không phải sâu đục thân)
-- Nguồn 3: Nói chung về "phòng trừ sâu bệnh" → BỎ QUA (quá chung chung)
+=== VÍ DỤ FOOTNOTE CITATIONS ===
 
 === TRẢ LỜI ===
 `.trim();
@@ -193,7 +221,103 @@ Câu hỏi: "Biện pháp phòng trừ sâu đục thân"
       temperature: 0.3, // Low temperature for factual answers
     });
 
-    return response.answer;
+    const rawAnswer = response.answer.trim();
+
+    // Only keep footnotes that are actually used in the answer.
+    // Lưu ý: tránh case "¹" bị match bên trong "¹⁰".
+    const superscriptDigits = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+    const usedFootnotes = footnoteMapping.filter(f => {
+      const symbol = f.number;
+      let index = rawAnswer.indexOf(symbol);
+
+      while (index !== -1) {
+        const beforeChar = index > 0 ? rawAnswer[index - 1] : '';
+        const afterChar =
+          index + symbol.length < rawAnswer.length
+            ? rawAnswer[index + symbol.length]
+            : '';
+
+        const beforeIsSup = superscriptDigits.includes(beforeChar);
+        const afterIsSup = superscriptDigits.includes(afterChar);
+
+        // Chỉ chấp nhận nếu ký tự trước/sau KHÔNG phải là superscript digit,
+        // tức là symbol không phải một phần của chuỗi superscript dài hơn.
+        if (!beforeIsSup && !afterIsSup) {
+          return true;
+        }
+
+        index = rawAnswer.indexOf(symbol, index + symbol.length);
+      }
+
+      return false;
+    });
+
+    const referenceSection = this.buildReferenceSection(usedFootnotes);
+    const finalAnswer = [rawAnswer, referenceSection]
+      .filter(Boolean)
+      .join('\n\n');
+
+    return finalAnswer;
+  }
+
+  /**
+   * Format source name to be more user-friendly
+   */
+  private formatSourceName(originalName: string): string {
+    if (!originalName || originalName === 'Unknown') {
+      return 'Tài liệu không xác định';
+    }
+
+    // Remove file extensions for cleaner display
+    const nameWithoutExt = originalName.replace(/\.(txt|pdf|docx?|md)$/i, '');
+    
+    // Convert underscores and hyphens to spaces
+    const friendlyName = nameWithoutExt
+      .replace(/[_-]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // Capitalize first letter of each word for better readability
+    const capitalizedName = friendlyName
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+
+    return capitalizedName;
+  }
+
+  /**
+   * Build standardized reference section appended to answers
+   */
+  private buildReferenceSection(footnotes: FootnoteReference[]): string {
+    if (!footnotes.length) {
+      return '';
+    }
+
+    const referenceLines = footnotes.map(
+      f => `- ${f.number} ${f.originalName} (chunk ${f.chunkIndex})`,
+    );
+
+    // Cấu trúc Markdown:
+    // ────────────────────────────────\n
+    // Nguồn tham khảo:\n
+    // - ¹ file1 (chunk..., ...%)\n
+    // - ² file2 (chunk..., ...%)
+    return [
+      '────────────────────────────────',
+      '',
+      'Nguồn tham khảo:',
+      '',
+      ...referenceLines,
+    ].join('\n');
+  }
+
+  /**
+   * Get footnote symbol for academic-style citations
+   */
+  private getFootnoteSymbol(index: number): string {
+    const symbols = ['¹', '²', '³', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹', '¹⁰'];
+    return symbols[index - 1] || `${index}`;
   }
 
   /**
@@ -233,8 +357,8 @@ Câu hỏi: "Biện pháp phòng trừ sâu đục thân"
     const answerLength = answer.length;
     const lengthScore = answerLength > 100 && answerLength < 2000 ? 1 : 0.7;
 
-    // 4. Has citations
-    const hasCitations = /\[Nguồn \d+\]/.test(answer);
+    // 4. Has citations (superscript footnotes)
+    const hasCitations = /[¹²³⁴⁵⁶⁷⁸⁹]/.test(answer);
     const citationScore = hasCitations ? 1 : 0.5;
 
     // 5. Check if answer indicates "no information found" (as backup check)

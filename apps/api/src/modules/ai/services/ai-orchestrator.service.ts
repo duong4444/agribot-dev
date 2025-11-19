@@ -250,7 +250,7 @@ export class AIOrchestrator {
         ragResult,
         sources: ragResult.sources.map(s => ({
           type: 'rag_document' as const,
-          reference: s.documentName,
+          reference: this.formatSourceName(s.documentName),
           confidence: s.similarity,
           excerpt: s.content.substring(0, 200) + '...',
         })),
@@ -438,5 +438,31 @@ export class AIOrchestrator {
     }[response.processingLayer];
 
     return `Processed via ${layerName} | Confidence: ${(response.confidence * 100).toFixed(0)}% | Time: ${response.responseTime}ms`;
+  }
+
+  /**
+   * Format source name to be more user-friendly
+   */
+  private formatSourceName(originalName: string): string {
+    if (!originalName || originalName === 'Unknown') {
+      return 'Tài liệu không xác định';
+    }
+
+    // Remove file extensions for cleaner display
+    const nameWithoutExt = originalName.replace(/\.(txt|pdf|docx?|md)$/i, '');
+    
+    // Convert underscores and hyphens to spaces
+    const friendlyName = nameWithoutExt
+      .replace(/[_-]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // Capitalize first letter of each word for better readability
+    const capitalizedName = friendlyName
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+
+    return capitalizedName;
   }
 }
