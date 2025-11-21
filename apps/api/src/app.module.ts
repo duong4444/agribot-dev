@@ -12,7 +12,7 @@ import { getJwtConfig } from './common/config/jwt.config';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ChatModule } from './modules/chat/chat.module';
-// import { FarmModule } from './modules/farm/farm.module'; // REMOVED: Will be rebuilt
+import { FarmsModule } from './modules/farms/farms.module';
 import { AIRefactoredModule } from './modules/ai/ai-refactored.module';
 // import { KnowledgeModule } from './modules/knowledge/knowledge.module';
 
@@ -48,7 +48,7 @@ import { AIRefactoredModule } from './modules/ai/ai-refactored.module';
     AuthModule,
     UsersModule,
     ChatModule,
-    // FarmModule, // REMOVED: Will be rebuilt
+    FarmsModule,
     AIRefactoredModule,
     // KnowledgeModule,
   ],

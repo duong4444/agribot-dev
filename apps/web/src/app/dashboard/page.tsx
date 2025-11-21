@@ -2,16 +2,13 @@
 
 import React from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { AuthGuard } from '@/components/auth/auth-guard';
-import { 
-  DashboardHeader, 
-  ChatInterface, 
-  DashboardSidebar,
-  useChat
-} from '@/components/dashboard';
+import { DashboardHeader, ChatInterface, DashboardSidebar, useChat } from '@/components/dashboard';
 
 const Dashboard = () => {
   const { data: session } = useSession();
+  const router = useRouter();
   const {
     messages,
     inputMessage,
@@ -37,6 +34,24 @@ const Dashboard = () => {
   const handleSelectConversation = (conversationId: string) => {
     loadConversation(conversationId);
   };
+
+  // Redirect new users without a farm to /farm
+  React.useEffect(() => {
+    if (session?.user) {
+      const checkFarm = async () => {
+        try {
+          const res = await fetch('/api/farms');
+          if (!res.ok) {
+            // If 404 or any error, redirect to farm registration page
+            router.replace('/farm');
+          }
+        } catch (e) {
+          router.replace('/farm');
+        }
+      };
+      checkFarm();
+    }
+  }, [session, router]);
 
   return (
     <AuthGuard>

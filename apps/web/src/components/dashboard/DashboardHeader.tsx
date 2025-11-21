@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
@@ -18,6 +18,7 @@ interface DashboardHeaderProps {
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) => {
   const router = useRouter();
+  const pathname = usePathname();
 
   const handleSettings = () => {
     router.push('/settings');
@@ -41,6 +42,26 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) =>
                 Xin chào, <span className="font-semibold text-gray-900 dark:text-white">{userName}</span>
               </span>
             </div>
+            
+            {/* Navigation */}
+            <nav className="hidden md:flex items-center gap-2 ml-8">
+              <Link href="/dashboard">
+                <Button 
+                  variant={pathname === '/dashboard' ? 'default' : 'ghost'}
+                  className={pathname === '/dashboard' ? 'bg-agri-green-600 hover:bg-agri-green-700' : ''}
+                >
+                  Chat
+                </Button>
+              </Link>
+              <Link href="/farm">
+                <Button 
+                  variant={pathname === '/farm' ? 'default' : 'ghost'}
+                  className={pathname === '/farm' ? 'bg-agri-green-600 hover:bg-agri-green-700' : ''}
+                >
+                  Nông Trại
+                </Button>
+              </Link>
+            </nav>
           </div>
           
           <div className="flex items-center gap-2">
