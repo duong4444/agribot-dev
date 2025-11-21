@@ -44,7 +44,7 @@ import { TextExtractionService } from './services/text-extraction.service';
 import { AdminGuard } from './guards/admin.guard';
 
 // Other modules
-import { FarmModule } from '../farm/farm.module';
+// import { FarmModule } from '../farm/farm.module'; // REMOVED: Farm module will be rebuilt
 import { AIRefactoredController } from './ai-refactored.controller';
 import { AdminDocumentController } from './controllers/admin-document.controller';
 import { AdminCropKnowledgeController } from './controllers/admin-crop-knowledge.controller';
@@ -55,7 +55,7 @@ import { PublicDebugController } from './controllers/public-debug.controller';
   imports: [
     ConfigModule,
     TypeOrmModule.forFeature([Document, CropKnowledgeChunk, RagDocument, RagChunk]),
-    FarmModule,
+    // FarmModule, // REMOVED: Will be rebuilt later
   ],
   controllers: [
     AIRefactoredController, 

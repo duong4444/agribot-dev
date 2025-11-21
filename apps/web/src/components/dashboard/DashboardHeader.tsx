@@ -9,9 +9,7 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { 
   Leaf,
   LogOut,
-  Settings,
-  BarChart3,
-  Home
+  Settings
 } from 'lucide-react';
 
 interface DashboardHeaderProps {
@@ -20,14 +18,6 @@ interface DashboardHeaderProps {
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) => {
   const router = useRouter();
-
-  const handleFarmManagement = () => {
-    router.push('/farm');
-  };
-
-  const handleAnalytics = () => {
-    router.push('/analytics');
-  };
 
   const handleSettings = () => {
     router.push('/settings');
@@ -54,24 +44,6 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) =>
           </div>
           
           <div className="flex items-center gap-2">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={handleFarmManagement}
-              className="hidden sm:flex hover:bg-agri-green-50 dark:hover:bg-agri-green-900/20 hover:text-agri-green-700 dark:hover:text-agri-green-300"
-            >
-              <Home className="h-4 w-4 mr-2" />
-              Farm
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={handleAnalytics}
-              className="hidden sm:flex hover:bg-agri-green-50 dark:hover:bg-agri-green-900/20 hover:text-agri-green-700 dark:hover:text-agri-green-300"
-            >
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Analytics
-            </Button>
             <Button 
               variant="ghost" 
               size="sm"

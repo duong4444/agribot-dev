@@ -228,3 +228,9 @@ pdf-extraction-service/test_service.py
 # search_crop_knowledge_fts.txt
 search_crop_knowledge_fts.txt
 ham_fts_v2.txt
+CLEANUP-CHECKLIST.md
+# COMPLETE-REFACTOR-SUMMARY.md
+FRONTEND-CLEANUP-SUMMARY.md
+# REFACTOR-SUMMARY.md
+COMPLETE-REFACTOR-SUMMARY.md
+REFACTOR-SUMMARY.md

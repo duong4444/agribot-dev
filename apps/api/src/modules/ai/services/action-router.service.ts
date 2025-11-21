@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { User } from '../../users/entities/user.entity';
-import { FarmService } from '../../farm/farm.service';
 import { 
   IntentType, 
   Entity, 
@@ -30,7 +29,6 @@ export class ActionRouterService {
   private readonly logger = new Logger(ActionRouterService.name);
 
   constructor(
-    private readonly farmService: FarmService,
     private readonly llmFallback: LLMFallbackService,
   ) {}
 
@@ -70,201 +68,20 @@ export class ActionRouterService {
 
   /**
    * Handle financial queries (doanh thu, chi phí)
+   * TODO: Implement when Farm & Financial module is ready
    */
   private async handleFinancialQuery(
     user: User,
     entities: Entity[],
     query: string
   ): Promise<ActionResult> {
-    try {
-      // Get user's farms
-      const farms = await this.farmService.getFarmsByUser(user);
-
-      if (farms.length === 0) {
-        return {
-          success: true,
-          message: 'Bạn chưa có nông trại nào. Hãy tạo nông trại đầu tiên để theo dõi tài chính.',
-        };
-      }
-
-      // Extract time period from entities
-      const timePeriod = this.extractTimePeriodFromEntities(entities);
-
-      // Calculate financial data
-      const financialData = await this.calculateFinancials(
-        farms,
-        timePeriod.start,
-        timePeriod.end,
-        user
-      );
-
-      // Generate human-friendly explanation
-      const explanation = await this.llmFallback.generateWithContext(
-        query,
-        financialData
-      );
-
-      return {
-        success: true,
-        message: explanation,
-        businessData: {
-          success: true,
-          data: financialData,
-          query,
-        },
-      };
-    } catch (error) {
-      this.logger.error('Error handling financial query:', error);
-      return {
-        success: false,
-        message: 'Không thể truy vấn dữ liệu tài chính.',
-      };
-    }
-  }
-
-  /**
-   * Handle crop queries
-   */
-  private async handleCropQuery(
-    user: User,
-    entities: Entity[],
-    query: string
-  ): Promise<ActionResult> {
-    try {
-      const farms = await this.farmService.getFarmsByUser(user);
-
-      if (farms.length === 0) {
-        return {
-          success: true,
-          message: 'Bạn chưa có nông trại nào.',
-        };
-      }
-
-      // Get all crops
-      const allCrops: any[] = [];
-      for (const farm of farms) {
-        const crops = await this.farmService.getCropsByFarm(farm.id, user);
-        allCrops.push(...crops);
-      }
-
-      // Filter by crop name if specified in entities
-      const cropNameEntity = entities.find(e => e.type === 'crop_name');
-      const filteredCrops = cropNameEntity
-        ? allCrops.filter(crop => 
-            crop.name.toLowerCase().includes(cropNameEntity.value.toLowerCase())
-          )
-        : allCrops;
-
-      const explanation = await this.llmFallback.generateWithContext(
-        query,
-        filteredCrops
-      );
-
-      return {
-        success: true,
-        message: explanation,
-        businessData: {
-          success: true,
-          data: filteredCrops,
-          query,
-        },
-      };
-    } catch (error) {
-      this.logger.error('Error handling crop query:', error);
-      return {
-        success: false,
-        message: 'Không thể truy vấn dữ liệu cây trồng.',
-      };
-    }
-  }
-
-  /**
-   * Handle activity queries
-   */
-  private async handleActivityQuery(
-    user: User,
-    entities: Entity[],
-    query: string
-  ): Promise<ActionResult> {
-    try {
-      const farms = await this.farmService.getFarmsByUser(user);
-
-      if (farms.length === 0) {
-        return {
-          success: true,
-          message: 'Bạn chưa có nông trại nào.',
-        };
-      }
-
-      const timePeriod = this.extractTimePeriodFromEntities(entities);
-
-      // Get activities
-      const allActivities: any[] = [];
-      for (const farm of farms) {
-        const activities = await this.farmService.getActivitiesByFarm(
-          farm.id,
-          user
-        );
-        allActivities.push(...activities);
-      }
-
-      const explanation = await this.llmFallback.generateWithContext(
-        query,
-        allActivities
-      );
-
-      return {
-        success: true,
-        message: explanation,
-        businessData: {
-          success: true,
-          data: allActivities,
-          query,
-        },
-      };
-    } catch (error) {
-      this.logger.error('Error handling activity query:', error);
-      return {
-        success: false,
-        message: 'Không thể truy vấn dữ liệu hoạt động.',
-      };
-    }
+    return {
+      success: false,
+      message: 'Chức năng quản lý tài chính đang được phát triển. Vui lòng quay lại sau.',
+    };
   }
 
 
-  /**
-   * Handle farm queries
-   */
-  private async handleFarmQuery(
-    user: User,
-    entities: Entity[],
-    query: string
-  ): Promise<ActionResult> {
-    try {
-      const farms = await this.farmService.getFarmsByUser(user);
-
-      const explanation = await this.llmFallback.generateWithContext(
-        query,
-        farms
-      );
-
-      return {
-        success: true,
-        message: explanation,
-        businessData: {
-          success: true,
-          data: farms,
-          query,
-        },
-      };
-    } catch (error) {
-      this.logger.error('Error handling farm query:', error);
-      return {
-        success: false,
-        message: 'Không thể truy vấn dữ liệu nông trại.',
-      };
-    }
-  }
 
   /**
    * Handle sensor queries (IoT)
@@ -313,143 +130,6 @@ export class ActionRouterService {
     };
   }
 
-  /**
-   * Handle create record
-   */
-  private async handleCreateRecord(
-    user: User,
-    entities: Entity[],
-    query: string
-  ): Promise<ActionResult> {
-    return {
-      success: false,
-      message: 'Chức năng tạo bản ghi đang được phát triển.',
-      requiresConfirmation: true,
-    };
-  }
-
-  /**
-   * Handle update record
-   */
-  private async handleUpdateRecord(
-    user: User,
-    entities: Entity[],
-    query: string
-  ): Promise<ActionResult> {
-    return {
-      success: false,
-      message: 'Chức năng cập nhật bản ghi đang được phát triển.',
-      requiresConfirmation: true,
-    };
-  }
-
-  /**
-   * Handle delete record
-   */
-  private async handleDeleteRecord(
-    user: User,
-    entities: Entity[],
-    query: string
-  ): Promise<ActionResult> {
-    return {
-      success: false,
-      message: 'Chức năng xóa bản ghi đang được phát triển.',
-      requiresConfirmation: true,
-    };
-  }
-
-  /**
-   * Extract time period from entities
-   */
-  private extractTimePeriodFromEntities(entities: Entity[]): {
-    start: Date;
-    end: Date;
-  } {
-    const dateEntity = entities.find(e => e.type === 'date');
-    const now = new Date();
-
-    if (!dateEntity) {
-      // Default: this month
-      const start = new Date(now.getFullYear(), now.getMonth(), 1);
-      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      return { start, end };
-    }
-
-    const value = dateEntity.value.toLowerCase();
-
-    // This week
-    if (value === 'this_week') {
-      const start = new Date(now);
-      start.setDate(now.getDate() - now.getDay());
-      const end = new Date(start);
-      end.setDate(start.getDate() + 6);
-      return { start, end };
-    }
-
-    // This month
-    if (value === 'this_month') {
-      const start = new Date(now.getFullYear(), now.getMonth(), 1);
-      const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      return { start, end };
-    }
-
-    // This year
-    if (value === 'this_year') {
-      const start = new Date(now.getFullYear(), 0, 1);
-      const end = new Date(now.getFullYear(), 11, 31);
-      return { start, end };
-    }
-
-    // Specific date
-    if (value.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      const date = new Date(value);
-      return { start: date, end: date };
-    }
-
-    // Default: this month
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    return { start, end };
-  }
-
-  /**
-   * Calculate financial data
-   */
-  private async calculateFinancials(
-    farms: any[],
-    startDate: Date,
-    endDate: Date,
-    user: User
-  ): Promise<any> {
-    let totalRevenue = 0;
-    let totalExpense = 0;
-
-    for (const farm of farms) {
-      const expenses = await this.farmService.getExpensesByFarm(
-        farm.id,
-        user
-      );
-
-      const farmExpense = expenses.reduce(
-        (sum, exp) => sum + parseFloat(exp.amount.toString()),
-        0
-      );
-
-      totalExpense += farmExpense;
-    }
-
-    const profit = totalRevenue - totalExpense;
-
-    return {
-      revenue: totalRevenue,
-      expense: totalExpense,
-      profit,
-      period: {
-        start: startDate.toISOString().split('T')[0],
-        end: endDate.toISOString().split('T')[0],
-      },
-    };
-  }
 }
 
 
