@@ -16,6 +16,7 @@ export enum ActivityType {
   FERTILIZE = 'FERTILIZE',
   PESTICIDE = 'PESTICIDE',
   HARVEST = 'HARVEST',
+  WATERING = 'WATERING',
   OTHER = 'OTHER',
 }
 
@@ -37,10 +38,10 @@ export class FarmActivity {
   @Column({ nullable: true, type: 'text' })
   description: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true, default: 0 })
+  @Column({ type: 'decimal', precision: 15, scale: 2, nullable: true, default: 0 })
   cost: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true, default: 0 })
+  @Column({ type: 'decimal', precision: 15, scale: 2, nullable: true, default: 0 })
   revenue: number;
 
   @Column()

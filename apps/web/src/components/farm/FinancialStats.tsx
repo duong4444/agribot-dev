@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { format, startOfMonth, endOfMonth, startOfYear, subMonths, subYears } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, subYears } from 'date-fns';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -34,7 +34,7 @@ export const FinancialStats: React.FC<FinancialStatsProps> = ({ onDateRangeChang
         break;
       case 'this_year':
         start = startOfYear(now);
-        end = now;
+        end = endOfYear(now);
         break;
       case 'last_year':
         const lastYear = subYears(now, 1);

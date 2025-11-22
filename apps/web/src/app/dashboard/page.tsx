@@ -1,14 +1,18 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { AuthGuard } from '@/components/auth/auth-guard';
 import { DashboardHeader, ChatInterface, DashboardSidebar, useChat } from '@/components/dashboard';
+import { Loader2 } from 'lucide-react';
 
 const Dashboard = () => {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
+  const [isCheckingFarm, setIsCheckingFarm] = useState(true);
+  const [hasFarm, setHasFarm] = useState(false);
+
   const {
     messages,
     inputMessage,
@@ -22,10 +26,10 @@ const Dashboard = () => {
     conversationId,
   } = useChat();
 
-  const [sidebarKey, setSidebarKey] = React.useState(0);
+  const [sidebarKey, setSidebarKey] = useState(0);
 
   // Trigger sidebar refresh when conversationId changes
-  React.useEffect(() => {
+  useEffect(() => {
     if (conversationId) {
       setSidebarKey(prev => prev + 1);
     }
@@ -35,23 +39,47 @@ const Dashboard = () => {
     loadConversation(conversationId);
   };
 
-  // Redirect new users without a farm to /farm
-  React.useEffect(() => {
-    if (session?.user) {
+  // Check farm immediately when session is ready
+  useEffect(() => {
+    if (status === 'authenticated' && session?.user) {
       const checkFarm = async () => {
         try {
           const res = await fetch('/api/farms');
-          if (!res.ok) {
-            // If 404 or any error, redirect to farm registration page
+          if (res.ok) {
+            setHasFarm(true);
+          } else if (res.status === 404) {
+            // No farm - redirect immediately
             router.replace('/farm');
+            return; // Don't set isCheckingFarm to false
           }
         } catch (e) {
+          console.error('Farm check error:', e);
           router.replace('/farm');
+          return;
+        } finally {
+          setIsCheckingFarm(false);
         }
       };
       checkFarm();
     }
-  }, [session, router]);
+  }, [session, status, router]);
+
+  // Show loading state while checking farm
+  if (status === 'loading' || isCheckingFarm) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-gray-50 to-agri-green-50/30">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-agri-green-600" />
+          <p className="text-gray-600">Đang tải...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Only render dashboard if farm exists
+  if (!hasFarm) {
+    return null; // Redirecting...
+  }
 
   return (
     <AuthGuard>
