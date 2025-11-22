@@ -12,8 +12,9 @@ import {
 import { FarmsService } from './farms.service';
 import { CreateFarmDto } from './dto/create-farm.dto';
 import { UpdateFarmDto } from './dto/update-farm.dto';
-import { CreateAreaDto } from './dto/create-area.dto';
+import { CreateAreaDto, UpdateAreaDto } from './dto/create-area.dto';
 import { CreateActivityDto } from './dto/create-activity.dto';
+import { UpdateActivityDto } from './dto/update-activity.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../users/entities/user.entity';
@@ -56,6 +57,22 @@ export class FarmsController {
     return this.farmsService.getAreas(user);
   }
 
+  @Patch('areas/:id')
+  @ApiOperation({ summary: 'Update an area' })
+  updateArea(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Body() updateAreaDto: UpdateAreaDto,
+  ) {
+    return this.farmsService.updateArea(user, id, updateAreaDto);
+  }
+
+  @Delete('areas/:id')
+  @ApiOperation({ summary: 'Delete an area' })
+  deleteArea(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.farmsService.deleteArea(user, id);
+  }
+
   @Post('activities')
   @ApiOperation({ summary: 'Record a farm activity' })
   createActivity(@CurrentUser() user: User, @Body() createActivityDto: CreateActivityDto) {
@@ -80,5 +97,33 @@ export class FarmsController {
     @Query('endDate') endDate?: string,
   ) {
     return this.farmsService.getFinancialStats(user, startDate, endDate);
+  }
+
+  @Patch('activities/:id')
+  @ApiOperation({ summary: 'Update a farm activity' })
+  updateActivity(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+    @Body() updateActivityDto: UpdateActivityDto,
+  ) {
+    return this.farmsService.updateActivity(user, id, updateActivityDto);
+  }
+
+  @Delete('activities/:id')
+  @ApiOperation({ summary: 'Delete a farm activity' })
+  deleteActivity(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.farmsService.deleteActivity(user, id);
+  }
+
+  @Get('crops')
+  @ApiOperation({ summary: 'Get all crops' })
+  getCrops() {
+    return this.farmsService.getCrops();
+  }
+
+  @Post('crops/seed')
+  @ApiOperation({ summary: 'Seed crops data (temporary endpoint)' })
+  seedCrops() {
+    return this.farmsService.seedCropsManually();
   }
 }

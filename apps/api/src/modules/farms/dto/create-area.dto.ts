@@ -15,6 +15,11 @@ export class CreateAreaDto {
   @IsString()
   @IsOptional()
   description?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  crop?: string;
 }
 
 export class UpdateAreaDto extends PartialType(CreateAreaDto) {}

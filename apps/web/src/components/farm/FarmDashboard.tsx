@@ -4,8 +4,22 @@ import React, { useEffect, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus, Loader2 } from 'lucide-react';
+import { Plus, Loader2, Edit, Trash2 } from 'lucide-react';
 import { AddAreaModal } from './AddAreaModal';
+import { EditAreaModal } from './EditAreaModal';
+import { AddActivityModal } from './AddActivityModal';
+import { ActivityList } from './ActivityList';
+import { FinancialStats } from './FinancialStats';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface FarmDashboardProps {
   farm: any;
@@ -13,8 +27,16 @@ interface FarmDashboardProps {
 
 export const FarmDashboard: React.FC<FarmDashboardProps> = ({ farm }) => {
   const [isAddAreaModalOpen, setIsAddAreaModalOpen] = useState(false);
+  const [isEditAreaModalOpen, setIsEditAreaModalOpen] = useState(false);
+  const [editingArea, setEditingArea] = useState<any>(null);
+  const [deleteAreaId, setDeleteAreaId] = useState<string | null>(null);
+  const [isDeletingArea, setIsDeletingArea] = useState(false);
+  const [isAddActivityModalOpen, setIsAddActivityModalOpen] = useState(false);
+  const [editingActivity, setEditingActivity] = useState<any>(null);
   const [areas, setAreas] = useState<any[]>([]);
+  const [activities, setActivities] = useState<any[]>([]);
   const [isLoadingAreas, setIsLoadingAreas] = useState(true);
+  const [isLoadingActivities, setIsLoadingActivities] = useState(true);
 
   const fetchAreas = async () => {
     try {
@@ -31,12 +53,80 @@ export const FarmDashboard: React.FC<FarmDashboardProps> = ({ farm }) => {
     }
   };
 
+  const fetchActivities = async () => {
+    try {
+      setIsLoadingActivities(true);
+      const response = await fetch('/api/farms/activities');
+      if (response.ok) {
+        const data = await response.json();
+        setActivities(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch activities:', error);
+    } finally {
+      setIsLoadingActivities(false);
+    }
+  };
+
   useEffect(() => {
     fetchAreas();
+    fetchActivities();
   }, []);
 
   const handleAreaAdded = (newArea: any) => {
     setAreas([...areas, newArea]);
+  };
+
+  const handleActivityAdded = (newActivity: any) => {
+    // Refetch to get full relations (area, etc.)
+    fetchActivities();
+  };
+
+  const handleActivityDeleted = (activityId: string) => {
+    setActivities(activities.filter(a => a.id !== activityId));
+  };
+
+  const handleEditActivity = (activity: any) => {
+    setEditingActivity(activity);
+    setIsAddActivityModalOpen(true);
+  };
+
+  const handleCloseActivityModal = () => {
+    setIsAddActivityModalOpen(false);
+    setEditingActivity(null);
+  };
+
+  const handleAreaUpdated = (updatedArea: any) => {
+    setAreas(areas.map(a => a.id === updatedArea.id ? updatedArea : a));
+    setIsEditAreaModalOpen(false);
+    setEditingArea(null);
+  };
+
+  const handleEditArea = (area: any) => {
+    setEditingArea(area);
+    setIsEditAreaModalOpen(true);
+  };
+
+  const handleDeleteArea = async () => {
+    if (!deleteAreaId) return;
+
+    try {
+      setIsDeletingArea(true);
+      const response = await fetch(`/api/farms/areas/${deleteAreaId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete area');
+      }
+
+      setAreas(areas.filter(a => a.id !== deleteAreaId));
+    } catch (error) {
+      console.error('Error deleting area:', error);
+    } finally {
+      setIsDeletingArea(false);
+      setDeleteAreaId(null);
+    }
   };
 
   return (
@@ -92,8 +182,28 @@ export const FarmDashboard: React.FC<FarmDashboardProps> = ({ farm }) => {
                   {areas.map((area) => (
                     <Card key={area.id}>
                       <CardHeader>
-                        <CardTitle className="text-lg">{area.name}</CardTitle>
-                        {area.type && <CardDescription>{area.type}</CardDescription>}
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <CardTitle className="text-lg">{area.name}</CardTitle>
+                            {area.type && <CardDescription>{area.type}</CardDescription>}
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditArea(area)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setDeleteAreaId(area.id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </div>
                       </CardHeader>
                       {area.description && (
                         <CardContent>
@@ -111,24 +221,31 @@ export const FarmDashboard: React.FC<FarmDashboardProps> = ({ farm }) => {
         <TabsContent value="activities">
           <Card>
             <CardHeader>
-              <CardTitle>Nhật ký canh tác</CardTitle>
-              <CardDescription>Ghi lại các hoạt động gieo trồng, chăm sóc.</CardDescription>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Nhật ký canh tác</CardTitle>
+                  <CardDescription>Ghi lại các hoạt động gieo trồng, chăm sóc.</CardDescription>
+                </div>
+                <Button onClick={() => setIsAddActivityModalOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" /> Thêm hoạt động
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              {/* Activity list will go here */}
-              <p className="text-muted-foreground">Chưa có hoạt động nào.</p>
+              <ActivityList
+                activities={activities}
+                onEdit={handleEditActivity}
+                onDelete={handleActivityDeleted}
+                isLoading={isLoadingActivities}
+              />
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="finance">
           <Card>
-            <CardHeader>
-              <CardTitle>Tài chính</CardTitle>
-              <CardDescription>Theo dõi chi phí và doanh thu.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">Chưa có dữ liệu tài chính.</p>
+            <CardContent className="pt-6">
+              <FinancialStats />
             </CardContent>
           </Card>
         </TabsContent>
@@ -139,6 +256,40 @@ export const FarmDashboard: React.FC<FarmDashboardProps> = ({ farm }) => {
         onClose={() => setIsAddAreaModalOpen(false)}
         onSuccess={handleAreaAdded}
       />
+
+      <AddActivityModal
+        isOpen={isAddActivityModalOpen}
+        onClose={handleCloseActivityModal}
+        onSuccess={handleActivityAdded}
+        editActivity={editingActivity}
+      />
+
+      <EditAreaModal
+        isOpen={isEditAreaModalOpen}
+        onClose={() => {
+          setIsEditAreaModalOpen(false);
+          setEditingArea(null);
+        }}
+        onSuccess={handleAreaUpdated}
+        area={editingArea}
+      />
+
+      <AlertDialog open={!!deleteAreaId} onOpenChange={() => setDeleteAreaId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận xóa khu vực</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn xóa khu vực này? Hành động này không thể hoàn tác.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeletingArea}>Hủy</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteArea} disabled={isDeletingArea}>
+              {isDeletingArea ? 'Đang xóa...' : 'Xóa'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

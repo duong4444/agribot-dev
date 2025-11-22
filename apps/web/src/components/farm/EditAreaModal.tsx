@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -21,6 +20,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
@@ -34,59 +34,64 @@ const areaSchema = z.object({
 
 type AreaFormData = z.infer<typeof areaSchema>;
 
-interface AddAreaModalProps {
+interface EditAreaModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (area: any) => void;
+  area: any;
 }
 
-export const AddAreaModal: React.FC<AddAreaModalProps> = ({ isOpen, onClose, onSuccess }) => {
-  const [isLoading, setIsLoading] = useState(false);
+export const EditAreaModal: React.FC<EditAreaModalProps> = ({
+  isOpen,
+  onClose,
+  onSuccess,
+  area,
+}) => {
   const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<AreaFormData>({
     resolver: zodResolver(areaSchema),
-    defaultValues: {
-      name: '',
-      type: '',
-      crop: '',
-      description: '',
+    values: {
+      name: area?.name || '',
+      type: area?.type || '',
+      crop: area?.crop || '',
+      description: area?.description || '',
     },
   });
 
   const onSubmit = async (data: AreaFormData) => {
-    setIsLoading(true);
     try {
-      const response = await fetch('/api/farms/areas', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      setIsSubmitting(true);
+
+      const response = await fetch(`/api/farms/areas/${area.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create area');
+        throw new Error('Failed to update area');
       }
 
-      const newArea = await response.json();
-      
+      const result = await response.json();
+
       toast({
-        title: 'Thành công!',
-        description: 'Khu vực đã được thêm.',
+        title: 'Đã cập nhật khu vực',
+        description: 'Thông tin khu vực đã được cập nhật thành công',
       });
 
-      form.reset();
-      onSuccess(newArea);
+      onSuccess(result);
       onClose();
     } catch (error) {
+      console.error('Error updating area:', error);
       toast({
         title: 'Lỗi',
-        description: 'Không thể thêm khu vực. Vui lòng thử lại.',
+        description: 'Không thể cập nhật khu vực',
         variant: 'destructive',
       });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -94,9 +99,9 @@ export const AddAreaModal: React.FC<AddAreaModalProps> = ({ isOpen, onClose, onS
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Thêm khu vực mới</DialogTitle>
+          <DialogTitle>Chỉnh sửa khu vực</DialogTitle>
           <DialogDescription>
-            Tạo một khu vực canh tác mới trong nông trại của bạn.
+            Cập nhật thông tin khu vực của bạn
           </DialogDescription>
         </DialogHeader>
 
@@ -109,7 +114,7 @@ export const AddAreaModal: React.FC<AddAreaModalProps> = ({ isOpen, onClose, onS
                 <FormItem>
                   <FormLabel>Tên khu vực *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ví dụ: Ruộng A, Nhà kính 1" {...field} />
+                    <Input placeholder="VD: Khu A, Vườn cam..." {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -124,7 +129,7 @@ export const AddAreaModal: React.FC<AddAreaModalProps> = ({ isOpen, onClose, onS
                   <FormItem>
                     <FormLabel>Loại khu vực</FormLabel>
                     <FormControl>
-                      <Input placeholder="VD: Ruộng lúa" {...field} />
+                      <Input placeholder="VD: Nhà kính" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -138,7 +143,7 @@ export const AddAreaModal: React.FC<AddAreaModalProps> = ({ isOpen, onClose, onS
                   <FormItem>
                     <FormLabel>Cây trồng</FormLabel>
                     <FormControl>
-                      <Input placeholder="VD: Lúa ST25" {...field} />
+                      <Input placeholder="VD: Cam sành" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -154,7 +159,8 @@ export const AddAreaModal: React.FC<AddAreaModalProps> = ({ isOpen, onClose, onS
                   <FormLabel>Mô tả</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Mô tả chi tiết về khu vực này..."
+                      placeholder="Mô tả chi tiết về khu vực..."
+                      className="resize-none"
                       {...field}
                     />
                   </FormControl>
@@ -164,11 +170,11 @@ export const AddAreaModal: React.FC<AddAreaModalProps> = ({ isOpen, onClose, onS
             />
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
+              <Button type="button" variant="outline" onClick={onClose}>
                 Hủy
               </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? 'Đang thêm...' : 'Thêm khu vực'}
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Đang lưu...' : 'Cập nhật'}
               </Button>
             </DialogFooter>
           </form>

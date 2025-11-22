@@ -25,6 +25,9 @@ export class Area {
   @Column({ nullable: true, type: 'text' })
   description: string;
 
+  @Column({ nullable: true })
+  crop: string;
+
   @Column()
   farmId: string;
 

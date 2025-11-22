@@ -37,10 +37,10 @@ export class FarmActivity {
   @Column({ nullable: true, type: 'text' })
   description: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true, default: 0 })
   cost: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true, default: 0 })
   revenue: number;
 
   @Column()
@@ -56,6 +56,9 @@ export class FarmActivity {
   @ManyToOne(() => Area, (area) => area.activities, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'areaId' })
   area: Area;
+
+  @Column({ nullable: true })
+  cropName: string;
 
   @Column({ nullable: true })
   cropId: string;

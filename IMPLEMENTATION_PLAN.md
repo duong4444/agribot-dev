@@ -88,5 +88,39 @@ Chia làm 3 Phase để đảm bảo tính ổn định và có thể kiểm th�
 *   **Frontend:**
     *   Cập nhật UI Chat để hiển thị phản hồi phong phú (ví dụ: Hiển thị Card thông tin cảm biến thay vì chỉ text).
 
+### Phase 4: Subscription & Monetization (Hệ thống gói đăng ký)
+**Mục tiêu:** Tạo nguồn doanh thu và kiểm soát quyền truy cập tính năng theo gói.
+
+*   **Backend:**
+    *   Tạo Entity: `SubscriptionPlan`, `UserSubscription`, `PaymentHistory`.
+    *   Viết API:
+        *   `GET /subscription-plans` – Danh sách gói (Free, Premium, Enterprise).
+        *   `GET /subscriptions/me` – Thông tin gói hiện tại + usage (farms/areas/devices).
+        *   `POST /subscriptions/checkout` – Khởi tạo thanh toán (VNPay/MoMo/Stripe).
+        *   `POST /subscriptions/vnpay-callback` – Webhook xử lý kết quả thanh toán.
+        *   `POST /subscriptions/cancel` – Hủy auto-renewal.
+    *   Implement `SubscriptionLimitGuard` middleware để check giới hạn trước khi tạo farm/area/device.
+    *   Cron job kiểm tra `nextBillingDate` để tự động gia hạn hoặc downgrade.
+    *   Soft downgrade: Giữ data cũ, chỉ chặn tạo mới khi vượt giới hạn.
+    
+*   **Frontend:**
+    *   Trang `/pricing` hiển thị 3 gói với nút "Nâng cấp".
+    *   Modal "Upgrade Required" khi user vượt giới hạn.
+    *   Badge "Premium" trong `DashboardHeader`.
+    *   Usage indicator (progress bar) cho farms/areas/devices.
+    *   Checkout flow tích hợp payment gateway.
+
+*   **Admin:**
+    *   CRUD `SubscriptionPlan` trong admin panel.
+    *   Dashboard thống kê: MRR, conversion rate, churn rate.
+    *   Quản lý subscriptions: extend trial, refund, gift subscription.
+
+*   **Gói đề xuất:**
+    *   **Free**: 1 farm, 3 areas, 2 devices, 10 chat/ngày.
+    *   **Premium** (299k/tháng): 3 farms, 20 areas, 15 devices, unlimited chat, báo cáo nâng cao.
+    *   **Enterprise** (liên hệ): Không giới hạn + API access + dedicated support.
+
+*   **Timeline:** 7 tuần (database → backend → payment → frontend → beta → launch).
+
 ---
 **Xin mời review kế hoạch trên. Nếu đồng ý, tôi sẽ bắt đầu thực hiện Phase 1.**

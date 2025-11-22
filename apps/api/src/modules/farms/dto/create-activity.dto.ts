@@ -32,6 +32,11 @@ export class CreateActivityDto {
   areaId?: string;
 
   @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  cropName?: string;
+
+  @ApiProperty({ required: false })
   @IsUUID()
   @IsOptional()
   cropId?: string;
