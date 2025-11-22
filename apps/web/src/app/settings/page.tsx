@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { AuthGuard } from '@/components/auth/auth-guard';
@@ -8,15 +8,17 @@ import { DashboardHeader } from '@/components/dashboard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, User, Bell, Lock, Palette, Globe } from 'lucide-react';
+import { ChangePasswordModal } from '@/components/settings/ChangePasswordModal';
 
 const SettingsPage = () => {
   const router = useRouter();
   const { data: session } = useSession();
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   return (
     <AuthGuard>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <DashboardHeader />
+        <DashboardHeader userName={session?.user?.name} />
 
         {/* Main Content */}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
@@ -108,7 +110,10 @@ const SettingsPage = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="outline" disabled>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsChangePasswordOpen(true)}
+                >
                   Đổi mật khẩu
                 </Button>
               </CardContent>
@@ -152,6 +157,11 @@ const SettingsPage = () => {
           </div>
         </div>
       </div>
+      
+      <ChangePasswordModal 
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
+      />
     </AuthGuard>
   );
 };
