@@ -16,7 +16,14 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "setup": "pnpm install && pnpm db:migrate && pnpm db:seed"
   },
-  "keywords": ["agriculture", "chatbot", "iot", "ai", "nextjs", "nestjs"],
+  "keywords": [
+    "agriculture",
+    "chatbot",
+    "iot",
+    "ai",
+    "nextjs",
+    "nestjs"
+  ],
   "author": "Your Team",
   "license": "MIT",
   "devDependencies": {
@@ -28,5 +35,8 @@
   "engines": {
     "node": ">=18.0.0",
     "pnpm": ">=8.0.0"
+  },
+  "dependencies": {
+    "mqtt": "^5.14.1"
   }
 }

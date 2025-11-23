@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     }
 
     // Call backend API to change password
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     const response = await fetch(`${apiUrl}/auth/change-password`, {
       method: 'PUT',
       headers: {
