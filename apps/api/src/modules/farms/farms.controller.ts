@@ -57,6 +57,12 @@ export class FarmsController {
     return this.farmsService.getAreas(user);
   }
 
+  @Get('areas/:id')
+  @ApiOperation({ summary: 'Get an area by ID' })
+  getArea(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.farmsService.getArea(user, id);
+  }
+
   @Patch('areas/:id')
   @ApiOperation({ summary: 'Update an area' })
   updateArea(

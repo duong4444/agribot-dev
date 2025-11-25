@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Device } from './device.entity';
 
 @Entity('sensor_data')
 export class SensorData {
@@ -22,4 +23,11 @@ export class SensorData {
 
   @CreateDateColumn()
   timestamp: Date;
+
+  @ManyToOne(() => Device, (device) => device.sensorData, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'device_internal_id' })
+  device: Device;
+
+  @Column({ nullable: true, name: 'device_internal_id' })
+  deviceInternalId: string;
 }

@@ -1,14 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 export async function GET(request: NextRequest) {
-  try {
-    // Note: Currently IoT endpoints are public, so no need for auth token
-    // If auth is added later, copy the pattern from api/farms/route.ts
+  const session = await getServerSession(authOptions);
 
-    const response = await fetch(`${API_URL}/iot/sensors/latest`, {
-      cache: 'no-store', // Ensure real-time data
+  if (!session) {
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
+
+  try {
+    const { searchParams } = new URL(request.url);
+    const areaId = searchParams.get("areaId");
+    
+    const url = new URL(`${API_URL}/iot/sensors/latest`);
+    if (areaId) {
+      url.searchParams.append("areaId", areaId);
+    }
+
+    const response = await fetch(url.toString(), {
+      headers: {
+        Authorization: `Bearer ${session.accessToken}`,
+      },
+      cache: 'no-store',
     });
 
     if (!response.ok) {

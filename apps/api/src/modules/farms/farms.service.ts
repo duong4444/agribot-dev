@@ -103,6 +103,18 @@ export class FarmsService implements OnModuleInit {
     return this.areasRepository.find({ where: { farmId: farm.id } });
   }
 
+  async getArea(user: User, areaId: string): Promise<Area> {
+    const farm = await this.getFarmByUser(user);
+    const area = await this.areasRepository.findOne({
+      where: { id: areaId, farmId: farm.id },
+      relations: ['devices']
+    });
+    if (!area) {
+      throw new NotFoundException('Area not found');
+    }
+    return area;
+  }
+
   async createActivity(user: User, createActivityDto: CreateActivityDto): Promise<FarmActivity> {
     const farm = await this.getFarmByUser(user);
     

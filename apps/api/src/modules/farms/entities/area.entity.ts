@@ -38,6 +38,9 @@ export class Area {
   @OneToMany(() => FarmActivity, (activity) => activity.area)
   activities: FarmActivity[];
 
+  @OneToMany('Device', (device: any) => device.area)
+  devices: any[];
+
   @CreateDateColumn()
   createdAt: Date;
 

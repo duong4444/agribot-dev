@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Plus, Loader2, Edit, Trash2 } from 'lucide-react';
+import Link from 'next/link';
 import { AddAreaModal } from '@/components/farm/AddAreaModal';
 import { EditAreaModal } from '@/components/farm/EditAreaModal';
 import {
@@ -110,42 +111,52 @@ export default function FarmAreasPage() {
           ) : (
             <div className="space-y-4">
               {areas.map((area) => (
-                <Card key={area.id}>
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-lg">{area.name}</CardTitle>
-                        {area.type && <CardDescription>{area.type}</CardDescription>}
-                        {area.crop && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Cây trồng: <span className="font-medium">{area.crop}</span>
-                          </p>
-                        )}
+                <Link key={area.id} href={`/farm/areas/${area.id}`}>
+                  <Card className="hover:bg-accent/50 transition-colors cursor-pointer">
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="text-lg">{area.name}</CardTitle>
+                          {area.type && <CardDescription>{area.type}</CardDescription>}
+                          {area.crop && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Cây trồng: <span className="font-medium">{area.crop}</span>
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleEditArea(area);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setDeleteAreaId(area.id);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditArea(area)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDeleteAreaId(area.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  {area.description && (
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground">{area.description}</p>
-                    </CardContent>
-                  )}
-                </Card>
+                    </CardHeader>
+                    {area.description && (
+                      <CardContent>
+                        <p className="text-sm text-muted-foreground">{area.description}</p>
+                      </CardContent>
+                    )}
+                  </Card>
+                </Link>
               ))}
             </div>
           )}

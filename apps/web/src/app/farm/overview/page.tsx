@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, MapPin, Calendar, TrendingUp, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 
-import { SensorDashboard } from '@/components/dashboard/SensorDashboard';
+
 
 export default function FarmOverviewPage() {
   const [stats, setStats] = useState<any>(null);
@@ -66,8 +66,7 @@ export default function FarmOverviewPage() {
         </div>
       </div>
 
-      {/* IoT Sensor Dashboard */}
-      <SensorDashboard />
+
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-3">

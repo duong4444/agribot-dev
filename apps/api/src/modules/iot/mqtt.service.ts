@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as mqtt from 'mqtt';
 import { SensorData } from './entities/sensor-data.entity';
+import { Device } from './entities/device.entity';
 
 @Injectable()
 export class MqttService implements OnModuleInit {
@@ -12,6 +13,8 @@ export class MqttService implements OnModuleInit {
   constructor(
     @InjectRepository(SensorData)
     private sensorDataRepository: Repository<SensorData>,
+    @InjectRepository(Device)
+    private deviceRepository: Repository<Device>,
   ) {}
 
   onModuleInit() {
@@ -50,16 +53,40 @@ export class MqttService implements OnModuleInit {
 
   private async handleMessage(topic: string, message: string) {
     try {
-      const data = JSON.parse(message);
+      const payload = JSON.parse(message);
       this.logger.debug(`Received data from ${topic}: ${message}`);
 
-      // Save to database
+      // Extract serial number from payload (assuming deviceId is the serial number)
+      const serialNumber = payload.deviceId;
+
+      if (!serialNumber) {
+        this.logger.warn('Received message without deviceId');
+        return;
+      }
+
+      // Find or create device
+      let device = await this.deviceRepository.findOne({
+        where: { serialNumber },
+      });
+
+      if (!device) {
+        this.logger.log(`Device ${serialNumber} not found. Auto-creating...`);
+        device = this.deviceRepository.create({
+          serialNumber,
+          name: `Device ${serialNumber}`,
+          isActive: true,
+        });
+        await this.deviceRepository.save(device);
+      }
+
       const sensorData = this.sensorDataRepository.create({
-        deviceId: data.deviceId,
-        temperature: data.temperature,
-        humidity: data.humidity,
-        soilMoisture: data.soilMoisture,
-        lightLevel: data.lightLevel,
+        deviceId: serialNumber, // Populate the required device_id column
+        deviceInternalId: device.id,
+        temperature: payload.temperature,
+        humidity: payload.humidity,
+        soilMoisture: payload.soilMoisture,
+        lightLevel: payload.lightLevel,
+        device: device,
       });
 
       const saved = await this.sensorDataRepository.save(sensorData);
@@ -69,12 +96,19 @@ export class MqttService implements OnModuleInit {
     }
   }
 
-  async getLatestSensorData() {
-    // Get latest data for each device
-    // This is a simplified query, for production might need more complex SQL
-    return this.sensorDataRepository.find({
-      order: { timestamp: 'DESC' },
-      take: 10,
-    });
+  async getLatestSensorData(userId: string, areaId?: string) {
+    const query = this.sensorDataRepository.createQueryBuilder('data')
+      .leftJoinAndSelect('data.device', 'device')
+      .leftJoinAndSelect('device.area', 'area')
+      .leftJoinAndSelect('area.farm', 'farm')
+      .where('farm.userId = :userId', { userId })
+      .orderBy('data.timestamp', 'DESC')
+      .take(10);
+
+    if (areaId) {
+      query.andWhere('device.areaId = :areaId', { areaId });
+    }
+
+    return query.getMany();
   }
 }

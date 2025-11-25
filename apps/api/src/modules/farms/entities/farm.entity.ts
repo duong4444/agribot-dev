@@ -29,7 +29,7 @@ export class Farm {
   @Column()
   userId: string;
 
-  @OneToOne(() => User)
+  @OneToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
   user: User;
 

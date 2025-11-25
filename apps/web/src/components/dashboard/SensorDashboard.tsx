@@ -1,132 +1,120 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Thermometer, Droplets, Sun, Wind, RefreshCw } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Droplets, Sun, Thermometer, Wind } from "lucide-react";
 
 interface SensorData {
   id: string;
-  device_id: string;
   temperature: number;
   humidity: number;
-  soil_moisture: number;
-  light_level: number;
+  soilMoisture: number;
+  lightLevel: number;
   timestamp: string;
+  device?: {
+    name: string;
+    area?: {
+      name: string;
+    };
+  };
 }
 
-export function SensorDashboard() {
-  const [data, setData] = useState<SensorData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+interface SensorDashboardProps {
+  areaId: string;
+}
 
-  const fetchData = async () => {
-    try {
-      const res = await fetch('/api/iot/sensors/latest');
-      if (res.ok) {
-        const json = await res.json();
-        // Assuming the API returns { success: true, data: [...] }
-        // and we want the latest reading (first item if sorted DESC)
-        if (json.data && json.data.length > 0) {
-          setData(json.data[0]);
-          setLastUpdated(new Date());
-        }
-      }
-    } catch (error) {
-      console.error('Failed to fetch sensor data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+export function SensorDashboard({ areaId }: SensorDashboardProps) {
+  const [data, setData] = useState<SensorData[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  // Fetch Sensor Data
   useEffect(() => {
+    const fetchData = async () => {
+      if (!areaId) return;
+      
+      try {
+        const url = `/api/iot/sensors/latest?areaId=${areaId}`;
+        const res = await fetch(url);
+        const json = await res.json();
+        if (json.success) {
+          setData(json.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch sensor data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchData();
-    const interval = setInterval(fetchData, 15000); // Poll every 15 seconds
+    const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [areaId]);
 
-  if (isLoading && !data) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Đang tải dữ liệu cảm biến...</CardTitle>
-        </CardHeader>
-      </Card>
-    );
+  if (loading) {
+    return <div>Loading sensor data...</div>;
   }
 
-  if (!data) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Chưa có dữ liệu cảm biến</CardTitle>
-        </CardHeader>
-      </Card>
-    );
-  }
+  // Calculate averages or use latest reading
+  const latest = data[0] || {
+    temperature: 0,
+    humidity: 0,
+    soilMoisture: 0,
+    lightLevel: 0,
+  };
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Giám sát môi trường (Real-time)</h3>
-        <div className="flex items-center text-sm text-muted-foreground">
-          <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
-          Cập nhật: {lastUpdated?.toLocaleTimeString('vi-VN')}
-        </div>
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold">Real-time Monitoring</h2>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {/* Temperature */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Nhiệt độ</CardTitle>
-            <Thermometer className="h-4 w-4 text-red-500" />
+            <CardTitle className="text-sm font-medium">Temperature</CardTitle>
+            <Thermometer className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.temperature}°C</div>
+            <div className="text-2xl font-bold">{latest.temperature.toFixed(1)}°C</div>
             <p className="text-xs text-muted-foreground">
-              Nhiệt độ không khí
+              {data.length > 0 ? "Latest reading" : "No data"}
             </p>
           </CardContent>
         </Card>
-
-        {/* Humidity */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Độ ẩm</CardTitle>
-            <Droplets className="h-4 w-4 text-blue-500" />
+            <CardTitle className="text-sm font-medium">Humidity</CardTitle>
+            <Wind className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.humidity}%</div>
+            <div className="text-2xl font-bold">{latest.humidity.toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground">
-              Độ ẩm không khí
+              Relative Humidity
             </p>
           </CardContent>
         </Card>
-
-        {/* Soil Moisture */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Độ ẩm đất</CardTitle>
-            <Wind className="h-4 w-4 text-amber-600" />
+            <CardTitle className="text-sm font-medium">Soil Moisture</CardTitle>
+            <Droplets className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.soil_moisture}%</div>
+            <div className="text-2xl font-bold">{latest.soilMoisture.toFixed(1)}%</div>
             <p className="text-xs text-muted-foreground">
-              Cảm biến đất
+              Volumetric Water Content
             </p>
           </CardContent>
         </Card>
-
-        {/* Light Level */}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ánh sáng</CardTitle>
-            <Sun className="h-4 w-4 text-yellow-500" />
+            <CardTitle className="text-sm font-medium">Light Level</CardTitle>
+            <Sun className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{data.light_level} Lux</div>
+            <div className="text-2xl font-bold">{latest.lightLevel.toFixed(0)} Lux</div>
             <p className="text-xs text-muted-foreground">
-              Cường độ ánh sáng
+              Ambient Light
             </p>
           </CardContent>
         </Card>

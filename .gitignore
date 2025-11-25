@@ -234,3 +234,6 @@ FRONTEND-CLEANUP-SUMMARY.md
 # REFACTOR-SUMMARY.md
 COMPLETE-REFACTOR-SUMMARY.md
 REFACTOR-SUMMARY.md
+reactivate.sql
+verify-admin-api.js
+seed.sql
