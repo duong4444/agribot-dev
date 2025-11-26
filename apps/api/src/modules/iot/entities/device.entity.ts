@@ -17,6 +17,14 @@ export enum DeviceType {
   GATEWAY = 'GATEWAY',
 }
 
+export enum DeviceStatus {
+  AVAILABLE = 'AVAILABLE',
+  ASSIGNED = 'ASSIGNED',
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  MAINTENANCE = 'MAINTENANCE',
+}
+
 @Entity('devices')
 export class Device {
   @PrimaryGeneratedColumn('uuid')
@@ -38,10 +46,23 @@ export class Device {
   @Column({ default: true, name: 'is_active' })
   isActive: boolean;
 
+  @Column({
+    type: 'enum',
+    enum: DeviceStatus,
+    default: DeviceStatus.AVAILABLE,
+  })
+  status: DeviceStatus;
+
+  @Column({ nullable: true, name: 'activated_by' })
+  activatedBy: string;
+
+  @Column({ type: 'timestamp', nullable: true, name: 'activated_at' })
+  activatedAt: Date;
+
   @Column({ nullable: true, name: 'area_id' })
   areaId: string;
 
-  @ManyToOne(() => Area, (area) => area.devices, { onDelete: 'SET NULL' })
+  @ManyToOne(() => Area, (area) => area.devices, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'area_id' })
   area: Area;
 

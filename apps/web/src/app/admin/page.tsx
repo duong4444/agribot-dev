@@ -12,6 +12,22 @@ const AdminPage = () => {
 
   const adminModules = [
     {
+      title: 'Yêu Cầu Lắp Đặt',
+      description: 'Quản lý yêu cầu lắp đặt thiết bị IoT và phân công kỹ thuật viên',
+      icon: Settings,
+      href: '/admin/installation-requests',
+      color: 'text-cyan-600',
+      bgColor: 'bg-cyan-100 dark:bg-cyan-900',
+    },
+    {
+      title: 'Kho Thiết Bị',
+      description: 'Quản lý thiết bị IoT trong kho và theo dõi trạng thái',
+      icon: Database,
+      href: '/admin/device-inventory',
+      color: 'text-teal-600',
+      bgColor: 'bg-teal-100 dark:bg-teal-900',
+    },
+    {
       title: 'Kiến thức Cây trồng',
       description: 'Upload file .md với structural chunking cho Layer 1 FTS',
       icon: Leaf,
@@ -43,14 +59,6 @@ const AdminPage = () => {
       color: 'text-purple-600',
       bgColor: 'bg-purple-100 dark:bg-purple-900',
     },
-    {
-      title: 'Cài đặt Hệ thống',
-      description: 'Cấu hình và thiết lập hệ thống',
-      icon: Settings,
-      href: '/admin/settings',
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-100 dark:bg-orange-900',
-    },
   ];
 
   return (
@@ -66,7 +74,7 @@ const AdminPage = () => {
       </div>
 
       {/* Admin Modules Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {adminModules.map((module, index) => {
           const Icon = module.icon;
           return (

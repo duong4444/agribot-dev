@@ -128,14 +128,14 @@ export default function AreaDetailPage() {
             </div>
           ) : (
             <div className="text-center py-8 text-muted-foreground">
-              Chưa có thiết bị nào được gán vào khu vực này.
+              Chưa có thiết bị nào được lắp đặt tại khu vực này.
               <br />
               <Button 
                 variant="link" 
-                onClick={() => router.push('/farm/devices')}
+                onClick={() => router.push('/farm/installation-requests')}
                 className="mt-2"
               >
-                Quản lý thiết bị
+                Yêu cầu lắp đặt thiết bị
               </Button>
             </div>
           )}

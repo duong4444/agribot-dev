@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,8 +12,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const searchParams = request.nextUrl.searchParams;
-    const response = await fetch(`${API_URL}/users?${searchParams.toString()}`, {
+    const response = await fetch(`${API_URL}/admin/installation-requests`, {
       headers: {
         'Authorization': `Bearer ${session.accessToken}`,
       },
@@ -21,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: 'Failed to fetch users' },
+        { error: 'Failed to fetch installation requests' },
         { status: response.status }
       );
     }
@@ -29,7 +28,7 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error fetching users:', error);
+    console.error('Error fetching installation requests:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

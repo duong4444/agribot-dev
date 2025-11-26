@@ -237,3 +237,5 @@ REFACTOR-SUMMARY.md
 reactivate.sql
 verify-admin-api.js
 seed.sql
+test-iot-api.ps1
+test-iot-workflow.js

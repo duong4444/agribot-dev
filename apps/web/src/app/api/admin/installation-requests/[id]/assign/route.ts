@@ -2,9 +2,13 @@ import { getServerSession } from 'next-auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
-export async function GET(request: NextRequest) {
+export async function PUT(
+  request: NextRequest,
+  props: { params: Promise<{ id: string }> }
+) {
+  const params = await props.params;
   try {
     const session = await getServerSession(authOptions);
     
@@ -12,16 +16,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const searchParams = request.nextUrl.searchParams;
-    const response = await fetch(`${API_URL}/users?${searchParams.toString()}`, {
+    const body = await request.json();
+
+    const response = await fetch(`${API_URL}/admin/installation-requests/${params.id}/assign`, {
+      method: 'PUT',
       headers: {
+        'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.accessToken}`,
       },
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
       return NextResponse.json(
-        { error: 'Failed to fetch users' },
+        { error: 'Failed to assign technician' },
         { status: response.status }
       );
     }
@@ -29,7 +37,7 @@ export async function GET(request: NextRequest) {
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error fetching users:', error);
+    console.error('Error assigning technician:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

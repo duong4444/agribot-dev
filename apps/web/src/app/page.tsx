@@ -33,10 +33,14 @@ export default function HomePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  // Redirect admin users to admin dashboard
+  // Redirect users based on role
   useEffect(() => {
-    if (status === 'authenticated' && session?.user?.role === 'ADMIN') {
-      router.push('/admin');
+    if (status === 'authenticated') {
+      if (session?.user?.role === 'ADMIN') {
+        router.push('/admin');
+      } else if (session?.user?.role === 'TECHNICIAN') {
+        router.push('/technician');
+      }
     }
   }, [session, status, router]);
 
@@ -47,14 +51,16 @@ export default function HomePage() {
   const getDashboardLink = () => {
     if (session?.user?.role === 'ADMIN') {
       return '/admin';
+    } else if (session?.user?.role === 'TECHNICIAN') {
+      return '/technician';
     }
     return '/dashboard';
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-agri-green-100 to-agri-green-200 dark:from-gray-900 dark:to-green-800">
-      {/* If admin is authenticated, show redirect message only */}
-      {status === 'authenticated' && session?.user?.role === 'ADMIN' ? (
+      {/* If admin or technician is authenticated, show redirect message only */}
+      {status === 'authenticated' && (session?.user?.role === 'ADMIN' || session?.user?.role === 'TECHNICIAN') ? (
         <div className="flex items-center justify-center min-h-screen">
           <Card className="max-w-md w-full mx-4">
             <CardContent className="pt-6 text-center">
@@ -62,10 +68,10 @@ export default function HomePage() {
                 <Shield className="h-16 w-16 text-purple-600 mx-auto mb-4" />
               </div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                ADMIN đã đăng nhập
+                {session.user?.role === 'ADMIN' ? 'ADMIN' : 'TECHNICIAN'} đã đăng nhập
               </h1>
               <p className="text-gray-600 dark:text-gray-300 mb-4">
-                Chuyển hướng đến trang ADMIN...
+                Chuyển hướng đến trang {session.user?.role === 'ADMIN' ? 'ADMIN' : 'Technician'}...
               </p>
               <div className="flex justify-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>

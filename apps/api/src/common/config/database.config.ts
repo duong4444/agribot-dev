@@ -18,5 +18,6 @@ export const getDatabaseConfig = (
   extra: {
     max: 100,
     connectionTimeoutMillis: 10000,
+    timezone: 'Asia/Ho_Chi_Minh',
   },
 });

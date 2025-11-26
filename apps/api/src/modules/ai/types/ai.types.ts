@@ -1,9 +1,3 @@
-/**
- * AI Module Types - Refactored Architecture
- * 2-Layer Processing: Exact FTS → LLM Fallback + Action Router
- * (Previously 3-layer with RAG, now simplified to 2-layer)
- */
-
 // ========================================
 // INTENT & ENTITY TYPES
 // ========================================

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole } from './entities/user.entity';
@@ -18,9 +18,11 @@ export class UsersService {
     return this.userRepository.findOne({ where: { email } });
   }
 
-  async findAll(): Promise<User[]> {
+  async findAll(role?: UserRole): Promise<User[]> {
+    const where = role ? { role } : {};
     return this.userRepository.find({
       select: ['id', 'email', 'fullName', 'role', 'isActive', 'createdAt', 'updatedAt'],
+      where,
     });
   }
 
@@ -51,6 +53,7 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
+    // Cascade delete will automatically remove related installation_requests, farms, and areas
     await this.userRepository.remove(user);
   }
 

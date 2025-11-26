@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as mqtt from 'mqtt';
 import { SensorData } from './entities/sensor-data.entity';
-import { Device } from './entities/device.entity';
+import { Device, DeviceStatus } from './entities/device.entity';
 
 @Injectable()
 export class MqttService implements OnModuleInit {
@@ -64,23 +64,25 @@ export class MqttService implements OnModuleInit {
         return;
       }
 
-      // Find or create device
-      let device = await this.deviceRepository.findOne({
+      // Find device - NO AUTO-CREATE, device must be activated by technician
+      const device = await this.deviceRepository.findOne({
         where: { serialNumber },
       });
 
       if (!device) {
-        this.logger.log(`Device ${serialNumber} not found. Auto-creating...`);
-        device = this.deviceRepository.create({
-          serialNumber,
-          name: `Device ${serialNumber}`,
-          isActive: true,
-        });
-        await this.deviceRepository.save(device);
+        this.logger.warn(`Unauthorized device attempted to publish: ${serialNumber}`);
+        return; // Reject data from unregistered devices
       }
 
+      // Security check: Only accept data from ACTIVE devices
+      if (device.status !== DeviceStatus.ACTIVE) {
+        this.logger.warn(`Inactive device attempted to publish: ${serialNumber} (status: ${device.status})`);
+        return; // Reject data from non-active devices
+      }
+
+      // Save sensor data
       const sensorData = this.sensorDataRepository.create({
-        deviceId: serialNumber, // Populate the required device_id column
+        deviceId: serialNumber,
         deviceInternalId: device.id,
         temperature: payload.temperature,
         humidity: payload.humidity,
