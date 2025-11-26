@@ -14,7 +14,7 @@ client.on('connect', () => {
   console.log(`Publishing to topic: ${TOPIC}`);
   
   // Start publishing loop
-  setInterval(publishMockData, 15000); // Every 15 seconds
+  setInterval(publishMockData, 10000); // Every 10 seconds
 });
 
 client.on('error', (err) => {

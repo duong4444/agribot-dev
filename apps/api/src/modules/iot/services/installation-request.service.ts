@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { DateUtils } from '../../../common/utils/date.util';
 import { InstallationRequest, InstallationRequestStatus } from '../entities/installation-request.entity';
 import { CreateInstallationRequestDto, AssignTechnicianDto } from '../dto/installation-request.dto';
 import { User, UserRole } from '../../users/entities/user.entity';
@@ -39,6 +40,7 @@ export class InstallationRequestService {
       notes: dto.notes,
       contactPhone: dto.contactPhone,
       status: InstallationRequestStatus.PENDING,
+      createdAt: DateUtils.getVietnamTime(),
     });
 
     return this.installationRequestRepository.save(request);

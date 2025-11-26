@@ -239,3 +239,6 @@ verify-admin-api.js
 seed.sql
 test-iot-api.ps1
 test-iot-workflow.js
+seed-technician.sql
+scripts/mockA.js
+scripts/mockB.js

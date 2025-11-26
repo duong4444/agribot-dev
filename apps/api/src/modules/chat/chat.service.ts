@@ -9,6 +9,7 @@ import { User } from '../users/entities/user.entity';
 import { Conversation, Message, MessageType, MessageStatus } from './entities';
 import { SendMessageDto, CreateConversationDto } from './dto';
 import { AIOrchestrator } from '../ai/services';
+import { DateUtils } from '../../common/utils/date.util';
 
 @Injectable()
 export class ChatService {
@@ -130,6 +131,7 @@ export class ChatService {
       metadata: sendMessageDto.metadata,
       conversationId: conversation.id,
       userId: user.id,
+      createdAt: DateUtils.getVietnamTime(), // Manually set Vietnam time
     });
 
     console.log("userMessage: ", userMessage);
@@ -155,13 +157,14 @@ export class ChatService {
       confidence: aiResponse.confidence,
       responseTime: Date.now() - startTime,
       conversationId: conversation.id,
+      createdAt: DateUtils.getVietnamTime(), // Manually set Vietnam time
     });
 
     const savedAssistantMessage =
       await this.messageRepository.save(assistantMessage);
 
     // Cập nhật cuộc trò chuyện
-    conversation.lastMessageAt = new Date();
+    conversation.lastMessageAt = DateUtils.getVietnamTime(); // Manually set Vietnam time
     conversation.messageCount += 2;
     await this.conversationRepository.save(conversation);
 
