@@ -1,9 +1,12 @@
 const mqtt = require('mqtt');
+const dotenv = require('dotenv');
+dotenv.config();
 
 // Configuration
 const BROKER_URL = 'mqtt://localhost:1883';
 const DEVICE_ID = 'esp32_mock_01';
 const TOPIC = `sensors/${DEVICE_ID}/data`;
+const SECRET = process.env.MQTT_SECRET || 'default-secret';
 
 // Connect to MQTT Broker
 const client = mqtt.connect(BROKER_URL);
@@ -29,7 +32,8 @@ function publishMockData() {
     humidity: +(60 + Math.random() * 20).toFixed(1),    // 60-80%
     soilMoisture: +(40 + Math.random() * 30).toFixed(1), // 40-70%
     lightLevel: Math.floor(1000 + Math.random() * 5000), // 1000-6000 Lux
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    secret: SECRET,
   };
 
   const payload = JSON.stringify(data);

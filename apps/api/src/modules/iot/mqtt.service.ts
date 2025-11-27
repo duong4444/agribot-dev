@@ -2,8 +2,11 @@ import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as mqtt from 'mqtt';
+import * as dotenv from 'dotenv';
 import { SensorData } from './entities/sensor-data.entity';
 import { Device, DeviceStatus } from './entities/device.entity';
+
+dotenv.config();
 
 @Injectable()
 export class MqttService implements OnModuleInit {
@@ -55,6 +58,17 @@ export class MqttService implements OnModuleInit {
     try {
       const payload = JSON.parse(message);
       this.logger.debug(`Received data from ${topic}: ${message}`);
+
+      // Security check: Validate secret token
+      const expectedSecret = process.env.MQTT_SECRET;
+      if (!expectedSecret) {
+        this.logger.warn('MQTT_SECRET is not defined in .env');
+      } else if (payload.secret !== expectedSecret) {
+        this.logger.warn(
+          `Unauthorized publish attempt on ${topic}: secret mismatch`,
+        );
+        return; // Reject message with invalid secret
+      }
 
       // Extract serial number from payload (assuming deviceId is the serial number)
       const serialNumber = payload.deviceId;
