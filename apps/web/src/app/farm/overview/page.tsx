@@ -64,9 +64,9 @@ export default function FarmOverviewPage() {
   return (
     <div className="space-y-8">
       {/* Hero Section */}
-      <div className="grid gap-4 md:grid-cols-12 lg:grid-cols-12">
-        {/* Welcome & Farm Info - Spans 8 columns */}
-        <Card className="md:col-span-7 lg:col-span-8 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-none shadow-sm">
+      <div className="grid gap-4 md:grid-cols-10 lg:grid-cols-10">
+        {/* Welcome & Farm Info - Spans 3 columns */}
+        <Card className="md:col-span-3 lg:col-span-3 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-none shadow-sm">
           <CardHeader>
             <CardTitle className="text-3xl font-bold text-green-800 dark:text-green-400">
               {farm?.name}
@@ -82,8 +82,8 @@ export default function FarmOverviewPage() {
           </CardContent>
         </Card>
 
-        {/* Weather Widget - Spans 4 columns */}
-        <div className="md:col-span-5 lg:col-span-4">
+        {/* Weather Widget - Spans 7 columns */}
+        <div className="md:col-span-7 lg:col-span-7">
           <WeatherWidget address={farm?.address || ""} />
         </div>
       </div>
