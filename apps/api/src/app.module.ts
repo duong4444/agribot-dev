@@ -15,6 +15,7 @@ import { ChatModule } from './modules/chat/chat.module';
 import { FarmsModule } from './modules/farms/farms.module';
 import { AIRefactoredModule } from './modules/ai/ai-refactored.module';
 import { IoTModule } from './modules/iot/iot.module';
+import { WeatherModule } from './modules/weather/weather.module';
 // import { KnowledgeModule } from './modules/knowledge/knowledge.module';
 
 @Module({
@@ -52,6 +53,7 @@ import { IoTModule } from './modules/iot/iot.module';
     FarmsModule,
     AIRefactoredModule,
     IoTModule,
+    WeatherModule,
     // KnowledgeModule,
   ],
   controllers: [AppController],
