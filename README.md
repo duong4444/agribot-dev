@@ -80,9 +80,9 @@ Start both the frontend and backend in development mode:
 ```bash
 pnpm dev
 ```
-- **Frontend:** http://localhost:3000
-- **Backend API:** http://localhost:3001
-- **API Docs (Swagger):** http://localhost:3001/api
+- **Frontend:** http://localhost:3001
+- **Backend API:** http://localhost:3000
+- **API Docs (Swagger):** http://localhost:3000/api
 
 ## 📂 Project Structure
 
