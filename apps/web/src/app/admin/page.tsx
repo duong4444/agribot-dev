@@ -78,9 +78,9 @@ const AdminPage = () => {
         {adminModules.map((module, index) => {
           const Icon = module.icon;
           return (
-            <Link key={index} href={module.href}>
-              <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
-                <CardHeader>
+            <Link key={index} href={module.href} className="h-full">
+              <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer flex flex-col">
+                <CardHeader className="flex-grow">
                   <div className="flex items-start justify-between">
                     <div>
                       <CardTitle className="text-xl mb-2">{module.title}</CardTitle>

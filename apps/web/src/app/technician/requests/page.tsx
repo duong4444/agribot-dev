@@ -218,15 +218,17 @@ export default function TechnicianRequestsPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Xác nhận hoàn thành</AlertDialogTitle>
-            <AlertDialogDescription>
-              Bạn có chắc chắn muốn đánh dấu yêu cầu lắp đặt này là <strong>Hoàn thành</strong>?
-              <br /><br />
-              Hãy đảm bảo rằng:
-              <ul className="list-disc list-inside mt-2 space-y-1">
-                <li>Thiết bị đã được lắp đặt đúng vị trí</li>
-                <li>Thiết bị đã được kích hoạt thành công</li>
-                <li>Đã kiểm tra kết nối và dữ liệu cảm biến</li>
-              </ul>
+            <AlertDialogDescription asChild>
+              <div className="text-sm text-muted-foreground">
+                Bạn có chắc chắn muốn đánh dấu yêu cầu lắp đặt này là <strong>Hoàn thành</strong>?
+                <br /><br />
+                Hãy đảm bảo rằng:
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li>Thiết bị đã được lắp đặt đúng vị trí</li>
+                  <li>Thiết bị đã được kích hoạt thành công</li>
+                  <li>Đã kiểm tra kết nối và dữ liệu cảm biến</li>
+                </ul>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

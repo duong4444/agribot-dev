@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, Settings, Cpu } from "lucide-react";
 import { SensorDashboard } from "@/components/dashboard/SensorDashboard";
+import { IrrigationControlPanel } from "@/components/iot/IrrigationControlPanel";
+import { IrrigationHistory } from "@/components/iot/IrrigationHistory";
 import { Badge } from "@/components/ui/badge";
 
 interface Device {
@@ -141,6 +143,14 @@ export default function AreaDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Irrigation Control - Only show if there are active devices */}
+      {area.devices && area.devices.length > 0 && area.devices.some(d => d.isActive) && (
+        <div className="grid gap-4 md:grid-cols-2">
+          <IrrigationControlPanel deviceId={area.devices.find(d => d.isActive)?.serialNumber || ''} />
+          <IrrigationHistory deviceId={area.devices.find(d => d.isActive)?.serialNumber || ''} />
+        </div>
+      )}
     </div>
   );
 }

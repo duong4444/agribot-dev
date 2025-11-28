@@ -44,12 +44,22 @@ export class MqttService implements OnModuleInit {
   }
 
   private subscribeToTopics() {
-    const topic = 'sensors/+/data';
-    this.client.subscribe(topic, (err) => {
+    const dataTopic = 'sensors/+/data';
+    const statusTopic = 'sensors/+/status';
+    
+    this.client.subscribe(dataTopic, (err) => {
       if (err) {
-        this.logger.error(`Failed to subscribe to ${topic}`, err);
+        this.logger.error(`Failed to subscribe to ${dataTopic}`, err);
       } else {
-        this.logger.log(`Subscribed to ${topic}`);
+        this.logger.log(`Subscribed to ${dataTopic}`);
+      }
+    });
+
+    this.client.subscribe(statusTopic, (err) => {
+      if (err) {
+        this.logger.error(`Failed to subscribe to ${statusTopic}`, err);
+      } else {
+        this.logger.log(`Subscribed to ${statusTopic}`);
       }
     });
   }
@@ -110,6 +120,30 @@ export class MqttService implements OnModuleInit {
     } catch (error) {
       this.logger.error(`Error processing message from ${topic}`, error);
     }
+  }
+
+  // ============================================================================
+  // Publish Control Commands
+  // ============================================================================
+
+  async publishCommand(serialNumber: string, command: any): Promise<void> {
+    const topic = `control/${serialNumber}/command`;
+    const payload = JSON.stringify({
+      ...command,
+      secret: process.env.MQTT_SECRET,
+    });
+
+    return new Promise((resolve, reject) => {
+      this.client.publish(topic, payload, (err) => {
+        if (err) {
+          this.logger.error(`Failed to publish command to ${topic}`, err);
+          reject(err);
+        } else {
+          this.logger.log(`Published command to ${topic}: ${command.action}`);
+          resolve();
+        }
+      });
+    });
   }
 
   async getLatestSensorData(userId: string, areaId?: string) {

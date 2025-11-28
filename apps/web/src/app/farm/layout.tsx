@@ -31,6 +31,11 @@ const navigationTabs = [
     href: '/farm/finance', 
     icon: DollarSign 
   },
+  { 
+    label: 'Yêu cầu lắp đặt', 
+    href: '/farm/installation-requests', 
+    icon: LayoutDashboard 
+  },
 ];
 
 export default function FarmLayout({

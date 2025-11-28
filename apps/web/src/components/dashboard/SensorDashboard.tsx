@@ -52,7 +52,7 @@ export function SensorDashboard({ areaId }: SensorDashboardProps) {
   }, [areaId]);
 
   if (loading) {
-    return <div>Loading sensor data...</div>;
+    return <div>Đang tải dữ liệu cảm biến...</div>;
   }
 
   // Calculate averages or use latest reading
@@ -66,56 +66,56 @@ export function SensorDashboard({ areaId }: SensorDashboardProps) {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Real-time Monitoring</h2>
+        <h2 className="text-xl font-semibold">Dữ liệu thời gian thực</h2>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Temperature</CardTitle>
+            <CardTitle className="text-sm font-medium">Nhiệt độ</CardTitle>
             <Thermometer className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{latest.temperature.toFixed(1)}°C</div>
-            <p className="text-xs text-muted-foreground">
+            {/* <p className="text-xs text-muted-foreground">
               {data.length > 0 ? "Latest reading" : "No data"}
-            </p>
+            </p> */}
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Humidity</CardTitle>
+            <CardTitle className="text-sm font-medium">Độ ẩm không khí</CardTitle>
             <Wind className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{latest.humidity.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">
+            {/* <p className="text-xs text-muted-foreground">
               Relative Humidity
-            </p>
+            </p> */}
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Soil Moisture</CardTitle>
+            <CardTitle className="text-sm font-medium">Độ ẩm đất</CardTitle>
             <Droplets className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{latest.soilMoisture.toFixed(1)}%</div>
-            <p className="text-xs text-muted-foreground">
+            {/* <p className="text-xs text-muted-foreground">
               Volumetric Water Content
-            </p>
+            </p> */}
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Light Level</CardTitle>
+            <CardTitle className="text-sm font-medium">Mức độ sáng</CardTitle>
             <Sun className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{latest.lightLevel.toFixed(0)} Lux</div>
-            <p className="text-xs text-muted-foreground">
+            {/* <p className="text-xs text-muted-foreground">
               Ambient Light
-            </p>
+            </p> */}
           </CardContent>
         </Card>
       </div>
