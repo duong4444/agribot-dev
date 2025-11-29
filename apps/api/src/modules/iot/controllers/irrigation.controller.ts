@@ -28,12 +28,12 @@ export class IrrigationController {
 
   @Post('on')
   async turnOn(@Param('deviceId') deviceId: string, @Request() req) {
-    return this.irrigationService.turnOnPump(deviceId, req.user.userId);
+    return this.irrigationService.turnOnPump(deviceId, req.user.id);
   }
 
   @Post('off')
   async turnOff(@Param('deviceId') deviceId: string, @Request() req) {
-    return this.irrigationService.turnOffPump(deviceId, req.user.userId);
+    return this.irrigationService.turnOffPump(deviceId, req.user.id);
   }
 
   // ============================================================================
@@ -46,7 +46,7 @@ export class IrrigationController {
     @Body() dto: IrrigateDurationDto,
     @Request() req,
   ) {
-    return this.irrigationService.irrigateDuration(deviceId, dto, req.user.userId);
+    return this.irrigationService.irrigateDuration(deviceId, dto, req.user.id);
   }
 
   // ============================================================================
@@ -64,7 +64,7 @@ export class IrrigationController {
     @Body() dto: UpdateAutoConfigDto,
     @Request() req,
   ) {
-    return this.irrigationService.updateAutoConfig(deviceId, dto, req.user.userId);
+    return this.irrigationService.updateAutoConfig(deviceId, dto, req.user.id);
   }
 
   @Post('auto-mode')
@@ -76,7 +76,7 @@ export class IrrigationController {
     return this.irrigationService.toggleAutoMode(
       deviceId,
       dto.enabled,
-      req.user.userId,
+      req.user.id,
     );
   }
 

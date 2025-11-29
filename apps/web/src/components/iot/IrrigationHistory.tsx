@@ -172,13 +172,13 @@ export function IrrigationHistory({ deviceId, limit = 20 }: IrrigationHistoryPro
                       )}
                     </div>
 
-                    {event.soilMoistureBefore !== undefined && (
+                    {event.soilMoistureBefore !== undefined && event.soilMoistureBefore !== null && (
                       <div className="flex items-center gap-4">
                         <span className="flex items-center gap-1">
                           <TrendingDown className="h-3 w-3" />
                           Trước: {event.soilMoistureBefore.toFixed(1)}%
                         </span>
-                        {event.soilMoistureAfter !== undefined && (
+                        {event.soilMoistureAfter !== undefined && event.soilMoistureAfter !== null && (
                           <span>
                             Sau: {event.soilMoistureAfter.toFixed(1)}%
                           </span>

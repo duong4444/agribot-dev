@@ -19,10 +19,14 @@ require('dotenv').config();
 
 // Configuration
 const DEVICE_SERIAL = process.argv[2] || 'ESP32-001';
+console.log("DEVICE_SERIAL: ",DEVICE_SERIAL);
+
 const MQTT_BROKER_URL = process.env.MQTT_BROKER_URL || 'mqtt://localhost:1883';
 const MQTT_SECRET = process.env.MQTT_SECRET || 'your-secret-key';
+console.log("MQTT_secret: ",MQTT_SECRET);
 
 // Device State
+// ktao state
 const state = {
   pumpOn: false,
   irrigationStartTime: null,
@@ -46,13 +50,18 @@ const state = {
   },
 };
 
-// MQTT Client
+// MQTT Client , tạo mqtt client kết nối đến broker mqtt://localhost:1883
 const client = mqtt.connect(MQTT_BROKER_URL);
 
 // Topics
 const CONTROL_TOPIC = `control/${DEVICE_SERIAL}/command`;
+console.log("CONTROL_TOPIC: ",CONTROL_TOPIC);
+
 const DATA_TOPIC = `sensors/${DEVICE_SERIAL}/data`;
+console.log("DATA_TOPIC: ",DATA_TOPIC);
+
 const STATUS_TOPIC = `sensors/${DEVICE_SERIAL}/status`;
+console.log("STATUS_TOPIC: ",STATUS_TOPIC);
 
 console.log(`🤖 Mock ESP32 Device: ${DEVICE_SERIAL}`);
 console.log(`📡 Connecting to MQTT Broker: ${MQTT_BROKER_URL}`);
@@ -60,7 +69,9 @@ console.log(`📡 Connecting to MQTT Broker: ${MQTT_BROKER_URL}`);
 // ============================================================================
 // MQTT Event Handlers
 // ============================================================================
+// đăng ký event listeners (chưa chạy, chỉ đăng ký)
 
+// == phase 2 kết nối thành công event connect đc trigger
 client.on('connect', () => {
   console.log('✅ Connected to MQTT Broker');
   
@@ -74,9 +85,14 @@ client.on('connect', () => {
   });
   
   // Start periodic tasks
-  startPeriodicTasks();
+  startPeriodicTasks(); // trong này chứa publish sensor_data
+// |     - Mỗi 5s:  updateSensorReadings()   → Cập nhật cảm biến     │
+// │     - Mỗi 60s: publishSensorData()      → Gửi data lên broker   │
+// │     - Mỗi 1s:  checkIrrigationTimer()   → Kiểm tra hết giờ tưới │
+// │     - Mỗi 10s: checkAndAutoIrrigate()   → Kiểm tra tưới tự động │
   
-  // Publish initial status
+  // Publish initial status 
+  // Published status: device_online
   publishStatus('device_online');
 });
 
@@ -270,12 +286,18 @@ function publishSensorData() {
     lightLevel: Math.round(state.sensors.lightLevel),
     timestamp: Date.now(),
   };
+
+  console.log("payload phía esp_ sensorData: ",payload);
   
   client.publish(DATA_TOPIC, JSON.stringify(payload));
   console.log(`📤 Published sensor data: Temp=${payload.temperature}°C, Moisture=${payload.soilMoisture}%`);
 }
 
 function publishStatus(event, metadata = {}) {
+  console.log("Log trong PUBstatus !!!!!");
+  console.log("log xem event là gì?:  ",event);
+  console.log("log xem metadata là gì? : ",metadata);
+  
   const payload = {
     deviceId: DEVICE_SERIAL,
     event,
@@ -285,6 +307,9 @@ function publishStatus(event, metadata = {}) {
     timestamp: Date.now(),
     ...metadata,
   };
+  
+  console.log("log trong publishStatus----PAYLOAD: ",payload);
+  
   
   client.publish(STATUS_TOPIC, JSON.stringify(payload));
   console.log(`📤 Published status: ${event}`);
@@ -316,6 +341,7 @@ function startPeriodicTasks() {
   }, 10000);
   
   // Publish initial sensor data
+  console.log("!!!!!! PUBLISH INIT SENSOR DATA");
   publishSensorData();
 }
 

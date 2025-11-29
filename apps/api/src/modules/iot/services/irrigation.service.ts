@@ -34,7 +34,8 @@ export class IrrigationService {
 
   async turnOnPump(deviceId: string, userId: string): Promise<IrrigationEvent> {
     await this.validateDeviceAccess(deviceId, userId);
-
+    console.log("_______________________DEVICE_ID________________________: ",deviceId);
+    
     // Get current soil moisture
     const soilMoisture = await this.getCurrentSoilMoisture(deviceId);
 
@@ -48,10 +49,15 @@ export class IrrigationService {
       userId,
       metadata: { action: 'manual_on' },
     });
-
+    console.log("===================================================");
+    console.log("EVENT___IrrigationEvent: ",event);
+    console.log("===================================================");
+    
     await this.eventRepo.save(event);
 
     // Publish MQTT command
+    console.log("----------irrigation.service gọi pushCMD của mqtt.service----------");
+    
     await this.mqttService.publishCommand(deviceId, {
       action: 'turn_on',
       component: 'pump',
@@ -323,33 +329,55 @@ export class IrrigationService {
   // Helper Methods
   // ============================================================================
 
+  // check device đang req có tồn tại trong bảng devices không
+  // check device active? , device thuộc farm|area 
+  // check req user với chủ sở hữu device
   private async validateDeviceAccess(
     deviceId: string,
     userId: string,
   ): Promise<Device> {
+    this.logger.debug(`[validateDeviceAccess] Checking device: ${deviceId}, userId: ${userId}`);
+    
+    console.log("________LOG trong validateDeviceAccess___________");
+    
     const device = await this.deviceRepo.findOne({
       where: { serialNumber: deviceId },
       relations: ['area', 'area.farm'],
     });
 
+    this.logger.debug(`[validateDeviceAccess] Device found: ${JSON.stringify({
+      id: device?.id,
+      serialNumber: device?.serialNumber,
+      status: device?.status,
+      areaId: device?.areaId,
+      hasArea: !!device?.area,
+      hasFarm: !!device?.area?.farm,
+      farmUserId: device?.area?.farm?.userId,
+    })}`);
+
     if (!device) {
+      this.logger.warn(`[validateDeviceAccess] Device NOT FOUND: ${deviceId}`);
       throw new NotFoundException(`Device ${deviceId} not found`);
     }
 
     if (device.status !== DeviceStatus.ACTIVE) {
+      this.logger.warn(`[validateDeviceAccess] Device NOT ACTIVE: ${deviceId}, status: ${device.status}`);
       throw new ForbiddenException(`Device ${deviceId} is not active`);
     }
 
     if (!device.area || !device.area.farm) {
+      this.logger.warn(`[validateDeviceAccess] Device NOT ASSIGNED to farm: ${deviceId}, areaId: ${device.areaId}`);
       throw new ForbiddenException(`Device ${deviceId} is not assigned to a farm`);
     }
 
     if (device.area.farm.userId !== userId) {
+      this.logger.warn(`[validateDeviceAccess] ACCESS DENIED: device farmUserId=${device.area.farm.userId}, requestUserId=${userId}`);
       throw new ForbiddenException(
         `You do not have access to device ${deviceId}`,
       );
     }
 
+    this.logger.debug(`PASS!!!!_____[validateDeviceAccess] Access GRANTED for device: ${deviceId}`);
     return device;
   }
 

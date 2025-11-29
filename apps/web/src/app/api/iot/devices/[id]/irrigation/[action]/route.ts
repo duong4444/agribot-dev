@@ -6,8 +6,11 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string; action: string } }
+  { params }: { params: Promise<{ id: string; action: string }> }
 ) {
+  // Next.js 15: params must be awaited
+  const { id, action } = await params;
+  
   try {
     const session = await getServerSession(authOptions);
     if (!session?.accessToken) {
@@ -17,7 +20,7 @@ export async function POST(
     const body = await request.json().catch(() => ({}));
 
     const response = await fetch(
-      `${API_URL}/iot/devices/${params.id}/irrigation/${params.action}`,
+      `${API_URL}/iot/devices/${id}/irrigation/${action}`,
       {
         method: 'POST',
         headers: {
@@ -36,7 +39,7 @@ export async function POST(
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
-    console.error(`Error executing irrigation action ${params.action}:`, error);
+    console.error(`Error executing irrigation action ${action}:`, error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

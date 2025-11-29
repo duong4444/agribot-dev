@@ -6,8 +6,10 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+  
   try {
     const session = await getServerSession(authOptions);
     if (!session?.accessToken) {
@@ -18,7 +20,7 @@ export async function GET(
     const queryString = searchParams.toString();
 
     const response = await fetch(
-      `${API_URL}/iot/devices/${params.id}/irrigation/history${queryString ? `?${queryString}` : ''}`,
+      `${API_URL}/iot/devices/${id}/irrigation/history${queryString ? `?${queryString}` : ''}`,
       {
         headers: {
           Authorization: `Bearer ${session.accessToken}`,
