@@ -170,6 +170,7 @@ export class PythonAIClientService {
       'device_name': EntityType.DEVICE_NAME,
       'activity_type': EntityType.ACTIVITY_TYPE,
       'metric': EntityType.METRIC,
+      'duration': EntityType.DURATION,
     };
 
     return {

@@ -16,37 +16,34 @@ from transformers import AutoModelForTokenClassification, AutoTokenizer
 
 class NERExtractor:
     """
-    PhoBERT-based NER Extractor for Vietnamese Agricultural Chatbot
+    PhoBERT-based NER Extractor for Vietnamese Agricultural IoT Chatbot
     """
     
-    # Entity labels (matching NestJS EntityType enum)
+    # Entity labels (6 types for IoT chatbot)
     ENTITY_LABELS = [
         "O",              # 0 - Outside
         "B-DATE",         # 1 - Begin Date
         "I-DATE",         # 2 - Inside Date
-        "B-MONEY",        # 3 - Begin Money
-        "I-MONEY",        # 4 - Inside Money
-        "B-CROP",         # 5 - Begin Crop Name
-        "I-CROP",         # 6 - Inside Crop Name
-        "B-AREA",         # 7 - Begin Farm Area
-        "I-AREA",         # 8 - Inside Farm Area
-        "B-DEVICE",       # 9 - Begin Device Name
-        "I-DEVICE",       # 10 - Inside Device Name
-        "B-ACTIVITY",     # 11 - Begin Activity Type
-        "I-ACTIVITY",     # 12 - Inside Activity Type
-        "B-METRIC",       # 13 - Begin Metric
-        "I-METRIC",       # 14 - Inside Metric
+        "B-CROP",         # 3 - Begin Crop Name
+        "I-CROP",         # 4 - Inside Crop Name
+        "B-AREA",         # 5 - Begin Farm Area
+        "I-AREA",         # 6 - Inside Farm Area
+        "B-DEVICE",       # 7 - Begin Device Name
+        "I-DEVICE",       # 8 - Inside Device Name
+        "B-METRIC",       # 9 - Begin Metric
+        "I-METRIC",       # 10 - Inside Metric
+        "B-DURATION",     # 11 - Begin Duration
+        "I-DURATION",     # 12 - Inside Duration
     ]
     
     # Entity type mapping
     ENTITY_TYPE_MAP = {
         "DATE": "date",
-        "MONEY": "money",
         "CROP": "crop_name",
         "AREA": "farm_area",
         "DEVICE": "device_name",
-        "ACTIVITY": "activity_type",
         "METRIC": "metric",
+        "DURATION": "duration",
     }
     
     def __init__(self, model_name: str = "vinai/phobert-base"):
@@ -398,11 +395,6 @@ class NERExtractor:
             (r'\d{1,2}/\d{1,2}/\d{2,4}', 'date'),
         ]
         
-        # Money patterns
-        money_patterns = [
-            (r'\d+[\d,\.]*\s*(đồng|vnđ|vnd|k|triệu|tr|tỷ)', 'money'),
-        ]
-        
         # Multi-word crop patterns (prioritize longer matches)
         crop_patterns = [
             # Common 2-3 word crops
@@ -444,7 +436,17 @@ class NERExtractor:
             (r'\bhàng\s+\d+\b', 'farm_area'),  # hàng 1, hàng 2
             (r'\bluống\s+\d+\b', 'farm_area'),  # luống 1
             (r'\bkhu\s+[A-Z]\b', 'farm_area'),  # khu A
+            (r'\bkhu\s+\d+\b', 'farm_area'),  # khu 1
             (r'\bvườn\s+\w+\b', 'farm_area'),  # vườn cam
+        ]
+        
+        # Duration patterns
+        duration_patterns = [
+            (r'\d+\s*phút', 'duration'),  # 5 phút, 10 phút
+            (r'\d+\s*giờ', 'duration'),   # 1 giờ, 2 giờ
+            (r'\d+\s*ngày', 'duration'),  # 1 ngày
+            (r'nửa\s+tiếng', 'duration'), # nửa tiếng
+            (r'\d+\s*tiếng\s*rưỡi', 'duration'), # 1 tiếng rưỡi
         ]
 
         # Combine all patterns (prioritize multi-word patterns first)
@@ -452,8 +454,8 @@ class NERExtractor:
             crop_patterns + 
             device_patterns + 
             area_patterns + 
-            date_patterns + 
-            money_patterns
+            duration_patterns +
+            date_patterns
         )
         
         for pattern, entity_type in all_patterns:

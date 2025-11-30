@@ -26,6 +26,7 @@ export enum EntityType {
   ACTIVITY_TYPE = 'activity_type',
   METRIC = 'metric',
   FINANCIAL_TYPE = 'financial_type',
+  DURATION = 'duration',
 }
 
 export interface Entity {
@@ -112,12 +113,17 @@ export interface BusinessQueryResult {
 
 export interface IoTCommandResult {
   success: boolean;
-  deviceId: string;
-  deviceName: string;
-  command: string;
-  status: 'sent' | 'acknowledged' | 'executed' | 'failed';
-  message: string;
-  timestamp: Date;
+  deviceId?: string;
+  deviceName?: string;
+  command?: string;
+  status?: 'sent' | 'acknowledged' | 'executed' | 'failed';
+  message?: string;
+  timestamp?: Date;
+  // Device control specific fields
+  deviceType?: string;
+  action?: string;
+  area?: string;
+  duration?: number;
 }
 
 // ========================================
