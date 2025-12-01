@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DeviceAutoConfig } from '../entities/device-auto-config.entity';
 import { Device, DeviceStatus } from '../entities/device.entity';
+import { LightingEvent, LightingEventType, LightingEventStatus } from '../entities/lighting-event.entity';
 import { MqttService } from '../mqtt.service';
 
 @Injectable()
@@ -14,6 +15,8 @@ export class LightingService {
     private configRepo: Repository<DeviceAutoConfig>,
     @InjectRepository(Device)
     private deviceRepo: Repository<Device>,
+    @InjectRepository(LightingEvent)
+    private eventRepo: Repository<LightingEvent>,
     @Inject(forwardRef(() => MqttService))
     private mqttService: MqttService,
   ) {}
@@ -21,6 +24,18 @@ export class LightingService {
   async turnOn(deviceId: string, userId: string) {
     await this.validateDeviceAccess(deviceId, userId);
     
+    // Log event
+    await this.eventRepo.save(
+      this.eventRepo.create({
+        deviceId,
+        type: LightingEventType.MANUAL_ON,
+        status: LightingEventStatus.COMPLETED,
+        timestamp: new Date(),
+        userId,
+        metadata: { action: 'manual_on' },
+      }),
+    );
+
     // Publish MQTT command
     await this.mqttService.publishCommand(deviceId, {
       action: 'turn_on_light',
@@ -32,6 +47,18 @@ export class LightingService {
 
   async turnOff(deviceId: string, userId: string) {
     await this.validateDeviceAccess(deviceId, userId);
+
+    // Log event
+    await this.eventRepo.save(
+      this.eventRepo.create({
+        deviceId,
+        type: LightingEventType.MANUAL_OFF,
+        status: LightingEventStatus.COMPLETED,
+        timestamp: new Date(),
+        userId,
+        metadata: { action: 'manual_off' },
+      }),
+    );
 
     // Publish MQTT command
     await this.mqttService.publishCommand(deviceId, {
@@ -84,6 +111,17 @@ export class LightingService {
       await this.configRepo.save(config);
     }
     return config;
+  }
+
+  async getLightingHistory(
+    deviceId: string,
+    limit: number = 20,
+  ): Promise<LightingEvent[]> {
+    return this.eventRepo.find({
+      where: { deviceId },
+      order: { timestamp: 'DESC' },
+      take: limit,
+    });
   }
 
   private async validateDeviceAccess(deviceId: string, userId: string) {

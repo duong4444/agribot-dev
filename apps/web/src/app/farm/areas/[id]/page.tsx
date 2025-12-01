@@ -9,7 +9,9 @@ import { SensorDashboard } from "@/components/dashboard/SensorDashboard";
 import { IrrigationControlPanel } from "@/components/iot/IrrigationControlPanel";
 import { IrrigationHistory } from "@/components/iot/IrrigationHistory";
 import { LightingControlPanel } from "@/components/iot/LightingControlPanel";
+import { LightingHistory } from "@/components/iot/LightingHistory";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Device {
   id: string;
@@ -99,71 +101,109 @@ export default function AreaDetailPage() {
       {/* Sensor Dashboard */}
       <SensorDashboard areaId={area.id} />
 
-      {/* Devices List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Thiết bị trong khu vực</CardTitle>
-          <CardDescription>Danh sách các cảm biến và bộ điều khiển</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {area.devices && area.devices.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {area.devices.map((device) => (
-                <div
-                  key={device.id}
-                  className="flex items-center justify-between p-4 border rounded-lg bg-card hover:bg-accent/50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-full">
-                      <Cpu className="h-4 w-4 text-primary" />
+      {/* Tabs Interface */}
+      <Tabs defaultValue="overview" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="overview">Tổng quan</TabsTrigger>
+          <TabsTrigger value="irrigation">Tưới tiêu</TabsTrigger>
+          <TabsTrigger value="lighting">Chiếu sáng</TabsTrigger>
+        </TabsList>
+
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-4">
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Thiết bị trong khu vực</CardTitle>
+              <CardDescription>Danh sách các cảm biến và bộ điều khiển</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {area.devices && area.devices.length > 0 ? (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {area.devices.map((device) => (
+                    <div
+                      key={device.id}
+                      className="flex items-center justify-between p-4 border rounded-lg bg-card hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-primary/10 rounded-full">
+                          <Cpu className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{device.name}</p>
+                          <p className="text-xs text-muted-foreground font-mono">
+                            {device.serialNumber}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant={device.isActive ? "default" : "secondary"}>
+                        {device.isActive ? "Online" : "Offline"}
+                      </Badge>
                     </div>
-                    <div>
-                      <p className="font-medium">{device.name}</p>
-                      <p className="text-xs text-muted-foreground font-mono">
-                        {device.serialNumber}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge variant={device.isActive ? "default" : "secondary"}>
-                    {device.isActive ? "Online" : "Offline"}
-                  </Badge>
+                  ))}
                 </div>
-              ))}
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  Chưa có thiết bị nào được lắp đặt tại khu vực này.
+                  <br />
+                  <Button 
+                    variant="link" 
+                    onClick={() => router.push('/farm/installation-requests')}
+                    className="mt-2"
+                  >
+                    Yêu cầu lắp đặt thiết bị
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Irrigation Tab */}
+        <TabsContent value="irrigation" className="space-y-4">
+          {area.devices && area.devices.length > 0 && area.devices.some(d => d.isActive) ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              <IrrigationControlPanel 
+                deviceId={area.devices.find(d => d.isActive)?.serialNumber || ''} 
+                onActionComplete={() => setRefreshHistoryKey(prev => prev + 1)}
+              />
+              <IrrigationHistory 
+                deviceId={area.devices.find(d => d.isActive)?.serialNumber || ''} 
+                refreshTrigger={refreshHistoryKey}
+              />
             </div>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              Chưa có thiết bị nào được lắp đặt tại khu vực này.
-              <br />
-              <Button 
-                variant="link" 
-                onClick={() => router.push('/farm/installation-requests')}
-                className="mt-2"
-              >
-                Yêu cầu lắp đặt thiết bị
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <p>Chưa có thiết bị kích hoạt nào để điều khiển tưới.</p>
+              <Button variant="link" onClick={() => router.push('/farm/installation-requests')}>
+                Kiểm tra yêu cầu lắp đặt
               </Button>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </TabsContent>
 
-      {/* Irrigation Control - Only show if there are active devices */}
-      {area.devices && area.devices.length > 0 && area.devices.some(d => d.isActive) && (
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-4">
-            <IrrigationControlPanel 
-              deviceId={area.devices.find(d => d.isActive)?.serialNumber || ''} 
-              onActionComplete={() => setRefreshHistoryKey(prev => prev + 1)}
-            />
-            <LightingControlPanel 
-              deviceId={area.devices.find(d => d.isActive)?.serialNumber || ''} 
-            />
-          </div>
-          <IrrigationHistory 
-            deviceId={area.devices.find(d => d.isActive)?.serialNumber || ''} 
-            refreshTrigger={refreshHistoryKey}
-          />
-        </div>
-      )}
+        {/* Lighting Tab */}
+        <TabsContent value="lighting" className="space-y-4">
+          {area.devices && area.devices.length > 0 && area.devices.some(d => d.isActive) ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              <LightingControlPanel 
+                deviceId={area.devices.find(d => d.isActive)?.serialNumber || ''} 
+              />
+              <LightingHistory 
+                deviceId={area.devices.find(d => d.isActive)?.serialNumber || ''} 
+                refreshTrigger={refreshHistoryKey}
+              />
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <p>Chưa có thiết bị kích hoạt nào để điều khiển đèn.</p>
+              <Button variant="link" onClick={() => router.push('/farm/installation-requests')}>
+                Kiểm tra yêu cầu lắp đặt
+              </Button>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

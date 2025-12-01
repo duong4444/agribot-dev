@@ -11,6 +11,7 @@ import { Device } from './entities/device.entity';
 import { InstallationRequest } from './entities/installation-request.entity';
 import { DeviceAutoConfig } from './entities/device-auto-config.entity';
 import { IrrigationEvent } from './entities/irrigation-event.entity';
+import { LightingEvent } from './entities/lighting-event.entity';
 import { 
   InstallationRequestController,
   AdminInstallationRequestController,
@@ -33,6 +34,7 @@ import { User } from '../users/entities/user.entity';
       InstallationRequest,
       DeviceAutoConfig,
       IrrigationEvent,
+      LightingEvent,
       Area,
       User,
     ]),

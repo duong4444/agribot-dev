@@ -242,3 +242,4 @@ test-iot-workflow.js
 seed-technician.sql
 scripts/mockA.js
 scripts/mockB.js
+apps/python-ai-service/train/data/intent_data_augmented_8000.csv

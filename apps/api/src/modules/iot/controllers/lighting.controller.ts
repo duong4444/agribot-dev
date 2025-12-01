@@ -30,4 +30,13 @@ export class LightingController {
   ) {
     return this.lightingService.updateAutoConfig(id, req.user.id, body);
   }
+
+  @Get('history')
+  async getHistory(
+    @Param('id') id: string,
+    @Request() req,
+  ) {
+    const limit = 20; // Default limit
+    return this.lightingService.getLightingHistory(id, limit);
+  }
 }

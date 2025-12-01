@@ -38,6 +38,8 @@ export class DeviceControlHandler {
     'bơm nước': 'pump',
     'hệ thống tưới': 'pump',
     'tưới tự động': 'pump',
+    'chế độ tưới': 'pump',
+    'chế độ tưới tự động': 'pump',
     
     // Light aliases
     'đèn': 'light',
@@ -47,8 +49,8 @@ export class DeviceControlHandler {
 
   // Action detection keywords
   private readonly ACTION_KEYWORDS = {
-    on: ['bật', 'mở', 'khởi động', 'start', 'on'],
-    off: ['tắt', 'dừng', 'ngừng', 'stop', 'off'],
+    on: ['bật', 'mở', 'khởi động', 'start', 'on', 'kích hoạt'],
+    off: ['tắt', 'dừng', 'ngừng', 'stop', 'off', 'huỷ', 'hủy', 'vô hiệu hóa'],
   };
 
   // Response templates
@@ -92,11 +94,23 @@ export class DeviceControlHandler {
     const durationEntity = entities.find(e => e.type === 'duration' || e.type === 'date');
 
     if (!deviceEntity) {
-      throw new BadRequestException('Không tìm thấy tên thiết bị trong câu lệnh');
+      return {
+        success: false,
+        message: 'Vui lòng sử dụng Bảng điều khiển tại Farm Dashboard để thao tác chính xác hơn.',
+        deviceType: 'unknown',
+        area: 'unknown',
+        action: 'unknown',
+      };
     }
 
     if (!areaEntity) {
-      throw new BadRequestException('Không tìm thấy khu vực trong câu lệnh');
+      return {
+        success: false,
+        message: 'Vui lòng sử dụng Bảng điều khiển tại Farm Dashboard để thao tác chính xác hơn.',
+        deviceType: deviceEntity?.value || 'unknown',
+        area: 'unknown',
+        action: 'unknown',
+      };
     }
 
     // Normalize device name
@@ -104,7 +118,13 @@ export class DeviceControlHandler {
     console.log("deviceType _ được normalize: ",deviceType);
     
     if (!deviceType) {
-      throw new BadRequestException(`Thiết bị "${deviceEntity.value}" không được hỗ trợ`);
+      return {
+        success: false,
+        message: `Vui lòng sử dụng Bảng điều khiển tại Farm Dashboard để thao tác.`,
+        deviceType: deviceEntity.value,
+        area: areaEntity?.value || 'unknown',
+        action: 'unknown',
+      };
     }
 
     // Detect action (on/off)
@@ -112,20 +132,54 @@ export class DeviceControlHandler {
     console.log("action _từ detectAction: ",action);
     
     if (!action) {
-      throw new BadRequestException('Không xác định được hành động (bật/tắt)');
+      return {
+        success: false,
+        message: 'Vui lòng sử dụng Bảng điều khiển tại Farm Dashboard để thao tác chính xác hơn.',
+        deviceType: deviceType,
+        area: areaEntity?.value || 'unknown',
+        action: 'unknown',
+      };
     }
 
     // Parse duration if provided
     const duration = durationEntity ? this.parseDuration(durationEntity.value) : undefined;
 
-    // Find area
-    const area = await this.findArea(areaEntity.value, userId);
-    console.log("area _từ findArea: ",area);
-    
+    // Find area with error handling
+    let area: Area;
+    try {
+      area = await this.findArea(areaEntity.value, userId);
+      console.log("area _từ findArea: ", area);
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        return {
+          success: false,
+          message: `Không tìm thấy khu vực "${areaEntity.value}" hoặc bạn không có quyền truy cập. Vui lòng sử dụng Bảng điều khiển tại Farm Dashboard để thao tác.`,
+          deviceType: deviceType,
+          area: areaEntity.value,
+          action: action,
+        };
+      }
+      throw error; // Re-throw unexpected errors
+    }
 
-    // Find device
-    const device = await this.findDevice(deviceType, area.id, userId);
-    console.log("device _từ findDevice: ",device);
+    // Find device with error handling
+    let device: Device;
+    try {
+      device = await this.findDevice(deviceType, area.id, userId);
+      console.log("device _từ findDevice: ", device);
+    } catch (error) {
+      if (error instanceof NotFoundException || error instanceof ForbiddenException) {
+        const deviceNameVi = deviceType === 'pump' ? 'máy bơm' : 'đèn';
+        return {
+          success: false,
+          message: `Không tìm thấy ${deviceNameVi} trong khu vực "${area.name}" hoặc bạn không có quyền điều khiển. Vui lòng sử dụng Bảng điều khiển tại Farm Dashboard để thao tác.`,
+          deviceType: deviceType,
+          area: area.name,
+          action: action,
+        };
+      }
+      throw error; // Re-throw unexpected errors
+    }
 
 
     // Detect if user wants to control Auto Mode

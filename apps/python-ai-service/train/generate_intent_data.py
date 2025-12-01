@@ -206,6 +206,13 @@ TEMPLATES = {
         "Cho {device} chạy {duration}.",
         "Ngưng {device} ở {area}.",
         "Tự động {action} {device} khi {condition}.",
+        "Thay đổi ngưỡng {sensor} tưới tự động của {area} thành {value}",
+        "Điều chỉnh ngưỡng {sensor} tưới tự động của {area} thành {value}",
+        "Đặt ngưỡng {sensor} tưới tự động của {area} thành {value}",
+        "Thay đổi ngưỡng ánh sáng tự động của {area} thành {value}",
+        "Đặt ngưỡng ánh sáng tự động của {area} thành {value}",
+        "Chỉnh ngưỡng sáng đèn tự động của {area} thành {value}",
+        "Điều chỉnh ngưỡng ánh sáng tự động của {area} thành {value}",
     ],
     
     "sensor_query": [
