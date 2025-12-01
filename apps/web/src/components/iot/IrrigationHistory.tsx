@@ -21,19 +21,29 @@ interface IrrigationEvent {
 interface IrrigationHistoryProps {
   deviceId: string;
   limit?: number;
+  refreshTrigger?: number;
 }
 
-export function IrrigationHistory({ deviceId, limit = 20 }: IrrigationHistoryProps) {
+export function IrrigationHistory({ deviceId, limit = 20, refreshTrigger = 0 }: IrrigationHistoryProps) {
   const [events, setEvents] = useState<IrrigationEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchHistory();
-  }, [deviceId, limit]);
+
+    const interval = setInterval(() => {
+      fetchHistory();
+    }, 10000); // Poll every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [deviceId, limit, refreshTrigger]);
 
   const fetchHistory = async () => {
     try {
-      setLoading(true);
+      // Only show loading spinner if we don't have data yet
+      if (events.length === 0) {
+        setLoading(true);
+      }
       const res = await fetch(`/api/iot/devices/${deviceId}/irrigation/history?limit=${limit}`);
       if (res.ok) {
         const data = await res.json();
@@ -111,13 +121,17 @@ export function IrrigationHistory({ deviceId, limit = 20 }: IrrigationHistoryPro
   };
 
   const formatDateTime = (dateString: string) => {
+    if (!dateString) return '-';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '-';
+    
     return new Intl.DateTimeFormat('vi-VN', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+      second: '2-digit',
     }).format(date);
   };
 

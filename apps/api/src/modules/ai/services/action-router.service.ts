@@ -7,6 +7,7 @@ import {
   IoTCommandResult 
 } from '../types';
 import { LLMFallbackService } from './llm-fallback.service';
+import { DeviceControlHandler } from '../handlers/device-control.handler';
 
 export interface ActionContext {
   user: User;
@@ -30,6 +31,7 @@ export class ActionRouterService {
 
   constructor(
     private readonly llmFallback: LLMFallbackService,
+    private readonly deviceControlHandler: DeviceControlHandler,
   ) {}
 
   /**
@@ -49,6 +51,8 @@ export class ActionRouterService {
           return await this.handleSensorQuery(user, entities, query);
 
         case IntentType.DEVICE_CONTROL:
+          console.log("------CASE DEVICE_CONTROL TRONG SWITCH CASE CỦA ROUTE ACTION----");
+          
           return await this.handleDeviceControl(user, entities, query);
 
         default:
@@ -108,26 +112,44 @@ export class ActionRouterService {
     entities: Entity[],
     query: string
   ): Promise<ActionResult> {
-    // TODO: Implement IoT device control
-    // This will be implemented when IoT module is ready
-
     // Extract device info from entities
     const deviceEntity = entities.find(e => e.type === 'device_name');
+    console.log("DEVICE ENTITY ĐC EXTRACT TỪ PYTHON_ TRONG handleDeviceControl: ",deviceEntity);
+    
     const areaEntity = entities.find(e => e.type === 'farm_area');
+    console.log("AREA ENTITY ĐC EXTRACT TỪ PYTHON_ TRONG handleDeviceControl: ",areaEntity);
 
     if (!deviceEntity && !areaEntity) {
+      console.log("KO CÓ DEVICE ENTITY VÀ AREA ENTITY");
+      
       return {
         success: false,
         message: 'Không xác định được thiết bị hoặc khu vực cần điều khiển.',
       };
     }
 
-    // For now, return placeholder
-    return {
-      success: false,
-      message: `Chức năng điều khiển thiết bị "${deviceEntity?.value || areaEntity?.value}" đang được phát triển.`,
-      requiresConfirmation: true,
-    };
+    // Call device control handler
+    try {
+      const result = await this.deviceControlHandler.handle(user.id, entities, query);
+      
+      return {
+        success: result.success,
+        message: result.message,
+        iotCommand: {
+          success: result.success,
+          deviceType: result.deviceType,
+          action: result.action,
+          area: result.area,
+          duration: result.duration,
+        },
+      };
+    } catch (error) {
+      this.logger.error('Device control error:', error);
+      return {
+        success: false,
+        message: error.message || 'Không thể điều khiển thiết bị. Vui lòng thử lại.',
+      };
+    }
   }
 
 }

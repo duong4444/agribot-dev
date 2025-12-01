@@ -19,9 +19,10 @@ interface AutoConfig {
 
 interface IrrigationControlPanelProps {
   deviceId: string;
+  onActionComplete?: () => void;
 }
 
-export function IrrigationControlPanel({ deviceId }: IrrigationControlPanelProps) {
+export function IrrigationControlPanel({ deviceId, onActionComplete }: IrrigationControlPanelProps) {
   const [loading, setLoading] = useState(false);
   const [autoConfig, setAutoConfig] = useState<AutoConfig | null>(null);
   const [durationInput, setDurationInput] = useState('600');
@@ -60,6 +61,10 @@ export function IrrigationControlPanel({ deviceId }: IrrigationControlPanelProps
         title: action === 'on' ? '✅ Đã bật máy bơm' : '🛑 Đã tắt máy bơm',
         description: `Lệnh điều khiển đã được gửi đến thiết bị`,
       });
+      
+      if (onActionComplete) {
+        onActionComplete();
+      }
     } catch (error) {
       toast({
         title: '❌ Lỗi',
@@ -96,6 +101,10 @@ export function IrrigationControlPanel({ deviceId }: IrrigationControlPanelProps
         title: '💧 Bắt đầu tưới',
         description: `Tưới trong ${Math.floor(duration / 60)} phút ${duration % 60} giây`,
       });
+
+      if (onActionComplete) {
+        onActionComplete();
+      }
     } catch (error) {
       toast({
         title: '❌ Lỗi',
@@ -126,6 +135,10 @@ export function IrrigationControlPanel({ deviceId }: IrrigationControlPanelProps
           ? `Tưới tự động khi độ ẩm < ${data.moistureThreshold}%`
           : 'Chỉ điều khiển thủ công',
       });
+
+      if (onActionComplete) {
+        onActionComplete();
+      }
     } catch (error) {
       toast({
         title: '❌ Lỗi',
@@ -159,6 +172,10 @@ export function IrrigationControlPanel({ deviceId }: IrrigationControlPanelProps
         title: '✅ Đã cập nhật cấu hình',
         description: 'Cấu hình tự động đã được lưu',
       });
+
+      if (onActionComplete) {
+        onActionComplete();
+      }
     } catch (error) {
       toast({
         title: '❌ Lỗi',

@@ -5,6 +5,7 @@ import { IoTController } from './iot.controller';
 import { DeviceService } from './device.service';
 import { InstallationRequestService } from './services/installation-request.service';
 import { IrrigationService } from './services/irrigation.service';
+import { LightingService } from './services/lighting.service';
 import { SensorData } from './entities/sensor-data.entity';
 import { Device } from './entities/device.entity';
 import { InstallationRequest } from './entities/installation-request.entity';
@@ -20,6 +21,7 @@ import {
   TechnicianDeviceController 
 } from './controllers/device-inventory.controller';
 import { IrrigationController } from './controllers/irrigation.controller';
+import { LightingController } from './controllers/lighting.controller';
 import { Area } from '../farms/entities/area.entity';
 import { User } from '../users/entities/user.entity';
 
@@ -43,18 +45,21 @@ import { User } from '../users/entities/user.entity';
     DeviceInventoryController,
     TechnicianDeviceController,
     IrrigationController,
+    LightingController,
   ],
   providers: [
     MqttService,
     DeviceService,
     InstallationRequestService,
     IrrigationService,
+    LightingService,
   ],
   exports: [
     MqttService,
     DeviceService,
     InstallationRequestService,
     IrrigationService,
+    LightingService,
   ],
 })
 export class IoTModule {}

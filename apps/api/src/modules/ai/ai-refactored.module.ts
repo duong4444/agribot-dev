@@ -7,6 +7,9 @@ import { Document } from './entities';
 // REMOVED: DocumentChunk - table dropped from database
 import { CropKnowledgeChunk } from './entities/crop-knowledge-chunk.entity';
 import { RagDocument, RagChunk } from './entities';
+import { Device } from '../iot/entities/device.entity';
+import { Area } from '../farms/entities/area.entity';
+
 
 // Existing services
 import { GeminiService } from './gemini.service';
@@ -45,17 +48,22 @@ import { AdminGuard } from './guards/admin.guard';
 
 // Other modules
 // import { FarmModule } from '../farm/farm.module'; // REMOVED: Farm module will be rebuilt
+import { IoTModule } from '../iot/iot.module';
 import { AIRefactoredController } from './ai-refactored.controller';
 import { AdminDocumentController } from './controllers/admin-document.controller';
 import { AdminCropKnowledgeController } from './controllers/admin-crop-knowledge.controller';
 import { AdminRagDocumentController } from './controllers/admin-rag-document.controller';
 import { PublicDebugController } from './controllers/public-debug.controller';
 
+// Handlers
+import { DeviceControlHandler } from './handlers/device-control.handler';
+
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([Document, CropKnowledgeChunk, RagDocument, RagChunk]),
+    TypeOrmModule.forFeature([Document, CropKnowledgeChunk, RagDocument, RagChunk, Device, Area]),
     // FarmModule, // REMOVED: Will be rebuilt later
+    IoTModule, // For device control
   ],
   controllers: [
     AIRefactoredController, 
@@ -101,6 +109,9 @@ import { PublicDebugController } from './controllers/public-debug.controller';
 
     // Guards
     AdminGuard,
+
+    // Handlers
+    DeviceControlHandler,
   ],
   exports: [
     GeminiService,

@@ -304,7 +304,8 @@ export class AIOrchestrator {
     startTime: number,
   ): Promise<AIResponse> {
     const { intent, entities, originalQuery: query } = intentResult;
-
+    console.log("PROCESSSSSSSSSSSS ACTIONNNNNNNNNNNNNNNNNN");
+    
     this.logger.log(`Processing action intent: ${intent}`);
 
     // Route to action handler

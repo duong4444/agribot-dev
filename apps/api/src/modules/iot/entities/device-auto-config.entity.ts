@@ -29,6 +29,13 @@ export class DeviceAutoConfig {
   @Column({ type: 'int', default: 3600 })
   cooldownPeriod: number; // seconds
 
+  // Lighting Configuration
+  @Column({ default: false })
+  lightEnabled: boolean;
+
+  @Column({ type: 'float', default: 100.0 })
+  lightThreshold: number; // Lux
+
   @CreateDateColumn()
   createdAt: Date;
 

@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, ForbiddenException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DeviceAutoConfig } from '../entities/device-auto-config.entity';
@@ -25,6 +25,7 @@ export class IrrigationService {
     private deviceRepo: Repository<Device>,
     @InjectRepository(SensorData)
     private sensorDataRepo: Repository<SensorData>,
+    @Inject(forwardRef(() => MqttService))
     private mqttService: MqttService,
   ) {}
 
@@ -34,6 +35,8 @@ export class IrrigationService {
 
   async turnOnPump(deviceId: string, userId: string): Promise<IrrigationEvent> {
     await this.validateDeviceAccess(deviceId, userId);
+    console.log("turnONPump đc gọi nè ______ON");
+
     console.log("_______________________DEVICE_ID________________________: ",deviceId);
     
     // Get current soil moisture
@@ -70,7 +73,8 @@ export class IrrigationService {
 
   async turnOffPump(deviceId: string, userId: string): Promise<IrrigationEvent> {
     await this.validateDeviceAccess(deviceId, userId);
-
+    console.log("turnOffPump đc gọi nè _________OFF");
+    
     const soilMoisture = await this.getCurrentSoilMoisture(deviceId);
 
     const event = this.eventRepo.create({
@@ -281,6 +285,9 @@ export class IrrigationService {
       order: { startTime: 'DESC' },
     });
 
+    console.log("recentEvent: ",recentEvent);
+    
+
     if (!recentEvent) {
       // No pending event, might be auto irrigation
       if (event === 'auto_irrigation_triggered') {
@@ -341,7 +348,7 @@ export class IrrigationService {
     console.log("________LOG trong validateDeviceAccess___________");
     
     const device = await this.deviceRepo.findOne({
-      where: { serialNumber: deviceId },
+      where: { serialNumber: deviceId }, // Query by serialNumber, not UUID
       relations: ['area', 'area.farm'],
     });
 
@@ -353,7 +360,7 @@ export class IrrigationService {
       hasArea: !!device?.area,
       hasFarm: !!device?.area?.farm,
       farmUserId: device?.area?.farm?.userId,
-    })}`);
+    })}` );
 
     if (!device) {
       this.logger.warn(`[validateDeviceAccess] Device NOT FOUND: ${deviceId}`);

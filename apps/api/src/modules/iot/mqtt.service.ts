@@ -1,10 +1,18 @@
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  Logger,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as mqtt from 'mqtt';
 import * as dotenv from 'dotenv';
 import { SensorData } from './entities/sensor-data.entity';
 import { Device, DeviceStatus } from './entities/device.entity';
+import { IrrigationService } from './services/irrigation.service';
+import { LightingService } from './services/lighting.service';
 
 dotenv.config();
 
@@ -18,6 +26,10 @@ export class MqttService implements OnModuleInit {
     private sensorDataRepository: Repository<SensorData>,
     @InjectRepository(Device)
     private deviceRepository: Repository<Device>,
+    @Inject(forwardRef(() => IrrigationService))
+    private irrigationService: IrrigationService,
+    @Inject(forwardRef(() => LightingService))
+    private lightingService: LightingService,
   ) {}
 
   onModuleInit() {
@@ -40,7 +52,11 @@ export class MqttService implements OnModuleInit {
 
     // khi nhận đc message từ topic đã subcribe
     this.client.on('message', (topic, message) => {
-      this.handleMessage(topic, message.toString());
+      if (topic.includes('/status')) {
+        this.handleStatusMessage(topic, message.toString());
+      } else {
+        this.handleMessage(topic, message.toString());
+      }
     });
   }
 
@@ -51,7 +67,7 @@ export class MqttService implements OnModuleInit {
   // check device.serialNum có trong bảng devices(technician add ) chưa
   // check device status active ?
   // pass hết thì save data vào sensor_data
-  // 
+  //
 
   private subscribeToTopics() {
     const dataTopic = 'sensors/+/data';
@@ -77,10 +93,17 @@ export class MqttService implements OnModuleInit {
   private async handleMessage(topic: string, message: string) {
     try {
       const payload = JSON.parse(message);
-      console.log("--------- bắt đầu handleMessage của sensor data trong mqtt.service -------- ");
-      
+      console.log(
+        '===========================================================================',
+      );
+      console.log(' ');
+
+      console.log(
+        '--------- bắt đầu handleMessage của sensor data trong mqtt.service -------- ',
+      );
+
       console.log('PAYLOAD từ ESP_ nhận phía MQTT.service: ', payload);
-      console.log("........................................................");
+      console.log('........................................................');
       console.log(
         'PAYLOAD.secret từ ESP_ nhận phía MQTT.service: ',
         payload.secret,
@@ -143,9 +166,55 @@ export class MqttService implements OnModuleInit {
       });
 
       const saved = await this.sensorDataRepository.save(sensorData);
-      this.logger.debug(`____________________Saved sensor data with ID_________________: ${saved.id}`);
+      this.logger.debug(
+        `____________________Saved sensor data with ID_________________: ${saved.id}`,
+      );
+      console.log('  ');
+
+      console.log(
+        '=========================================================================================',
+      );
     } catch (error) {
       this.logger.error(`Error processing message from ${topic}`, error);
+    }
+  }
+
+  private async handleStatusMessage(topic: string, message: string) {
+    try {
+      console.log("=======handleStatusMessage===========");
+      
+      const payload = JSON.parse(message);
+      console.log('================XỬ LÝ handleStatusMessage============');
+      console.log('payload_từ topic status: ', payload);
+      console.log('==========================================================');
+
+      const serialNumber = payload.deviceId;
+
+      if (!serialNumber) {
+        this.logger.warn('Received status message without deviceId');
+        return;
+      }
+
+      this.logger.log(
+        `Received status update from ${serialNumber}: ${payload.event}`,
+      );
+
+      // Delegate to IrrigationService
+      await this.irrigationService.handleStatusUpdate(serialNumber, payload);
+
+      // Handle Lighting Status
+      if (payload.event === 'light_auto_mode_disabled_by_manual_off') {
+        this.logger.log(
+          `Auto light disabled by manual OFF for ${serialNumber}`,
+        );
+        await this.lightingService.updateAutoConfig(serialNumber, 'SYSTEM', {
+          enabled: false,
+        });
+      }
+      console.log("============endlog____handleStatusMessage================");
+      
+    } catch (error) {
+      this.logger.error(`Error processing status message from ${topic}`, error);
     }
   }
 
@@ -160,17 +229,19 @@ export class MqttService implements OnModuleInit {
       secret: process.env.MQTT_SECRET,
     });
 
-    console.log("=============================================");
-    console.log("||____PAYLOAD____mqtt.service___:  ", payload);
-    console.log("=============================================");
-    
+    console.log('=============================================');
+    console.log('||____PAYLOAD____mqtt.service___:  ', payload);
+    console.log('=============================================');
+
     return new Promise((resolve, reject) => {
       this.client.publish(topic, payload, (err) => {
         if (err) {
           this.logger.error(`Failed to publish command to ${topic}`, err);
           reject(err);
         } else {
-          this.logger.log(`Published command to ---- ${topic} ----:${command.action}======`);
+          this.logger.log(
+            `Published command to ---- ${topic} ----:${command.action}======`,
+          );
           resolve();
         }
       });

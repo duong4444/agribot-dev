@@ -8,6 +8,7 @@ import { ArrowLeft, Loader2, Settings, Cpu } from "lucide-react";
 import { SensorDashboard } from "@/components/dashboard/SensorDashboard";
 import { IrrigationControlPanel } from "@/components/iot/IrrigationControlPanel";
 import { IrrigationHistory } from "@/components/iot/IrrigationHistory";
+import { LightingControlPanel } from "@/components/iot/LightingControlPanel";
 import { Badge } from "@/components/ui/badge";
 
 interface Device {
@@ -32,6 +33,7 @@ export default function AreaDetailPage() {
   const router = useRouter();
   const [area, setArea] = useState<AreaDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshHistoryKey, setRefreshHistoryKey] = useState(0);
 
   useEffect(() => {
     const fetchArea = async () => {
@@ -147,8 +149,19 @@ export default function AreaDetailPage() {
       {/* Irrigation Control - Only show if there are active devices */}
       {area.devices && area.devices.length > 0 && area.devices.some(d => d.isActive) && (
         <div className="grid gap-4 md:grid-cols-2">
-          <IrrigationControlPanel deviceId={area.devices.find(d => d.isActive)?.serialNumber || ''} />
-          <IrrigationHistory deviceId={area.devices.find(d => d.isActive)?.serialNumber || ''} />
+          <div className="space-y-4">
+            <IrrigationControlPanel 
+              deviceId={area.devices.find(d => d.isActive)?.serialNumber || ''} 
+              onActionComplete={() => setRefreshHistoryKey(prev => prev + 1)}
+            />
+            <LightingControlPanel 
+              deviceId={area.devices.find(d => d.isActive)?.serialNumber || ''} 
+            />
+          </div>
+          <IrrigationHistory 
+            deviceId={area.devices.find(d => d.isActive)?.serialNumber || ''} 
+            refreshTrigger={refreshHistoryKey}
+          />
         </div>
       )}
     </div>
