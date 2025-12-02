@@ -8,6 +8,7 @@ import {
 } from '../types';
 import { LLMFallbackService } from './llm-fallback.service';
 import { DeviceControlHandler } from '../handlers/device-control.handler';
+import { SensorQueryHandler } from '../handlers/sensor-query.handler';
 
 export interface ActionContext {
   user: User;
@@ -32,6 +33,7 @@ export class ActionRouterService {
   constructor(
     private readonly llmFallback: LLMFallbackService,
     private readonly deviceControlHandler: DeviceControlHandler,
+    private readonly sensorQueryHandler: SensorQueryHandler,
   ) {}
 
   /**
@@ -45,14 +47,15 @@ export class ActionRouterService {
     try {
       switch (intent) {
         case IntentType.FINANCIAL_QUERY:
+          console.log("------CASE FINANCIAL_QUERY TRONG SWITCH CASE CỦA ROUTE ACTION----");
           return await this.handleFinancialQuery(user, entities, query);
 
         case IntentType.SENSOR_QUERY:
+          console.log("------CASE SENSOR_QUERY TRONG SWITCH CASE CỦA ROUTE ACTION----");
           return await this.handleSensorQuery(user, entities, query);
 
         case IntentType.DEVICE_CONTROL:
           console.log("------CASE DEVICE_CONTROL TRONG SWITCH CASE CỦA ROUTE ACTION----");
-          
           return await this.handleDeviceControl(user, entities, query);
 
         default:
@@ -95,13 +98,24 @@ export class ActionRouterService {
     entities: Entity[],
     query: string
   ): Promise<ActionResult> {
-    // TODO: Implement IoT sensor query
-    // This will be implemented when IoT module is ready
-    
-    return {
-      success: false,
-      message: 'Chức năng truy vấn cảm biến đang được phát triển.',
-    };
+    try {
+      console.log("BEGIN=====================handleSensorQuery========================");
+      
+      const result = await this.sensorQueryHandler.handle(user.id, entities, query);
+      console.log("END=====================END handleSensorQuery========================");
+
+      return {
+        success: result.success,
+        message: result.message,
+        data: result.data,
+      };
+    } catch (error) {
+      this.logger.error('Sensor query error:', error);
+      return {
+        success: false,
+        message: 'Không thể lấy dữ liệu cảm biến. Vui lòng thử lại.',
+      };
+    }
   }
 
   /**
