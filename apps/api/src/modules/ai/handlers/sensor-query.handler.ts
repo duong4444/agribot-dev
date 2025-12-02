@@ -55,7 +55,7 @@ export class SensorQueryHandler {
     entities: Entity[],
     message: string,
   ): Promise<SensorQueryResult> {
-    this.logger.log(`Handling sensor query for user ${userId}`);
+    // this.logger.log(`Handling sensor query for user ${userId}`);
     
     // Extract entities
     const areaEntity = entities.find(e => e.type === 'farm_area');

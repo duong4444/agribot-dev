@@ -545,16 +545,23 @@ class NERExtractor:
         normalized = date_str.lower().strip()
         now = datetime.now()
         
+        # Keep Vietnamese date expressions as-is for NestJS date parser
         if "hôm nay" in normalized:
             return now.strftime("%Y-%m-%d")
         elif "hôm qua" in normalized:
             return (now - timedelta(days=1)).strftime("%Y-%m-%d")
         elif "tuần này" in normalized:
-            return "this_week"
+            return "tuần này"  # Keep Vietnamese
+        elif "tuần trước" in normalized:
+            return "tuần trước"  # Keep Vietnamese
         elif "tháng này" in normalized:
-            return "this_month"
+            return "tháng này"  # Keep Vietnamese
+        elif "tháng trước" in normalized:
+            return "tháng trước"  # Keep Vietnamese
         elif "năm này" in normalized:
-            return "this_year"
+            return "năm nay"  # Keep Vietnamese
+        elif "năm trước" in normalized or "năm ngoái" in normalized:
+            return "năm trước"  # Keep Vietnamese
         
         # Try to parse dd/mm/yyyy
         date_match = re.match(r'(\d{1,2})/(\d{1,2})/(\d{2,4})', normalized)

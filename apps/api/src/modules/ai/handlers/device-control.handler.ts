@@ -83,7 +83,7 @@ export class DeviceControlHandler {
     entities: Entity[],
     message: string,
   ): Promise<DeviceControlResult> {
-    this.logger.log(`Handling device control for user ${userId}`);
+    // this.logger.log(`Handling device control for user ${userId}`);
     this.logger.debug(`Entities: ${JSON.stringify(entities)}`);
     this.logger.debug(`Message: ${message}`);
 

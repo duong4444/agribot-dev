@@ -9,6 +9,7 @@ import {
 import { LLMFallbackService } from './llm-fallback.service';
 import { DeviceControlHandler } from '../handlers/device-control.handler';
 import { SensorQueryHandler } from '../handlers/sensor-query.handler';
+import { FinancialQueryHandler } from '../handlers/financial-query.handler';
 
 export interface ActionContext {
   user: User;
@@ -34,6 +35,7 @@ export class ActionRouterService {
     private readonly llmFallback: LLMFallbackService,
     private readonly deviceControlHandler: DeviceControlHandler,
     private readonly sensorQueryHandler: SensorQueryHandler,
+    private readonly financialQueryHandler: FinancialQueryHandler,
   ) {}
 
   /**
@@ -82,10 +84,24 @@ export class ActionRouterService {
     entities: Entity[],
     query: string
   ): Promise<ActionResult> {
-    return {
-      success: false,
-      message: 'Chức năng quản lý tài chính đang được phát triển. Vui lòng quay lại sau.',
-    };
+    try {
+      console.log("BEGIN=====================handleFinancialQuery========================");
+      
+      const result = await this.financialQueryHandler.handle(user.id, entities, query);
+      console.log("END=====================END handleFinancialQuery========================");
+
+      return {
+        success: result.success,
+        message: result.message,
+        data: result.data,
+      };
+    } catch (error) {
+      this.logger.error('Financial query error:', error);
+      return {
+        success: false,
+        message: 'Không thể lấy dữ liệu tài chính. Vui lòng thử lại.',
+      };
+    }
   }
 
 

@@ -10,6 +10,8 @@ import { RagDocument, RagChunk } from './entities';
 import { Device } from '../iot/entities/device.entity';
 import { Area } from '../farms/entities/area.entity';
 import { SensorData } from '../iot/entities/sensor-data.entity';
+import { Farm } from '../farms/entities/farm.entity';
+import { FarmActivity } from '../farms/entities/farm-activity.entity';
 
 
 // Existing services
@@ -59,11 +61,12 @@ import { PublicDebugController } from './controllers/public-debug.controller';
 // Handlers
 import { DeviceControlHandler } from './handlers/device-control.handler';
 import { SensorQueryHandler } from './handlers/sensor-query.handler';
+import { FinancialQueryHandler } from './handlers/financial-query.handler';
 
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([Document, CropKnowledgeChunk, RagDocument, RagChunk, Device, Area, SensorData]),
+    TypeOrmModule.forFeature([Document, CropKnowledgeChunk, RagDocument, RagChunk, Device, Area, SensorData, Farm, FarmActivity]),
     // FarmModule, // REMOVED: Will be rebuilt later
     IoTModule, // For device control
   ],
@@ -115,6 +118,7 @@ import { SensorQueryHandler } from './handlers/sensor-query.handler';
     // Handlers
     DeviceControlHandler,
     SensorQueryHandler,
+    FinancialQueryHandler,
   ],
   exports: [
     GeminiService,
