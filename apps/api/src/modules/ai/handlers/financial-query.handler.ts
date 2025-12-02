@@ -35,12 +35,22 @@ export class FinancialQueryHandler {
   ): Promise<FinancialQueryResult> {
     // this.logger.log(`Handling financial query for user ${userId}`);
 
-    // Extract date entity
-    const dateEntity = entities.find(e => e.type === 'date');
-    console.log("dateEntity_ trong FinancialQueryHandler: ",dateEntity);
-    console.log("dateEntity.value trong FinancialQueryHandler: ",dateEntity?.value);
-    
-    if (!dateEntity) {
+    // Extract date entities
+    const dateEntities = entities.filter(e => e.type === 'date');
+    let dateString = '';
+
+    // Check if we have separate "month" and "year" entities
+    const monthEntity = dateEntities.find(e => e.value.toLowerCase().includes('tháng'));
+    const yearEntity = dateEntities.find(e => e.value.toLowerCase().includes('năm'));
+
+    if (monthEntity && yearEntity && !monthEntity.value.includes('năm')) {
+      // Merge them: "tháng 11" + "năm 2024" -> "tháng 11 năm 2024"
+      dateString = `${monthEntity.value} ${yearEntity.value}`;
+      console.log("Merged date entities:", dateString);
+    } else if (dateEntities.length > 0) {
+      // Use the first (or most relevant) entity
+      dateString = dateEntities[0].value;
+    } else {
       return {
         success: false,
         message: 'Vui lòng truy cập trang tài chính của nông trại để biết thêm chi tiết!',
@@ -48,8 +58,8 @@ export class FinancialQueryHandler {
     }
 
     // Parse date range
-    const dateRange = parseDateRange(dateEntity.value);
-    console.log("dateRange_ trong FinancialQueryHandler: ",dateRange);
+    const dateRange = parseDateRange(dateString);
+    console.log("dateRange_ trong FinancialQueryHandler: ", dateRange);
     
     if (!dateRange) {
       return {
@@ -120,7 +130,7 @@ export class FinancialQueryHandler {
 
       // Format response
       let responseMessage: string;
-      const periodStr = this.formatPeriodName(dateEntity.value);
+      const periodStr = this.formatPeriodName(dateString);
 
       if (isRevenueQuery) {
         responseMessage = `Tổng doanh thu ${periodStr} là ${this.formatCurrency(revenue)}.`;

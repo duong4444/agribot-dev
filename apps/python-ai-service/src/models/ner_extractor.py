@@ -385,13 +385,28 @@ class NERExtractor:
         """Extract entities using rule-based patterns (fallback)"""
         entities = []
         
-        # Date patterns
+        # Date patterns (prioritize longer/more specific patterns first)
         date_patterns = [
+            # Month + Year combinations (most specific first)
+            (r'tháng\s*\d{1,2}\s*năm\s*\d{4}', 'date'),  # tháng 11 năm 2024
+            (r'tháng\s*\d{1,2}\s*năm\s*(?:ngoái|trước)', 'date'),  # tháng 11 năm ngoái
+            # Year patterns
+            (r'năm\s*\d{4}', 'date'),  # năm 2024
+            (r'năm\s*(?:nay|này)', 'date'),  # năm nay
+            (r'năm\s*(?:ngoái|trước)', 'date'),  # năm ngoái
+            # Month patterns
+            (r'tháng\s*\d{1,2}', 'date'),  # tháng 11
+            (r'tháng\s*(?:này|nay)', 'date'),  # tháng này
+            (r'tháng\s*trước', 'date'),  # tháng trước
+            # Quarter patterns
+            (r'quý\s*\d', 'date'),  # quý 1, quý 2
+            # Week patterns
+            (r'tuần\s*(?:này|nay)', 'date'),  # tuần này
+            (r'tuần\s*trước', 'date'),  # tuần trước
+            # Day patterns
             (r'hôm\s*nay', 'date'),
             (r'hôm\s*qua', 'date'),
-            (r'tuần\s*này', 'date'),
-            (r'tháng\s*này', 'date'),
-            (r'năm\s*này', 'date'),
+            # Date format
             (r'\d{1,2}/\d{1,2}/\d{2,4}', 'date'),
         ]
         

@@ -33,8 +33,46 @@ export function parseDateRange(dateEntity: string): DateRange | null {
     };
   }
 
-  // Tháng cụ thể: "tháng 1", "tháng 2", ..., "tháng 12"
-  const monthMatch = normalized.match(/tháng\s*(\d{1,2})/);
+  // Tháng X năm Y: "tháng 11 năm 2024", "tháng 1 năm 2023"
+  const monthYearMatch = normalized.match(/tháng\s*(\d{1,2})\s*năm\s*(\d{4})/);
+  if (monthYearMatch) {
+    const month = parseInt(monthYearMatch[1]);
+    const year = parseInt(monthYearMatch[2]);
+    if (month >= 1 && month <= 12 && year >= 2000 && year <= 2100) {
+      return {
+        start: new Date(year, month - 1, 1),
+        end: new Date(year, month, 0, 23, 59, 59, 999),
+      };
+    }
+  }
+
+  // Tháng X năm ngoái/trước: "tháng 11 năm ngoái", "tháng 5 năm trước"
+  const monthLastYearMatch = normalized.match(/tháng\s*(\d{1,2})\s*năm\s*(ngoái|trước)/);
+  if (monthLastYearMatch) {
+    const month = parseInt(monthLastYearMatch[1]);
+    const lastYear = now.getFullYear() - 1;
+    if (month >= 1 && month <= 12) {
+      return {
+        start: new Date(lastYear, month - 1, 1),
+        end: new Date(lastYear, month, 0, 23, 59, 59, 999),
+      };
+    }
+  }
+
+  // Năm cụ thể: "năm 2024", "năm 2023"
+  const yearMatch = normalized.match(/năm\s*(\d{4})/);
+  if (yearMatch) {
+    const year = parseInt(yearMatch[1]);
+    if (year >= 2000 && year <= 2100) {
+      return {
+        start: new Date(year, 0, 1),
+        end: new Date(year, 11, 31, 23, 59, 59, 999),
+      };
+    }
+  }
+
+  // Tháng cụ thể: "tháng 1", "tháng 2", ..., "tháng 12" (without year)
+  const monthMatch = normalized.match(/tháng\s*(\d{1,2})(?!\s*năm)/);
   if (monthMatch) {
     const month = parseInt(monthMatch[1]);
     if (month >= 1 && month <= 12) {
