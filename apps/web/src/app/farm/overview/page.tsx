@@ -218,7 +218,17 @@ export default function FarmOverviewPage() {
           <CardContent className="flex-1">
             {stats?.recentActivities && stats.recentActivities.length > 0 ? (
               <div className="space-y-4">
-                {stats.recentActivities.map((activity: any) => (
+                {stats.recentActivities.map((activity: any) => {
+                  const activityLabels: Record<string, string> = {
+                    seeding: 'Gieo trồng',
+                    fertilize: 'Bón phân',
+                    pesticide: 'Phun thuốc',
+                    harvest: 'Thu hoạch',
+                    watering: 'Tưới nước',
+                    other: 'Khác',
+                  };
+                  const typeKey = activity.type?.toLowerCase() || '';
+                  return (
                   <div
                     key={activity.id}
                     className="flex items-start gap-4 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors border border-transparent hover:border-slate-100 group"
@@ -229,7 +239,7 @@ export default function FarmOverviewPage() {
                     <div className="flex-1">
                       <div className="flex justify-between items-start">
                         <p className="font-medium text-sm text-slate-900 dark:text-slate-100">
-                          {activity.type}
+                          {activityLabels[typeKey] || activity.type}
                         </p>
                         <span className="text-xs text-muted-foreground bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-full">
                           {new Date(activity.date).toLocaleDateString("vi-VN", {
@@ -253,7 +263,7 @@ export default function FarmOverviewPage() {
                       )}
                     </div>
                   </div>
-                ))}
+                )})}
               </div>
             ) : (
               <div className="text-center py-12 text-muted-foreground flex flex-col items-center justify-center h-full">

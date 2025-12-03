@@ -139,8 +139,8 @@ export const ActivityList: React.FC<ActivityListProps> = ({
             <TableRow key={activity.id}>
               <TableCell>{format(new Date(activity.date), 'dd/MM/yyyy')}</TableCell>
               <TableCell>
-                <Badge className={activityColors[activity.type] || activityColors.other}>
-                  {activityLabels[activity.type] || activity.type}
+                <Badge className={activityColors[activity.type?.toLowerCase()] || activityColors.other}>
+                  {activityLabels[activity.type?.toLowerCase()] || activity.type}
                 </Badge>
               </TableCell>
               <TableCell>{activity.area?.name || '-'}</TableCell>
