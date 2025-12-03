@@ -4,7 +4,7 @@ import React from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, BarChart3, Settings, Shield, Leaf, Database } from 'lucide-react';
+import { Users, Settings, Leaf, Database } from 'lucide-react';
 import Link from 'next/link';
 
 const AdminPage = () => {
@@ -51,14 +51,6 @@ const AdminPage = () => {
       color: 'text-blue-600',
       bgColor: 'bg-blue-100 dark:bg-blue-900',
     },
-    {
-      title: 'Thống kê & Phân tích',
-      description: 'Xem thống kê hệ thống và phân tích dữ liệu',
-      icon: BarChart3,
-      href: '/admin/analytics',
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100 dark:bg-purple-900',
-    },
   ];
 
   return (
@@ -102,30 +94,6 @@ const AdminPage = () => {
         })}
       </div>
 
-      {/* Quick Stats */}
-      <div className="mt-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Thông tin nhanh</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <p className="text-2xl font-bold text-green-600">Hoạt động</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Trạng thái hệ thống</p>
-              </div>
-              <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <p className="text-2xl font-bold text-blue-600">API Ready</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Backend status</p>
-              </div>
-              <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <p className="text-2xl font-bold text-purple-600">AI Service</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Python AI status</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 };
