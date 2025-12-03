@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Trash2, FileText, Loader2, CheckCircle, Clock, XCircle, Sparkles } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Trash2, FileText, Loader2, CheckCircle, Clock, XCircle, Sparkles, Search } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -38,6 +39,7 @@ export const RagDocumentList: React.FC<RagDocumentListProps> = ({ refreshTrigger
   const [deleting, setDeleting] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<RagDocument | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchDocuments = async () => {
     try {
@@ -138,8 +140,23 @@ export const RagDocumentList: React.FC<RagDocumentListProps> = ({ refreshTrigger
           {documents.length} document(s) • Vector embeddings
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        {documents.length === 0 ? (
+      <CardContent className="space-y-4">
+        {/* Search */}
+        <div className="flex gap-2">
+          <Input
+            placeholder="Tìm kiếm tài liệu..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="flex-1"
+          />
+          <Button variant="outline" size="icon">
+            <Search className="h-4 w-4" />
+          </Button>
+        </div>
+        {documents.filter(doc => 
+          doc.originalName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          doc.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+        ).length === 0 ? (
           <div className="text-center py-12 text-gray-500 dark:text-gray-400">
             <Sparkles className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>Chưa có document nào</p>
@@ -147,7 +164,10 @@ export const RagDocumentList: React.FC<RagDocumentListProps> = ({ refreshTrigger
           </div>
         ) : (
           <div className="space-y-3">
-            {documents.map((doc) => (
+            {documents.filter(doc => 
+              doc.originalName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              doc.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+            ).map((doc) => (
               <div
                 key={doc.id}
                 className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"

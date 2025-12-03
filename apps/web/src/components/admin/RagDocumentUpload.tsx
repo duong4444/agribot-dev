@@ -271,7 +271,7 @@ export const RagDocumentUpload: React.FC<RagDocumentUploadProps> = ({ onUploadSu
         <Button
           onClick={handleUpload}
           disabled={!state.file || state.uploading}
-          className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+          className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600"
         >
           {state.uploading ? (
             <>
