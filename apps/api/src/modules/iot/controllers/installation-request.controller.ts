@@ -67,6 +67,16 @@ export class AdminInstallationRequestController {
   async updateStatus(@Param('id') id: string, @Body() body: { status: InstallationRequestStatus }) {
     return this.installationRequestService.updateStatus(id, body.status);
   }
+
+  @Put(':id/cancel')
+  async cancel(@Param('id') id: string) {
+    return this.installationRequestService.cancelByAdmin(id);
+  }
+
+  @Delete(':id')
+  async delete(@Param('id') id: string) {
+    return this.installationRequestService.delete(id);
+  }
 }
 
 @Controller('technician/installation-requests')

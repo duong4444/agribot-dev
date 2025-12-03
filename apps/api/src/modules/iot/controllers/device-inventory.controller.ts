@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
@@ -26,6 +26,16 @@ export class DeviceInventoryController {
   @Post()
   async create(@Body() body: { serialNumber: string; type: string; name: string }) {
     return this.deviceService.createInventoryDevice(body.serialNumber, body.type, body.name);
+  }
+
+  @Put(':id')
+  async update(@Param('id') id: string, @Body() body: any) {
+    return this.deviceService.update(id, body);
+  }
+
+  @Delete(':id')
+  async delete(@Param('id') id: string) {
+    return this.deviceService.delete(id);
   }
 }
 

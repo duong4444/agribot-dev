@@ -125,4 +125,24 @@ export class InstallationRequestService {
       order: { createdAt: 'DESC' },
     });
   }
+
+  async cancelByAdmin(requestId: string): Promise<InstallationRequest> {
+    const request = await this.findOne(requestId);
+
+    if (request.status === InstallationRequestStatus.CANCELLED) {
+      throw new BadRequestException('Request is already cancelled');
+    }
+
+    if (request.status === InstallationRequestStatus.COMPLETED) {
+      throw new BadRequestException('Cannot cancel completed request');
+    }
+
+    request.status = InstallationRequestStatus.CANCELLED;
+    return this.installationRequestRepository.save(request);
+  }
+
+  async delete(requestId: string): Promise<void> {
+    const request = await this.findOne(requestId);
+    await this.installationRequestRepository.remove(request);
+  }
 }

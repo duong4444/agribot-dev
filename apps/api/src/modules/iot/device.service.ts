@@ -15,6 +15,7 @@ export class DeviceService {
   async findAll(farmId?: string) {
     const query = this.deviceRepository.createQueryBuilder('device')
       .leftJoinAndSelect('device.area', 'area')
+      .leftJoinAndSelect('area.farm', 'farm')
       .orderBy('device.createdAt', 'DESC');
 
     if (farmId) {
@@ -120,5 +121,9 @@ export class DeviceService {
       where: { serialNumber },
       relations: ['area'],
     });
+  }
+  async delete(id: string) {
+    const device = await this.findOne(id);
+    return this.deviceRepository.remove(device);
   }
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { FileText, Trash2, Search, RefreshCw } from 'lucide-react';
+import { FileText, Trash2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -85,8 +85,6 @@ export const DocumentList: React.FC<DocumentListProps> = ({ refreshTrigger }) =>
   const [total, setTotal] = useState(0);
   const [limit] = useState(10);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<DocumentCategory | ''>('');
-  const [selectedStatus, setSelectedStatus] = useState<DocumentStatus | ''>('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<{ id: string; filename: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -102,8 +100,6 @@ export const DocumentList: React.FC<DocumentListProps> = ({ refreshTrigger }) =>
       });
 
       if (searchQuery) params.append('search', searchQuery);
-      if (selectedCategory) params.append('category', selectedCategory);
-      if (selectedStatus) params.append('status', selectedStatus);
 
       const response = await fetch(`/api/admin/documents?${params}`);
 
@@ -212,40 +208,16 @@ export const DocumentList: React.FC<DocumentListProps> = ({ refreshTrigger }) =>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-2">
-          <div className="flex-1 flex gap-2">
-            <Input
-              placeholder="Tìm kiếm tài liệu..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-            />
-            <Button onClick={handleSearch} variant="outline" size="icon">
-              <Search className="h-4 w-4" />
-            </Button>
-          </div>
-          <select
-            className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value as DocumentCategory | '')}
-          >
-            <option value="">Tất cả danh mục</option>
-            {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
-              <option key={value} value={value}>{label}</option>
-            ))}
-          </select>
-          <select
-            className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value as DocumentStatus | '')}
-          >
-            <option value="">Tất cả trạng thái</option>
-            {Object.entries(STATUS_LABELS).map(([value, { label }]) => (
-              <option key={value} value={value}>{label}</option>
-            ))}
-          </select>
-          <Button onClick={fetchDocuments} variant="outline" size="icon">
-            <RefreshCw className="h-4 w-4" />
+        <div className="flex gap-2">
+          <Input
+            placeholder="Tìm kiếm tài liệu..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+            className="flex-1"
+          />
+          <Button onClick={handleSearch} variant="outline" size="icon">
+            <Search className="h-4 w-4" />
           </Button>
         </div>
 

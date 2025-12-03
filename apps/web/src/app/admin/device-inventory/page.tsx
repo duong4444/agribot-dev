@@ -29,8 +29,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Plus, Package, Search } from 'lucide-react';
+import { Loader2, Plus, Package, Search, Edit, Trash2, Power, PowerOff } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Switch } from "@/components/ui/switch";
 
 interface Device {
   id: string;
@@ -39,7 +50,14 @@ interface Device {
   type: string;
   status: string;
   isActive: boolean;
-  area?: { id: string; name: string };
+  area?: { 
+    id: string; 
+    name: string;
+    farm?: {
+      id: string;
+      name: string;
+    }
+  };
   activatedAt?: string;
   createdAt: string;
 }
@@ -58,6 +76,8 @@ export default function DeviceInventoryPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
+  const [editingDevice, setEditingDevice] = useState<Device | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -117,6 +137,103 @@ export default function DeviceInventoryPage() {
     }
   };
 
+  const handleUpdateDevice = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingDevice) return;
+
+    try {
+      const res = await fetch(`/api/admin/device-inventory/${editingDevice.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (!res.ok) throw new Error('Failed to update device');
+
+      toast({
+        title: "Thành công",
+        description: "Đã cập nhật thông tin thiết bị",
+      });
+
+      setIsModalOpen(false);
+      setEditingDevice(null);
+      setFormData({ serialNumber: '', name: '', type: 'SENSOR_NODE' });
+      fetchDevices();
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: "Không thể cập nhật thiết bị",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteDevice = async () => {
+    if (!deleteId) return;
+
+    try {
+      const res = await fetch(`/api/admin/device-inventory/${deleteId}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) throw new Error('Failed to delete device');
+
+      toast({
+        title: "Thành công",
+        description: "Đã xoá thiết bị",
+      });
+      fetchDevices();
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: "Không thể xoá thiết bị",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteId(null);
+    }
+  };
+
+  const handleToggleActive = async (device: Device) => {
+    try {
+      const res = await fetch(`/api/admin/device-inventory/${device.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: !device.isActive }),
+      });
+
+      if (!res.ok) throw new Error('Failed to update status');
+
+      toast({
+        title: "Thành công",
+        description: `Đã ${!device.isActive ? 'kích hoạt' : 'vô hiệu hoá'} thiết bị`,
+      });
+      fetchDevices();
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: "Không thể thay đổi trạng thái thiết bị",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const openEditModal = (device: Device) => {
+    setEditingDevice(device);
+    setFormData({
+      serialNumber: device.serialNumber,
+      name: device.name,
+      type: device.type,
+    });
+    setIsModalOpen(true);
+  };
+
+  const openAddModal = () => {
+    setEditingDevice(null);
+    setFormData({ serialNumber: '', name: '', type: 'SENSOR_NODE' });
+    setIsModalOpen(true);
+  };
+
   const filteredDevices = devices.filter(device => {
     const matchesSearch = 
       device.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -132,7 +249,7 @@ export default function DeviceInventoryPage() {
           <h2 className="text-3xl font-bold tracking-tight">Kho Thiết Bị</h2>
           <p className="text-muted-foreground">Quản lý thiết bị IoT trong kho</p>
         </div>
-        <Button onClick={() => setIsModalOpen(true)}>
+        <Button onClick={openAddModal}>
           <Plus className="mr-2 h-4 w-4" />
           Thêm Thiết Bị
         </Button>
@@ -181,7 +298,9 @@ export default function DeviceInventoryPage() {
                   <TableHead>Loại</TableHead>
                   <TableHead>Trạng thái</TableHead>
                   <TableHead>Khu vực</TableHead>
+                  <TableHead>Kích hoạt</TableHead>
                   <TableHead>Ngày tạo</TableHead>
+                  <TableHead className="w-[100px]">Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -202,9 +321,46 @@ export default function DeviceInventoryPage() {
                           {statusConfig[device.status as keyof typeof statusConfig]?.label || device.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>{device.area?.name || '-'}</TableCell>
+                      <TableCell>
+                        {device.area ? (
+                          <div>
+                            <p className="font-medium">{device.area.name}</p>
+                            {device.area.farm && (
+                              <>
+                                <p className="text-xs text-muted-foreground">{device.area.farm.name}</p>
+                                <p className="text-xs text-muted-foreground font-mono">ID: {device.area.farm.id}</p>
+                              </>
+                            )}
+                          </div>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell>
+                        <Switch
+                          checked={device.isActive}
+                          onCheckedChange={() => handleToggleActive(device)}
+                        />
+                      </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {new Date(device.createdAt).toLocaleDateString('vi-VN')}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEditModal(device)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => setDeleteId(device.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
@@ -219,13 +375,13 @@ export default function DeviceInventoryPage() {
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Thêm Thiết Bị Mới</DialogTitle>
+            <DialogTitle>{editingDevice ? 'Cập nhật Thiết Bị' : 'Thêm Thiết Bị Mới'}</DialogTitle>
             <DialogDescription>
-              Thêm thiết bị IoT vào kho để sẵn sàng lắp đặt
+              {editingDevice ? 'Cập nhật thông tin thiết bị IoT' : 'Thêm thiết bị IoT vào kho để sẵn sàng lắp đặt'}
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleAddDevice} className="space-y-4">
+          <form onSubmit={editingDevice ? handleUpdateDevice : handleAddDevice} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="serialNumber">Serial Number *</Label>
               <Input
@@ -270,12 +426,29 @@ export default function DeviceInventoryPage() {
                 Hủy
               </Button>
               <Button type="submit">
-                Thêm Thiết Bị
+                {editingDevice ? 'Cập nhật' : 'Thêm Thiết Bị'}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bạn có chắc chắn muốn xoá?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Hành động này không thể hoàn tác. Thiết bị sẽ bị xoá vĩnh viễn khỏi kho.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Huỷ</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteDevice} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Xoá
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -21,8 +21,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search, Trash2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface InstallationRequest {
   id: string;
@@ -47,6 +57,7 @@ export default function AdminInstallationRequestsPage() {
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchRequests = async () => {
@@ -103,6 +114,32 @@ export default function AdminInstallationRequestsPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!deleteId) return;
+
+    try {
+      const res = await fetch(`/api/admin/installation-requests/${deleteId}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) throw new Error('Failed to delete');
+
+      toast({
+        title: "Thành công",
+        description: "Đã xoá yêu cầu",
+      });
+      fetchRequests();
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: "Không thể xoá yêu cầu",
+        variant: "destructive",
+      });
+    } finally {
+      setDeleteId(null);
+    }
+  };
+
   const filteredRequests = requests.filter(req =>
     req.farmer.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     req.farm.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -140,11 +177,12 @@ export default function AdminInstallationRequestsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nông dân</TableHead>
-                  <TableHead>Trang trại / Khu vực</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                  <TableHead>Kỹ thuật viên</TableHead>
-                  <TableHead>Ngày tạo</TableHead>
+                  <TableHead className="w-[200px]">Nông dân</TableHead>
+                  <TableHead className="w-[200px]">Trang trại / Khu vực</TableHead>
+                  <TableHead className="w-[120px]">Trạng thái</TableHead>
+                  <TableHead className="w-[200px]">Kỹ thuật viên</TableHead>
+                  <TableHead className="w-[120px]">Ngày tạo</TableHead>
+                  <TableHead className="w-[60px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -197,6 +235,19 @@ export default function AdminInstallationRequestsPage() {
                     <TableCell className="text-sm text-muted-foreground">
                       {new Date(req.createdAt).toLocaleDateString('vi-VN')}
                     </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteId(req.id);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -204,6 +255,24 @@ export default function AdminInstallationRequestsPage() {
           )}
         </CardContent>
       </Card>
+
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bạn có chắc chắn muốn xoá?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Hành động này không thể hoàn tác. Yêu cầu này sẽ bị xoá vĩnh viễn khỏi hệ thống.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Huỷ</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Xoá
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

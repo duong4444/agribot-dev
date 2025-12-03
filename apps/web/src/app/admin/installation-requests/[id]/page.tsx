@@ -15,6 +15,16 @@ import {
 import { Loader2, MapPin, User, Package, ArrowLeft, Calendar, UserPlus, CheckCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import Link from 'next/link';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface InstallationRequest {
   id: string;
@@ -50,6 +60,7 @@ export default function AdminRequestDetailPage() {
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [loading, setLoading] = useState(true);
   const [assigning, setAssigning] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -120,6 +131,35 @@ export default function AdminRequestDetailPage() {
     }
   };
 
+  const handleCancel = async () => {
+    if (!request) return;
+
+    try {
+      const res = await fetch(`/api/admin/installation-requests/${request.id}/cancel`, {
+        method: 'PUT',
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || 'Failed to cancel');
+      }
+
+      toast({
+        title: "Thành công",
+        description: "Đã huỷ yêu cầu",
+      });
+      fetchRequestDetail(request.id);
+    } catch (error: any) {
+      toast({
+        title: "Lỗi",
+        description: error.message || "Không thể huỷ yêu cầu",
+        variant: "destructive",
+      });
+    } finally {
+      setShowCancelDialog(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-12">
@@ -146,6 +186,15 @@ export default function AdminRequestDetailPage() {
         <Badge className={`text-base px-3 py-1 ${statusConfig[request.status as keyof typeof statusConfig]?.color}`}>
           {statusConfig[request.status as keyof typeof statusConfig]?.label || request.status}
         </Badge>
+        {request.status === 'PENDING' && (
+          <Button 
+            variant="destructive" 
+            size="sm" 
+            onClick={() => setShowCancelDialog(true)}
+          >
+            Huỷ yêu cầu
+          </Button>
+        )}
       </div>
 
       {/* Main Content */}
@@ -294,6 +343,24 @@ export default function AdminRequestDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận huỷ yêu cầu</AlertDialogTitle>
+            <AlertDialogDescription>
+              Bạn có chắc chắn muốn huỷ yêu cầu này không? Trạng thái sẽ chuyển sang "Đã huỷ".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Đóng</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCancel} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Huỷ yêu cầu
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

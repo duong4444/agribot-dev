@@ -45,6 +45,7 @@ export default function TechnicianRequestsPage() {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [confirmingRequestId, setConfirmingRequestId] = useState<string | null>(null);
+  const [startingRequestId, setStartingRequestId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -186,7 +187,7 @@ export default function TechnicianRequestsPage() {
                       {request.status === 'ASSIGNED' && (
                         <Button
                           size="sm"
-                          onClick={() => handleUpdateStatus(request.id, 'IN_PROGRESS')}
+                          onClick={() => setStartingRequestId(request.id)}
                         >
                           <Play className="mr-2 h-4 w-4" />
                           Bắt đầu lắp đặt
@@ -213,7 +214,36 @@ export default function TechnicianRequestsPage() {
         </div>
       )}
 
-      {/* Confirmation Dialog */}
+      {/* Start Installation Confirmation Dialog */}
+      <AlertDialog open={!!startingRequestId} onOpenChange={(open) => !open && setStartingRequestId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Xác nhận bắt đầu lắp đặt</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="text-sm text-muted-foreground">
+                Bạn có chắc chắn muốn bắt đầu lắp đặt thiết bị cho yêu cầu này?
+                <br /><br />
+                Sau khi bắt đầu, trạng thái sẽ chuyển sang <strong>Đang lắp đặt</strong>.
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (startingRequestId) {
+                  handleUpdateStatus(startingRequestId, 'IN_PROGRESS');
+                  setStartingRequestId(null);
+                }
+              }}
+            >
+              Bắt đầu lắp đặt
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Completion Confirmation Dialog */}
       <AlertDialog open={!!confirmingRequestId} onOpenChange={(open) => !open && setConfirmingRequestId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
