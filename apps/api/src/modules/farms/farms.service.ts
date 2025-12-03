@@ -98,9 +98,33 @@ export class FarmsService implements OnModuleInit {
     return this.areasRepository.save(area);
   }
 
-  async getAreas(user: User): Promise<Area[]> {
+  async getAreas(user: User, excludeWithDevices: boolean = false): Promise<Area[]> {
     const farm = await this.getFarmByUser(user);
-    return this.areasRepository.find({ where: { farmId: farm.id } });
+    
+    const query = this.areasRepository.createQueryBuilder('area')
+      .where('area.farmId = :farmId', { farmId: farm.id })
+      .leftJoinAndSelect('area.devices', 'device');
+
+    if (excludeWithDevices) {
+      // Filter areas that have NO devices
+      // We use a subquery or check for null on left join if we want to be strict, 
+      // but checking if count of devices is 0 is also valid.
+      // However, since we left join, we can check if device.id is null
+      // But wait, if an area has multiple devices, it will return multiple rows? 
+      // No, createQueryBuilder returns entities.
+      // Let's use a subquery to be safe and clean.
+      
+      query.andWhere(qb => {
+        const subQuery = qb.subQuery()
+          .select('count(*)')
+          .from('devices', 'd')
+          .where('d.area_id = area.id')
+          .getQuery();
+        return `${subQuery} = 0`;
+      });
+    }
+
+    return query.getMany();
   }
 
   async getArea(user: User, areaId: string): Promise<Area> {

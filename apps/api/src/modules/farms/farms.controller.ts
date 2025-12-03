@@ -53,8 +53,11 @@ export class FarmsController {
 
   @Get('areas')
   @ApiOperation({ summary: 'Get all areas of the farm' })
-  getAreas(@CurrentUser() user: User) {
-    return this.farmsService.getAreas(user);
+  getAreas(
+    @CurrentUser() user: User,
+    @Query('excludeWithDevices') excludeWithDevices?: string,
+  ) {
+    return this.farmsService.getAreas(user, excludeWithDevices === 'true');
   }
 
   @Get('areas/:id')

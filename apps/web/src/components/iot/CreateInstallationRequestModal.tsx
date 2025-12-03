@@ -66,7 +66,7 @@ export function CreateInstallationRequestModal({
   const fetchAreas = async () => {
     try {
       setLoadingAreas(true);
-      const res = await fetch('/api/farms/areas');
+      const res = await fetch('/api/farms/areas?excludeWithDevices=true');
       if (!res.ok) throw new Error('Failed to fetch areas');
       const data = await res.json();
       setAreas(data);

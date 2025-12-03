@@ -50,7 +50,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const response = await fetch(`${API_URL}/farms/areas`, {
+    const { searchParams } = new URL(request.url);
+    const queryString = searchParams.toString();
+    const url = `${API_URL}/farms/areas${queryString ? `?${queryString}` : ''}`;
+
+    const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${session.accessToken}`,

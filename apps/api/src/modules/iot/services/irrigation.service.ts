@@ -147,14 +147,26 @@ export class IrrigationService {
 
     // Create default config if not exists
     if (!config) {
-      config = this.autoConfigRepo.create({
-        deviceId,
-        enabled: false,
-        moistureThreshold: 30.0,
-        irrigationDuration: 600,
-        cooldownPeriod: 3600,
-      });
-      await this.autoConfigRepo.save(config);
+      try {
+        config = this.autoConfigRepo.create({
+          deviceId,
+          enabled: false,
+          moistureThreshold: 30.0,
+          irrigationDuration: 600,
+          cooldownPeriod: 3600,
+        });
+        await this.autoConfigRepo.save(config);
+      } catch (error: any) {
+        // Handle race condition: if duplicate key error, fetch again
+        if (error.code === '23505') { // Postgres unique violation code
+          config = await this.autoConfigRepo.findOne({ where: { deviceId } });
+          if (!config) {
+             throw error; // Should not happen if constraint violated
+          }
+        } else {
+          throw error;
+        }
+      }
     }
 
     return config;
