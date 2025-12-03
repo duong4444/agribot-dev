@@ -1,13 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -32,12 +26,11 @@ import {
   MoreHorizontal,
   Search,
   Shield,
-  ShieldAlert,
   UserCog,
-  UserX,
   CheckCircle,
   XCircle,
   Trash2,
+  Edit,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import {
@@ -78,6 +71,7 @@ interface User {
   role: "ADMIN" | "FARMER" | "TECHNICIAN";
   isActive: boolean;
   createdAt: string;
+  updatedAt: string;
 }
 
 export default function AdminUsersPage() {
@@ -104,6 +98,15 @@ export default function AdminUsersPage() {
     fullName: "",
     phoneNumber: "",
     role: "FARMER",
+  });
+
+  // Edit User State
+  const [editUser, setEditUser] = useState<User | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    email: "",
+    fullName: "",
+    phoneNumber: "",
   });
 
   const fetchUsers = async () => {
@@ -256,6 +259,46 @@ export default function AdminUsersPage() {
     }
   };
 
+  const openEditDialog = (user: User) => {
+    setEditUser(user);
+    setEditFormData({
+      email: user.email,
+      fullName: user.fullName,
+      phoneNumber: "",
+    });
+  };
+
+  const handleEditUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editUser) return;
+
+    try {
+      setIsEditing(true);
+      const res = await fetch(`/api/admin/users/${editUser.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editFormData),
+      });
+
+      if (!res.ok) throw new Error("Failed to update user");
+
+      toast({
+        title: "Thành công",
+        description: "Thông tin tài khoản đã được cập nhật",
+      });
+      setEditUser(null);
+      fetchUsers();
+    } catch (error) {
+      toast({
+        title: "Lỗi",
+        description: "Không thể cập nhật thông tin tài khoản",
+        variant: "destructive",
+      });
+    } finally {
+      setIsEditing(false);
+    }
+  };
+
   const filteredUsers = users.filter(
     (user) =>
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -396,6 +439,7 @@ export default function AdminUsersPage() {
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Created At</TableHead>
+                  <TableHead>Updated At</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -442,6 +486,9 @@ export default function AdminUsersPage() {
                     <TableCell>
                       {new Date(user.createdAt).toLocaleDateString("vi-VN")}
                     </TableCell>
+                    <TableCell>
+                      {new Date(user.updatedAt).toLocaleDateString("vi-VN")}
+                    </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -477,9 +524,14 @@ export default function AdminUsersPage() {
                             )}
                           </DropdownMenuItem>
                           <DropdownMenuItem
+                            onClick={() => openEditDialog(user)}
+                          >
+                            <Edit className="mr-2 h-4 w-4" /> Sửa thông tin
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
                             onClick={() => openRoleChangeDialog(user)}
                           >
-                            <UserCog className="mr-2 h-4 w-4" /> Change Role
+                            <UserCog className="mr-2 h-4 w-4" /> Đổi vai trò
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
@@ -541,6 +593,78 @@ export default function AdminUsersPage() {
               )}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog
+        open={!!editUser}
+        onOpenChange={(open) => !open && setEditUser(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Sửa thông tin tài khoản</DialogTitle>
+            <DialogDescription>
+              Cập nhật thông tin cho {editUser?.fullName} ({editUser?.email})
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditUser} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="editEmail">Email</Label>
+              <Input
+                id="editEmail"
+                type="email"
+                required
+                value={editFormData.email}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, email: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editFullName">Họ và tên</Label>
+              <Input
+                id="editFullName"
+                required
+                value={editFormData.fullName}
+                onChange={(e) =>
+                  setEditFormData({ ...editFormData, fullName: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editPhoneNumber">Số điện thoại</Label>
+              <Input
+                id="editPhoneNumber"
+                value={editFormData.phoneNumber}
+                onChange={(e) =>
+                  setEditFormData({
+                    ...editFormData,
+                    phoneNumber: e.target.value,
+                  })
+                }
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditUser(null)}
+              >
+                Hủy
+              </Button>
+              <Button type="submit" disabled={isEditing}>
+                {isEditing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Đang lưu...
+                  </>
+                ) : (
+                  "Lưu thay đổi"
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

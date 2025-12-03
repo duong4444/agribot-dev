@@ -107,6 +107,22 @@ export class UsersController {
     };
   }
 
+  @Put(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Update user information (Admin only)' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiResponse({ status: 200, description: 'User updated successfully' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async update(@Param('id') id: string, @Body() updateData: { email?: string; fullName?: string; phoneNumber?: string }) {
+    const user = await this.usersService.update(id, updateData);
+    return {
+      success: true,
+      data: user,
+      message: 'User updated successfully',
+    };
+  }
+
   @Put(':id/role')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
