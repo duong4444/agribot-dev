@@ -1,9 +1,15 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import React, { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -11,7 +17,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,10 +25,21 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, MoreHorizontal, Search, Shield, ShieldAlert, UserCog, UserX, CheckCircle, XCircle, Trash2 } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import {
+  Loader2,
+  MoreHorizontal,
+  Search,
+  Shield,
+  ShieldAlert,
+  UserCog,
+  UserX,
+  CheckCircle,
+  XCircle,
+  Trash2,
+} from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,7 +49,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 
 import {
   Dialog,
@@ -42,9 +59,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Plus } from 'lucide-react';
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Plus } from "lucide-react";
 
 import {
   Select,
@@ -52,13 +69,13 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 
 interface User {
   id: string;
   email: string;
   fullName: string;
-  role: 'ADMIN' | 'FARMER' | 'TECHNICIAN';
+  role: "ADMIN" | "FARMER" | "TECHNICIAN";
   isActive: boolean;
   createdAt: string;
 }
@@ -66,34 +83,34 @@ interface User {
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
-  
+
   // Delete Dialog State
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Role Change Dialog State
   const [roleChangeUser, setRoleChangeUser] = useState<User | null>(null);
-  const [selectedRole, setSelectedRole] = useState<string>('');
+  const [selectedRole, setSelectedRole] = useState<string>("");
   const [isUpdatingRole, setIsUpdatingRole] = useState(false);
 
   // Create User State
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [newUser, setNewUser] = useState({
-    email: '',
-    password: '',
-    fullName: '',
-    phoneNumber: '',
-    role: 'TECHNICIAN',
+    email: "",
+    password: "",
+    fullName: "",
+    phoneNumber: "",
+    role: "FARMER",
   });
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/admin/users');
-      if (!res.ok) throw new Error('Failed to fetch users');
+      const res = await fetch("/api/admin/users");
+      if (!res.ok) throw new Error("Failed to fetch users");
       const json = await res.json();
       if (json.success) {
         setUsers(json.data);
@@ -116,13 +133,13 @@ export default function AdminUsersPage() {
 
   const handleStatusChange = async (userId: string, currentStatus: boolean) => {
     try {
-      const action = currentStatus ? 'deactivate' : 'activate';
+      const action = currentStatus ? "deactivate" : "activate";
       const res = await fetch(`/api/admin/users/${userId}/${action}`, {
-        method: 'PUT',
+        method: "PUT",
       });
-      
+
       if (!res.ok) throw new Error(`Failed to ${action} user`);
-      
+
       toast({
         title: "Success",
         description: `User ${action}d successfully`,
@@ -144,17 +161,17 @@ export default function AdminUsersPage() {
 
   const executeRoleChange = async () => {
     if (!roleChangeUser) return;
-    
+
     try {
       setIsUpdatingRole(true);
       const res = await fetch(`/api/admin/users/${roleChangeUser.id}/role`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role: selectedRole }),
       });
-      
-      if (!res.ok) throw new Error('Failed to change role');
-      
+
+      if (!res.ok) throw new Error("Failed to change role");
+
       toast({
         title: "Success",
         description: `Role changed to ${selectedRole}`,
@@ -177,11 +194,11 @@ export default function AdminUsersPage() {
     try {
       setIsDeleting(true);
       const res = await fetch(`/api/admin/users/${deleteUserId}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
-      
-      if (!res.ok) throw new Error('Failed to delete user');
-      
+
+      if (!res.ok) throw new Error("Failed to delete user");
+
       toast({
         title: "Success",
         description: "User deleted successfully",
@@ -203,29 +220,29 @@ export default function AdminUsersPage() {
     e.preventDefault();
     try {
       setIsCreating(true);
-      const res = await fetch('/api/admin/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newUser),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || 'Failed to create user');
+        throw new Error(data.message || "Failed to create user");
       }
 
       toast({
-        title: "Success",
-        description: "Technician account created successfully",
+        title: "Thành công",
+        description: "Tài khoản đã được tạo thành công",
       });
       setIsCreateOpen(false);
       setNewUser({
-        email: '',
-        password: '',
-        fullName: '',
-        phoneNumber: '',
-        role: 'TECHNICIAN',
+        email: "",
+        password: "",
+        fullName: "",
+        phoneNumber: "",
+        role: "FARMER",
       });
       fetchUsers();
     } catch (error: any) {
@@ -239,30 +256,35 @@ export default function AdminUsersPage() {
     }
   };
 
-  const filteredUsers = users.filter(user => 
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.fullName.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredUsers = users.filter(
+    (user) =>
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.fullName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Quản lý Người dùng</h2>
-          <p className="text-muted-foreground">Quản lý tài khoản và phân quyền hệ thống</p>
+          <h2 className="text-3xl font-bold tracking-tight">
+            Quản lý Người dùng
+          </h2>
+          <p className="text-muted-foreground">
+            Quản lý tài khoản và phân quyền hệ thống
+          </p>
         </div>
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
-              Thêm Kỹ thuật viên
+              Thêm tài khoản
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Tạo tài khoản Kỹ thuật viên</DialogTitle>
+              <DialogTitle>Tạo tài khoản mới</DialogTitle>
               <DialogDescription>
-                Tạo tài khoản mới với vai trò Technician.
+                Tạo tài khoản người dùng mới cho hệ thống.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleCreateUser} className="space-y-4">
@@ -273,7 +295,9 @@ export default function AdminUsersPage() {
                   type="email"
                   required
                   value={newUser.email}
-                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, email: e.target.value })
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -284,7 +308,9 @@ export default function AdminUsersPage() {
                   required
                   minLength={6}
                   value={newUser.password}
-                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, password: e.target.value })
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -293,7 +319,9 @@ export default function AdminUsersPage() {
                   id="fullName"
                   required
                   value={newUser.fullName}
-                  onChange={(e) => setNewUser({ ...newUser, fullName: e.target.value })}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, fullName: e.target.value })
+                  }
                 />
               </div>
               <div className="space-y-2">
@@ -301,8 +329,27 @@ export default function AdminUsersPage() {
                 <Input
                   id="phoneNumber"
                   value={newUser.phoneNumber}
-                  onChange={(e) => setNewUser({ ...newUser, phoneNumber: e.target.value })}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, phoneNumber: e.target.value })
+                  }
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="role">Vai trò</Label>
+                <Select
+                  value={newUser.role}
+                  onValueChange={(value) =>
+                    setNewUser({ ...newUser, role: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn vai trò" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="FARMER">Chủ nông trại</SelectItem>
+                    <SelectItem value="TECHNICIAN">Kỹ thuật viên</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <DialogFooter>
                 <Button type="submit" disabled={isCreating}>
@@ -312,7 +359,7 @@ export default function AdminUsersPage() {
                       Đang tạo...
                     </>
                   ) : (
-                    'Tạo tài khoản'
+                    "Tạo tài khoản"
                   )}
                 </Button>
               </DialogFooter>
@@ -358,23 +405,42 @@ export default function AdminUsersPage() {
                     <TableCell>
                       <div className="flex flex-col">
                         <span className="font-medium">{user.fullName}</span>
-                        <span className="text-sm text-muted-foreground">{user.email}</span>
+                        <span className="text-sm text-muted-foreground">
+                          {user.email}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={user.role === 'ADMIN' ? 'default' : user.role === 'TECHNICIAN' ? 'secondary' : 'outline'}>
-                        {user.role === 'ADMIN' && <Shield className="w-3 h-3 mr-1" />}
-                        {user.role === 'TECHNICIAN' && <UserCog className="w-3 h-3 mr-1" />}
+                      <Badge
+                        variant={
+                          user.role === "ADMIN"
+                            ? "default"
+                            : user.role === "TECHNICIAN"
+                              ? "secondary"
+                              : "outline"
+                        }
+                      >
+                        {user.role === "ADMIN" && (
+                          <Shield className="w-3 h-3 mr-1" />
+                        )}
+                        {user.role === "TECHNICIAN" && (
+                          <UserCog className="w-3 h-3 mr-1" />
+                        )}
                         {user.role}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={user.isActive ? 'outline' : 'destructive'} className={user.isActive ? 'text-green-600 border-green-600' : ''}>
-                        {user.isActive ? 'Active' : 'Inactive'}
+                      <Badge
+                        variant={user.isActive ? "outline" : "destructive"}
+                        className={
+                          user.isActive ? "text-green-600 border-green-600" : ""
+                        }
+                      >
+                        {user.isActive ? "Active" : "Inactive"}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {new Date(user.createdAt).toLocaleDateString('vi-VN')}
+                      {new Date(user.createdAt).toLocaleDateString("vi-VN")}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -386,22 +452,37 @@ export default function AdminUsersPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => navigator.clipboard.writeText(user.id)}>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              navigator.clipboard.writeText(user.id)
+                            }
+                          >
                             Copy ID
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => handleStatusChange(user.id, user.isActive)}>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleStatusChange(user.id, user.isActive)
+                            }
+                          >
                             {user.isActive ? (
-                              <><XCircle className="mr-2 h-4 w-4" /> Deactivate</>
+                              <>
+                                <XCircle className="mr-2 h-4 w-4" /> Deactivate
+                              </>
                             ) : (
-                              <><CheckCircle className="mr-2 h-4 w-4" /> Activate</>
+                              <>
+                                <CheckCircle className="mr-2 h-4 w-4" />{" "}
+                                Activate
+                              </>
                             )}
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => openRoleChangeDialog(user)}>
+                          <DropdownMenuItem
+                            onClick={() => openRoleChangeDialog(user)}
+                          >
                             <UserCog className="mr-2 h-4 w-4" /> Change Role
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             className="text-red-600"
                             onClick={() => setDeleteUserId(user.id)}
                           >
@@ -418,16 +499,22 @@ export default function AdminUsersPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={!!roleChangeUser} onOpenChange={(open) => !open && setRoleChangeUser(null)}>
+      <Dialog
+        open={!!roleChangeUser}
+        onOpenChange={(open) => !open && setRoleChangeUser(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Change User Role</DialogTitle>
             <DialogDescription>
-              Select a new role for user {roleChangeUser?.fullName} ({roleChangeUser?.email}).
+              Select a new role for user {roleChangeUser?.fullName} (
+              {roleChangeUser?.email}).
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <Label htmlFor="role" className="mb-2 block">Role</Label>
+            <Label htmlFor="role" className="mb-2 block">
+              Role
+            </Label>
             <Select value={selectedRole} onValueChange={setSelectedRole}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a role" />
@@ -440,7 +527,9 @@ export default function AdminUsersPage() {
             </Select>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRoleChangeUser(null)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setRoleChangeUser(null)}>
+              Cancel
+            </Button>
             <Button onClick={executeRoleChange} disabled={isUpdatingRole}>
               {isUpdatingRole ? (
                 <>
@@ -448,30 +537,33 @@ export default function AdminUsersPage() {
                   Updating...
                 </>
               ) : (
-                'Update Role'
+                "Update Role"
               )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deleteUserId} onOpenChange={() => setDeleteUserId(null)}>
+      <AlertDialog
+        open={!!deleteUserId}
+        onOpenChange={() => setDeleteUserId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>Bạn đã chắc chắn chưa?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the user account
-              and remove their data from our servers.
+              Hành động này không thể hoàn tác.Nó sẽ xoá vĩnh viễn tài khoản của
+              người dùng và cả dữ liệu của họ khỏi server
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteUser} 
+            <AlertDialogAction
+              onClick={handleDeleteUser}
               disabled={isDeleting}
               className="bg-red-600 hover:bg-red-700"
             >
-              {isDeleting ? 'Deleting...' : 'Delete'}
+              {isDeleting ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
