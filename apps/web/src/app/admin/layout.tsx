@@ -17,28 +17,12 @@ export default function AdminLayout({
   const { data: session } = useSession();
   const router = useRouter();
 
-  // Redirect non-admin users to dashboard
-  React.useEffect(() => {
-    if (session && session.user?.role !== 'ADMIN') {
-      router.push('/dashboard');
-    }
-  }, [session, router]);
-
-  // Show loading while checking
-  if (!session || session.user?.role !== 'ADMIN') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-agri-green-600"></div>
-      </div>
-    );
-  }
-
   const handleSignOut = async () => {
     await signOut({ callbackUrl: '/' });
   };
 
   return (
-    <AuthGuard>
+    <AuthGuard allowedRoles={['ADMIN']}>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         {/* Admin Header */}
         <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
@@ -57,7 +41,7 @@ export default function AdminLayout({
               <div className="flex items-center space-x-4">
                 <ThemeToggle />
                 <div className="hidden sm:block text-sm text-gray-600 dark:text-gray-400">
-                  {session.user?.name || session.user?.email}
+                  {session?.user?.name || session?.user?.email}
                 </div>
                 <Button
                   variant="outline"

@@ -6,6 +6,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from './entities/user.entity';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @ApiTags('users')
 @Controller('users')
@@ -27,6 +28,24 @@ export class UsersController {
     return {
       success: true,
       data: users,
+    };
+  }
+
+  @Post()
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Create new user (Admin only)' })
+  @ApiBody({ type: CreateUserDto })
+  @ApiResponse({ status: 201, description: 'User created successfully' })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+  async create(@Body() createUserDto: CreateUserDto) {
+    const user = await this.usersService.create(createUserDto);
+    return {
+      success: true,
+      data: user,
+      message: 'User created successfully',
     };
   }
 

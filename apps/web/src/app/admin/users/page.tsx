@@ -34,11 +34,31 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Plus } from 'lucide-react';
+
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
 interface User {
   id: string;
   email: string;
   fullName: string;
-  role: 'ADMIN' | 'FARMER';
+  role: 'ADMIN' | 'FARMER' | 'TECHNICIAN';
   isActive: boolean;
   createdAt: string;
 }
@@ -52,6 +72,22 @@ export default function AdminUsersPage() {
   // Delete Dialog State
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Role Change Dialog State
+  const [roleChangeUser, setRoleChangeUser] = useState<User | null>(null);
+  const [selectedRole, setSelectedRole] = useState<string>('');
+  const [isUpdatingRole, setIsUpdatingRole] = useState(false);
+
+  // Create User State
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [newUser, setNewUser] = useState({
+    email: '',
+    password: '',
+    fullName: '',
+    phoneNumber: '',
+    role: 'TECHNICIAN',
+  });
 
   const fetchUsers = async () => {
     try {
@@ -101,21 +137,29 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleRoleChange = async (userId: string, currentRole: string) => {
+  const openRoleChangeDialog = (user: User) => {
+    setRoleChangeUser(user);
+    setSelectedRole(user.role);
+  };
+
+  const executeRoleChange = async () => {
+    if (!roleChangeUser) return;
+    
     try {
-      const newRole = currentRole === 'ADMIN' ? 'FARMER' : 'ADMIN';
-      const res = await fetch(`/api/admin/users/${userId}/role`, {
+      setIsUpdatingRole(true);
+      const res = await fetch(`/api/admin/users/${roleChangeUser.id}/role`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: newRole }),
+        body: JSON.stringify({ role: selectedRole }),
       });
       
       if (!res.ok) throw new Error('Failed to change role');
       
       toast({
         title: "Success",
-        description: `Role changed to ${newRole}`,
+        description: `Role changed to ${selectedRole}`,
       });
+      setRoleChangeUser(null);
       fetchUsers();
     } catch (error) {
       toast({
@@ -123,6 +167,8 @@ export default function AdminUsersPage() {
         description: "Failed to change role",
         variant: "destructive",
       });
+    } finally {
+      setIsUpdatingRole(false);
     }
   };
 
@@ -153,6 +199,46 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setIsCreating(true);
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newUser),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to create user');
+      }
+
+      toast({
+        title: "Success",
+        description: "Technician account created successfully",
+      });
+      setIsCreateOpen(false);
+      setNewUser({
+        email: '',
+        password: '',
+        fullName: '',
+        phoneNumber: '',
+        role: 'TECHNICIAN',
+      });
+      fetchUsers();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   const filteredUsers = users.filter(user => 
     user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     user.fullName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -165,6 +251,74 @@ export default function AdminUsersPage() {
           <h2 className="text-3xl font-bold tracking-tight">Quản lý Người dùng</h2>
           <p className="text-muted-foreground">Quản lý tài khoản và phân quyền hệ thống</p>
         </div>
+        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="mr-2 h-4 w-4" />
+              Thêm Kỹ thuật viên
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Tạo tài khoản Kỹ thuật viên</DialogTitle>
+              <DialogDescription>
+                Tạo tài khoản mới với vai trò Technician.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleCreateUser} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  required
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Mật khẩu</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  minLength={6}
+                  value={newUser.password}
+                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Họ và tên</Label>
+                <Input
+                  id="fullName"
+                  required
+                  value={newUser.fullName}
+                  onChange={(e) => setNewUser({ ...newUser, fullName: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phoneNumber">Số điện thoại</Label>
+                <Input
+                  id="phoneNumber"
+                  value={newUser.phoneNumber}
+                  onChange={(e) => setNewUser({ ...newUser, phoneNumber: e.target.value })}
+                />
+              </div>
+              <DialogFooter>
+                <Button type="submit" disabled={isCreating}>
+                  {isCreating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Đang tạo...
+                    </>
+                  ) : (
+                    'Tạo tài khoản'
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Card>
@@ -208,8 +362,9 @@ export default function AdminUsersPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={user.role === 'ADMIN' ? 'default' : 'secondary'}>
-                        {user.role === 'ADMIN' ? <Shield className="w-3 h-3 mr-1" /> : <UserCog className="w-3 h-3 mr-1" />}
+                      <Badge variant={user.role === 'ADMIN' ? 'default' : user.role === 'TECHNICIAN' ? 'secondary' : 'outline'}>
+                        {user.role === 'ADMIN' && <Shield className="w-3 h-3 mr-1" />}
+                        {user.role === 'TECHNICIAN' && <UserCog className="w-3 h-3 mr-1" />}
                         {user.role}
                       </Badge>
                     </TableCell>
@@ -242,12 +397,8 @@ export default function AdminUsersPage() {
                               <><CheckCircle className="mr-2 h-4 w-4" /> Activate</>
                             )}
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleRoleChange(user.id, user.role)}>
-                            {user.role === 'ADMIN' ? (
-                              <><UserCog className="mr-2 h-4 w-4" /> Demote to Farmer</>
-                            ) : (
-                              <><ShieldAlert className="mr-2 h-4 w-4" /> Promote to Admin</>
-                            )}
+                          <DropdownMenuItem onClick={() => openRoleChangeDialog(user)}>
+                            <UserCog className="mr-2 h-4 w-4" /> Change Role
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 
@@ -266,6 +417,43 @@ export default function AdminUsersPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={!!roleChangeUser} onOpenChange={(open) => !open && setRoleChangeUser(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change User Role</DialogTitle>
+            <DialogDescription>
+              Select a new role for user {roleChangeUser?.fullName} ({roleChangeUser?.email}).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="role" className="mb-2 block">Role</Label>
+            <Select value={selectedRole} onValueChange={setSelectedRole}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="FARMER">FARMER</SelectItem>
+                <SelectItem value="TECHNICIAN">TECHNICIAN</SelectItem>
+                <SelectItem value="ADMIN">ADMIN</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRoleChangeUser(null)}>Cancel</Button>
+            <Button onClick={executeRoleChange} disabled={isUpdatingRole}>
+              {isUpdatingRole ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Updating...
+                </>
+              ) : (
+                'Update Role'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog open={!!deleteUserId} onOpenChange={() => setDeleteUserId(null)}>
         <AlertDialogContent>

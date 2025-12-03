@@ -20,13 +20,12 @@ import {
   Leaf,
   Smartphone,
   Cloud,
-  User,
   LogOut,
   MessageSquare,
   FileText,
   Users,
-  Settings,
   Shield,
+  Tractor,
 } from "lucide-react";
 
 export default function HomePage() {
@@ -116,6 +115,14 @@ export default function HomePage() {
                     )}
                   </Button>
                 </Link>
+                {session.user?.role !== 'ADMIN' && (
+                  <Link href="/farm/overview">
+                    <Button variant="outline" className="flex items-center space-x-2">
+                      <Tractor className="h-4 w-4" />
+                      <span>Nông trại</span>
+                    </Button>
+                  </Link>
+                )}
                 <Button 
                   variant="ghost" 
                   onClick={handleSignOut}

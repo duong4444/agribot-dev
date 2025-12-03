@@ -7,18 +7,86 @@ import { AuthGuard } from '@/components/auth/auth-guard';
 import { DashboardHeader } from '@/components/dashboard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, User, Bell, Lock, Palette, Globe } from 'lucide-react';
+import { ArrowLeft, User, Bell, Lock, Palette, Globe, Wrench, Shield } from 'lucide-react';
 import { ChangePasswordModal } from '@/components/settings/ChangePasswordModal';
+import Link from 'next/link';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 const SettingsPage = () => {
   const router = useRouter();
   const { data: session } = useSession();
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
+  const isTechnician = session?.user?.role === 'TECHNICIAN';
+  const isAdmin = session?.user?.role === 'ADMIN';
+
+  const handleBack = () => {
+    if (isTechnician) {
+      router.push('/technician');
+    } else if (isAdmin) {
+      router.push('/admin');
+    } else {
+      router.push('/dashboard');
+    }
+  };
+
+  const renderHeader = () => {
+    if (isTechnician) {
+      return (
+        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="container flex h-16 items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Link href="/technician" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                <Wrench className="h-6 w-6 text-primary" />
+                <span className="text-xl font-bold">AgriBot Technician</span>
+              </Link>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="hidden md:flex items-center gap-2 text-sm mr-2">
+                <span className="text-muted-foreground">
+                  Xin chào, <span className="font-semibold text-foreground">{session?.user?.name || session?.user?.email}</span>
+                </span>
+              </div>
+              <ThemeToggle />
+            </div>
+          </div>
+        </header>
+      );
+    }
+    
+    if (isAdmin) {
+      return (
+        <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <Link href="/admin" className="flex items-center space-x-2">
+                <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
+                  <Shield className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900 dark:text-white">AgriBot Admin</h1>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Quản trị hệ thống</p>
+                </div>
+              </Link>
+              <div className="flex items-center space-x-4">
+                <ThemeToggle />
+                <div className="hidden sm:block text-sm text-gray-600 dark:text-gray-400">
+                  {session?.user?.name || session?.user?.email}
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+      );
+    }
+
+    return <DashboardHeader userName={session?.user?.name} />;
+  };
+
   return (
     <AuthGuard>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <DashboardHeader userName={session?.user?.name} />
+        {renderHeader()}
 
         {/* Main Content */}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
@@ -26,10 +94,10 @@ const SettingsPage = () => {
           <Button 
             variant="ghost" 
             className="mb-4"
-            onClick={() => router.push('/dashboard')}
+            onClick={handleBack}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Quay lại Dashboard
+            {isTechnician ? 'Quay lại' : isAdmin ? 'Quay lại Admin' : 'Quay lại Dashboard'}
           </Button>
 
           {/* Page Title */}

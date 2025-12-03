@@ -82,7 +82,7 @@ const Dashboard = () => {
   }
 
   return (
-    <AuthGuard>
+    <AuthGuard allowedRoles={['FARMER', 'ADMIN']}>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-50 to-agri-green-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
         <DashboardHeader userName={session?.user?.name} />
 
