@@ -26,7 +26,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 
 const areaSchema = z.object({
-  name: z.string().min(1, 'Tên khu vực là bắt buộc'),
+  name: z.string()
+    .min(1, 'Tên khu vực là bắt buộc')
+    .regex(/^(Khu [A-Z]|Khu \d+)$/, 'Tên khu vực phải theo định dạng "Khu [Chữ cái]" (VD: Khu A) hoặc "Khu [Số]" (VD: Khu 1) để tối ưu hóa cho AI nhận diện.'),
   type: z.string().optional(),
   crop: z.string().optional(),
   description: z.string().optional(),
@@ -109,7 +111,7 @@ export const AddAreaModal: React.FC<AddAreaModalProps> = ({ isOpen, onClose, onS
                 <FormItem>
                   <FormLabel>Tên khu vực *</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ví dụ: Ruộng A, Nhà kính 1" {...field} />
+                    <Input placeholder="Ví dụ: Khu A, Khu 1" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -124,7 +126,7 @@ export const AddAreaModal: React.FC<AddAreaModalProps> = ({ isOpen, onClose, onS
                   <FormItem>
                     <FormLabel>Loại khu vực</FormLabel>
                     <FormControl>
-                      <Input placeholder="VD: Ruộng lúa" {...field} />
+                      <Input placeholder="VD: Vườn cà chua,Vườn bưởi da xanh" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
