@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { 
@@ -11,6 +11,7 @@ import {
   LogOut,
   Settings
 } from 'lucide-react';
+import { AreaReference } from './AreaReference';
 
 interface DashboardHeaderProps {
   userName?: string | null;
@@ -19,6 +20,8 @@ interface DashboardHeaderProps {
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) => {
   const router = useRouter();
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const isFarmer = session?.user?.role === 'FARMER';
 
   const handleSettings = () => {
     router.push('/settings');
@@ -53,10 +56,10 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) =>
                   Chat
                 </Button>
               </Link>
-              <Link href="/farm">
+              <Link href="/farm/overview">
                 <Button 
-                  variant={pathname === '/farm' ? 'default' : 'ghost'}
-                  className={pathname === '/farm' ? 'bg-agri-green-600 hover:bg-agri-green-700' : ''}
+                  variant={pathname?.startsWith('/farm') ? 'default' : 'ghost'}
+                  className={pathname?.startsWith('/farm') ? 'bg-agri-green-600 hover:bg-agri-green-700' : ''}
                 >
                   Nông Trại
                 </Button>
@@ -65,6 +68,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) =>
           </div>
           
           <div className="flex items-center gap-2">
+            {isFarmer && <AreaReference />}
             <Button 
               variant="ghost" 
               size="sm"
