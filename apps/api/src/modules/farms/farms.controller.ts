@@ -16,8 +16,10 @@ import { CreateAreaDto, UpdateAreaDto } from './dto/create-area.dto';
 import { CreateActivityDto } from './dto/create-activity.dto';
 import { UpdateActivityDto } from './dto/update-activity.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { User } from '../users/entities/user.entity';
+import { User, UserRole } from '../users/entities/user.entity';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 
 @ApiTags('Farms')
@@ -134,5 +136,21 @@ export class FarmsController {
   @ApiOperation({ summary: 'Seed crops data (temporary endpoint)' })
   seedCrops() {
     return this.farmsService.seedCropsManually();
+  }
+
+  @Get('all')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get all farms (Admin only)' })
+  getAllFarms() {
+    return this.farmsService.getAllFarms();
+  }
+
+  @Get(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get farm by ID (Admin only)' })
+  getFarmById(@Param('id') id: string) {
+    return this.farmsService.getFarmById(id);
   }
 }

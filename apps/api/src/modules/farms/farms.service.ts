@@ -244,4 +244,64 @@ export class FarmsService implements OnModuleInit {
       order: { name: 'ASC' }
     });
   }
+
+  // Admin methods
+  async getAllFarms() {
+    const farms = await this.farmsRepository.find({
+      relations: ['user', 'areas'],
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        description: true,
+        createdAt: true,
+        updatedAt: true,
+        user: {
+          id: true,
+          email: true,
+          fullName: true,
+        },
+      },
+    });
+
+    return farms.map(farm => ({
+      ...farm,
+      areasCount: farm.areas?.length || 0,
+      areas: undefined, // Remove detailed areas data
+    }));
+  }
+
+  async getFarmById(id: string) {
+    const farm = await this.farmsRepository.findOne({
+      where: { id },
+      relations: ['user', 'areas'],
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        description: true,
+        createdAt: true,
+        updatedAt: true,
+        user: {
+          id: true,
+          email: true,
+          fullName: true,
+        },
+      },
+    });
+
+    if (!farm) {
+      throw new NotFoundException('Farm not found');
+    }
+
+    return {
+      ...farm,
+      areas: farm.areas?.map(area => ({
+        id: area.id,
+        name: area.name,
+        type: area.type,
+        crop: area.crop,
+      })),
+    };
+  }
 }
