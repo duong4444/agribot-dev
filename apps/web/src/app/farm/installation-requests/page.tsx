@@ -7,10 +7,12 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Plus, Package, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { CreateInstallationRequestModal } from '@/components/iot/CreateInstallationRequestModal';
+import { EditInstallationRequestModal } from '@/components/iot/EditInstallationRequestModal';
 
 interface InstallationRequest {
   id: string;
   notes: string;
+  contactPhone?: string;
   status: 'PENDING' | 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
   area: {
     id: string;
@@ -37,6 +39,8 @@ export default function InstallationRequestsPage() {
   const [requests, setRequests] = useState<InstallationRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<InstallationRequest | null>(null);
   const { toast } = useToast();
 
   const fetchRequests = async () => {
@@ -68,6 +72,21 @@ export default function InstallationRequestsPage() {
     toast({
       title: "Thành công",
       description: "Yêu cầu lắp đặt đã được tạo",
+    });
+  };
+
+
+  const handleEditRequest = (request: InstallationRequest) => {
+    setSelectedRequest(request);
+    setIsEditModalOpen(true);
+  };
+
+  const handleRequestUpdated = () => {
+    setIsEditModalOpen(false);
+    fetchRequests();
+    toast({
+      title: "Thành công",
+      description: "Đã cập nhật yêu cầu lắp đặt",
     });
   };
 
@@ -166,13 +185,22 @@ export default function InstallationRequestsPage() {
                         Tạo lúc: {new Date(request.createdAt).toLocaleString('vi-VN')}
                       </p>
                       {request.status === 'PENDING' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCancelRequest(request.id)}
-                        >
-                          Hủy Yêu Cầu
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditRequest(request)}
+                          >
+                            Chỉnh sửa
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCancelRequest(request.id)}
+                          >
+                            Hủy Yêu Cầu
+                          </Button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -183,10 +211,18 @@ export default function InstallationRequestsPage() {
         </div>
       )}
 
+
       <CreateInstallationRequestModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={handleRequestCreated}
+      />
+      
+      <EditInstallationRequestModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSuccess={handleRequestUpdated}
+        request={selectedRequest}
       />
     </div>
   );

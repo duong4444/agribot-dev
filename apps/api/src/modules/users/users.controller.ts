@@ -60,6 +60,22 @@ export class UsersController {
     };
   }
 
+  @Put('profile')
+  @ApiOperation({ summary: 'Update current user profile' })
+  @ApiResponse({ status: 200, description: 'User profile updated successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async updateProfile(
+    @CurrentUser() user: any,
+    @Body() updateData: { fullName?: string; phoneNumber?: string; email?: string }
+  ) {
+    const updatedUser = await this.usersService.update(user.id, updateData);
+    return {
+      success: true,
+      data: updatedUser,
+      message: 'Profile updated successfully',
+    };
+  }
+
   // kma
   @Post('subscription/upgrade')
   @ApiOperation({ summary: 'Upgrade to Premium (Mock)' })

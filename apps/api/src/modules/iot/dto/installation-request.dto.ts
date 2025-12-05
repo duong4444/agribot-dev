@@ -13,6 +13,16 @@ export class CreateInstallationRequestDto {
   contactPhone?: string;
 }
 
+export class UpdateInstallationRequestDto {
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @IsOptional()
+  @IsString()
+  contactPhone?: string;
+}
+
 export class AssignTechnicianDto {
   @IsUUID()
   technicianId: string;

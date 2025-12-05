@@ -4,7 +4,7 @@ import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../auth/decorators/roles.decorator';
 import { UserRole } from '../../users/entities/user.entity';
 import { InstallationRequestService } from '../services/installation-request.service';
-import { CreateInstallationRequestDto, AssignTechnicianDto } from '../dto/installation-request.dto';
+import { CreateInstallationRequestDto, AssignTechnicianDto, UpdateInstallationRequestDto } from '../dto/installation-request.dto';
 import { InstallationRequestStatus } from '../entities/installation-request.entity';
 
 @Controller('installation-requests')
@@ -37,6 +37,12 @@ export class InstallationRequestController {
   async cancel(@Request() req, @Param('id') id: string) {
     const farmerId = req.user.id;
     return this.installationRequestService.cancel(id, farmerId);
+  }
+
+  @Put(':id')
+  async update(@Request() req, @Param('id') id: string, @Body() dto: UpdateInstallationRequestDto) {
+    const farmerId = req.user.id;
+    return this.installationRequestService.update(id, farmerId, dto);
   }
 }
 

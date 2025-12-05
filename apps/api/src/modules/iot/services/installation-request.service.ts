@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DateUtils } from '../../../common/utils/date.util';
 import { InstallationRequest, InstallationRequestStatus } from '../entities/installation-request.entity';
-import { CreateInstallationRequestDto, AssignTechnicianDto } from '../dto/installation-request.dto';
+import { CreateInstallationRequestDto, AssignTechnicianDto, UpdateInstallationRequestDto } from '../dto/installation-request.dto';
 import { User, UserRole } from '../../users/entities/user.entity';
 import { Area } from '../../farms/entities/area.entity';
 import { Device } from '../entities/device.entity';
@@ -163,6 +163,23 @@ export class InstallationRequestService {
     }
 
     request.status = InstallationRequestStatus.CANCELLED;
+    return this.installationRequestRepository.save(request);
+  }
+
+  async update(requestId: string, farmerId: string, dto: UpdateInstallationRequestDto): Promise<InstallationRequest> {
+    const request = await this.findOne(requestId, farmerId);
+
+    if (request.status !== InstallationRequestStatus.PENDING) {
+      throw new BadRequestException('Can only update pending requests');
+    }
+
+    if (dto.notes !== undefined) {
+      request.notes = dto.notes;
+    }
+    if (dto.contactPhone !== undefined) {
+      request.contactPhone = dto.contactPhone;
+    }
+
     return this.installationRequestRepository.save(request);
   }
 

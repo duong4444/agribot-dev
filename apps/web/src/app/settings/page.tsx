@@ -7,8 +7,9 @@ import { AuthGuard } from '@/components/auth/auth-guard';
 import { DashboardHeader } from '@/components/dashboard';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, User, Bell, Lock, Palette, Globe, Wrench, Shield } from 'lucide-react';
+import { ArrowLeft, User, Lock, Wrench, Shield } from 'lucide-react';
 import { ChangePasswordModal } from '@/components/settings/ChangePasswordModal';
+import { EditProfileModal } from '@/components/settings/EditProfileModal';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
@@ -16,6 +17,7 @@ const SettingsPage = () => {
   const router = useRouter();
   const { data: session } = useSession();
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
 
   const isTechnician = session?.user?.role === 'TECHNICIAN';
   const isAdmin = session?.user?.role === 'ADMIN';
@@ -113,58 +115,44 @@ const SettingsPage = () => {
           {/* Settings Sections */}
           <div className="space-y-4">
             {/* Profile Settings */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center space-x-2">
-                  <User className="h-5 w-5" />
-                  <CardTitle>Thông tin cá nhân</CardTitle>
-                </div>
-                <CardDescription>
-                  Cập nhật thông tin tài khoản của bạn
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Tên
-                    </label>
-                    <p className="mt-1 text-gray-900 dark:text-white">
-                      {session?.user?.name || 'Chưa cập nhật'}
-                    </p>
+            {!isTechnician && (
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center space-x-2">
+                    <User className="h-5 w-5" />
+                    <CardTitle>Thông tin cá nhân</CardTitle>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Email
-                    </label>
-                    <p className="mt-1 text-gray-900 dark:text-white">
-                      {session?.user?.email || 'Chưa cập nhật'}
-                    </p>
+                  <CardDescription>
+                    Cập nhật thông tin tài khoản của bạn
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Tên
+                      </label>
+                      <p className="mt-1 text-gray-900 dark:text-white">
+                        {session?.user?.name || 'Chưa cập nhật'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Email
+                      </label>
+                      <p className="mt-1 text-gray-900 dark:text-white">
+                        {session?.user?.email || 'Chưa cập nhật'}
+                      </p>
+                    </div>
+                    <Button variant="outline" onClick={() => setIsEditProfileOpen(true)}>
+                      Chỉnh sửa thông tin
+                    </Button>
                   </div>
-                  <Button variant="outline" disabled>
-                    Chỉnh sửa thông tin
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
 
-            {/* Notification Settings */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center space-x-2">
-                  <Bell className="h-5 w-5" />
-                  <CardTitle>Thông báo</CardTitle>
-                </div>
-                <CardDescription>
-                  Quản lý cách bạn nhận thông báo
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Tính năng đang phát triển
-                </p>
-              </CardContent>
-            </Card>
+
 
             {/* Security Settings */}
             <Card>
@@ -187,41 +175,7 @@ const SettingsPage = () => {
               </CardContent>
             </Card>
 
-            {/* Appearance Settings */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center space-x-2">
-                  <Palette className="h-5 w-5" />
-                  <CardTitle>Giao diện</CardTitle>
-                </div>
-                <CardDescription>
-                  Tùy chỉnh giao diện ứng dụng
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Tính năng đang phát triển
-                </p>
-              </CardContent>
-            </Card>
 
-            {/* Language Settings */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center space-x-2">
-                  <Globe className="h-5 w-5" />
-                  <CardTitle>Ngôn ngữ</CardTitle>
-                </div>
-                <CardDescription>
-                  Chọn ngôn ngữ hiển thị
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-900 dark:text-white">
-                  Tiếng Việt (Mặc định)
-                </p>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>
@@ -229,6 +183,10 @@ const SettingsPage = () => {
       <ChangePasswordModal 
         isOpen={isChangePasswordOpen}
         onClose={() => setIsChangePasswordOpen(false)}
+      />
+      <EditProfileModal
+        isOpen={isEditProfileOpen}
+        onClose={() => setIsEditProfileOpen(false)}
       />
     </AuthGuard>
   );
