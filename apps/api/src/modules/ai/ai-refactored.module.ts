@@ -50,8 +50,10 @@ import { TextExtractionService } from './services/text-extraction.service';
 import { AdminGuard } from './guards/admin.guard';
 
 // Other modules
+// Other modules
 // import { FarmModule } from '../farm/farm.module'; // REMOVED: Farm module will be rebuilt
 import { IoTModule } from '../iot/iot.module';
+import { UsersModule } from '../users/users.module';
 import { AIRefactoredController } from './ai-refactored.controller';
 import { AdminDocumentController } from './controllers/admin-document.controller';
 import { AdminCropKnowledgeController } from './controllers/admin-crop-knowledge.controller';
@@ -69,6 +71,7 @@ import { FinancialQueryHandler } from './handlers/financial-query.handler';
     TypeOrmModule.forFeature([Document, CropKnowledgeChunk, RagDocument, RagChunk, Device, Area, SensorData, Farm, FarmActivity]),
     // FarmModule, // REMOVED: Will be rebuilt later
     IoTModule, // For device control
+    UsersModule, // For subscription management
   ],
   controllers: [
     AIRefactoredController, 

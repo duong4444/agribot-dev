@@ -55,7 +55,10 @@ export function IrrigationControlPanel({ deviceId, onActionComplete }: Irrigatio
         method: 'POST',
       });
 
-      if (!res.ok) throw new Error('Failed to control pump');
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: 'Failed to control pump' }));
+        throw new Error(errorData.message || 'Failed to control pump');
+      }
 
       toast({
         title: action === 'on' ? '✅ Đã bật máy bơm' : '🛑 Đã tắt máy bơm',
@@ -65,10 +68,10 @@ export function IrrigationControlPanel({ deviceId, onActionComplete }: Irrigatio
       if (onActionComplete) {
         onActionComplete();
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: '❌ Lỗi',
-        description: 'Không thể điều khiển máy bơm',
+        description: error.message || 'Không thể điều khiển máy bơm',
         variant: 'destructive',
       });
     } finally {
@@ -95,7 +98,10 @@ export function IrrigationControlPanel({ deviceId, onActionComplete }: Irrigatio
         body: JSON.stringify({ duration }),
       });
 
-      if (!res.ok) throw new Error('Failed to start irrigation');
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: 'Failed to start irrigation' }));
+        throw new Error(errorData.message || 'Failed to start irrigation');
+      }
 
       toast({
         title: '💧 Bắt đầu tưới',
@@ -105,10 +111,10 @@ export function IrrigationControlPanel({ deviceId, onActionComplete }: Irrigatio
       if (onActionComplete) {
         onActionComplete();
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: '❌ Lỗi',
-        description: 'Không thể bắt đầu tưới',
+        description: error.message || 'Không thể bắt đầu tưới',
         variant: 'destructive',
       });
     } finally {

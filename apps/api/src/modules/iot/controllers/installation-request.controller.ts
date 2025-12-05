@@ -64,8 +64,8 @@ export class AdminInstallationRequestController {
   }
 
   @Put(':id/status')
-  async updateStatus(@Param('id') id: string, @Body() body: { status: InstallationRequestStatus }) {
-    return this.installationRequestService.updateStatus(id, body.status);
+  async updateStatus(@Param('id') id: string, @Body() body: { status: InstallationRequestStatus, isPaid?: boolean }) {
+    return this.installationRequestService.updateStatus(id, body.status, body.isPaid);
   }
 
   @Put(':id/cancel')
@@ -99,7 +99,7 @@ export class TechnicianInstallationRequestController {
   }
 
   @Put(':id/complete')
-  async completeInstallation(@Param('id') id: string) {
-    return this.installationRequestService.updateStatus(id, InstallationRequestStatus.COMPLETED);
+  async completeInstallation(@Param('id') id: string, @Body() body: { isPaid?: boolean }) {
+    return this.installationRequestService.updateStatus(id, InstallationRequestStatus.COMPLETED, body.isPaid);
   }
 }

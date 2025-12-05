@@ -1,9 +1,10 @@
 import { Controller, Post, Body, Param, UseGuards, Request, Get, Put } from '@nestjs/common';
 import { LightingService } from '../services/lighting.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { PremiumSubscriptionGuard } from '../../auth/guards/premium-subscription.guard';
 
 @Controller('iot/devices/:id/lighting')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PremiumSubscriptionGuard)
 export class LightingController {
   constructor(private readonly lightingService: LightingService) {}
 

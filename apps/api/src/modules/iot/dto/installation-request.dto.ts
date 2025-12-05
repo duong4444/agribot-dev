@@ -4,8 +4,6 @@ export class CreateInstallationRequestDto {
   @IsUUID()
   areaId: string;
 
-
-
   @IsOptional()
   @IsString()
   notes?: string;
@@ -29,4 +27,7 @@ export class ActivateDeviceDto {
 
   @IsUUID()
   installationRequestId: string;
+
+  @IsOptional()
+  isPaid?: boolean;
 }

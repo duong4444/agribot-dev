@@ -44,6 +44,8 @@ export default function ActivateDevicePage() {
     areaId: '',
   });
 
+  const [isPaid, setIsPaid] = useState(false);
+
   useEffect(() => {
     fetchRequests();
   }, []);
@@ -88,12 +90,21 @@ export default function ActivateDevicePage() {
       return;
     }
 
+    if (!isPaid) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng xác nhận đã thu tiền phần cứng từ khách hàng",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setSubmitting(true);
       const res = await fetch('/api/technician/devices/activate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, isPaid }),
       });
 
       if (!res.ok) {
@@ -117,6 +128,7 @@ export default function ActivateDevicePage() {
         installationRequestId: '',
         areaId: '',
       });
+      setIsPaid(false);
     } catch (error: any) {
       toast({
         title: "Lỗi",
@@ -198,6 +210,25 @@ export default function ActivateDevicePage() {
                   </p>
                 </div>
               )}
+
+              <div className="p-4 border rounded-lg bg-yellow-50 dark:bg-yellow-950/20 border-yellow-500">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isPaid}
+                    onChange={(e) => setIsPaid(e.target.checked)}
+                    className="w-4 h-4 mt-0.5 rounded border-gray-300"
+                  />
+                  <div>
+                    <span className="font-medium text-yellow-900 dark:text-yellow-100">
+                      Đã thu tiền phần cứng từ khách hàng
+                    </span>
+                    <p className="text-xs text-yellow-800 dark:text-yellow-200 mt-1">
+                      Xác nhận rằng bạn đã nhận thanh toán cho thiết bị trước khi kích hoạt
+                    </p>
+                  </div>
+                </label>
+              </div>
 
               <Button type="submit" className="w-full" disabled={submitting}>
                 {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

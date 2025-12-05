@@ -37,6 +37,10 @@ export class AuthService {
         fullName: user.fullName,
         role: user.role,
         isActive: user.isActive,
+        credits: user.credits,
+        plan: user.plan,
+        subscriptionStatus: user.subscriptionStatus,
+        subscriptionExpiry: user.subscriptionExpiry,
       },
     };
   }

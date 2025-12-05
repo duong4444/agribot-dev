@@ -78,17 +78,20 @@ export default function TechnicianRequestsPage() {
         body: JSON.stringify({ status: newStatus }),
       });
 
-      if (!res.ok) throw new Error('Failed to update');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'Failed to update');
+      }
 
       toast({
         title: "Thành công",
         description: "Đã cập nhật trạng thái",
       });
       fetchRequests();
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Lỗi",
-        description: "Không thể cập nhật trạng thái",
+        description: error.message || "Không thể cập nhật trạng thái",
         variant: "destructive",
       });
     }
@@ -255,7 +258,8 @@ export default function TechnicianRequestsPage() {
                 Hãy đảm bảo rằng:
                 <ul className="list-disc list-inside mt-2 space-y-1">
                   <li>Thiết bị đã được lắp đặt đúng vị trí</li>
-                  <li>Thiết bị đã được kích hoạt thành công</li>
+                  <li><strong>Thiết bị đã được kích hoạt thành công</strong></li>
+                  <li><strong>Đã thu tiền phần cứng từ khách hàng</strong></li>
                   <li>Đã kiểm tra kết nối và dữ liệu cảm biến</li>
                 </ul>
               </div>

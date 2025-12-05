@@ -62,6 +62,12 @@ export class InstallationRequest {
   })
   status: InstallationRequestStatus;
 
+  @Column({ default: false })
+  isPaid: boolean;
+
+  @Column({ nullable: true })
+  paymentDate: Date;
+
   @Column({ nullable: true })
   assignedTechnicianId: string;
 

@@ -1,13 +1,14 @@
 import { Controller, Get, Post, Put, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PremiumSubscriptionGuard } from '../auth/guards/premium-subscription.guard';
 import { MqttService } from './mqtt.service';
 import { DeviceService } from './device.service';
 import { CreateDeviceDto, UpdateDeviceDto } from './dto/device.dto';
 
 @ApiTags('IoT')
 @Controller('iot')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PremiumSubscriptionGuard)
 @ApiBearerAuth()
 export class IoTController {
   constructor(

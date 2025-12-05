@@ -16,6 +16,17 @@ export enum UserRole {
   TECHNICIAN = 'TECHNICIAN',
 }
 
+export enum SubscriptionPlan {
+  FREE = 'FREE',
+  PREMIUM = 'PREMIUM',
+}
+
+export enum SubscriptionStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  TRIAL = 'TRIAL',
+}
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -45,6 +56,29 @@ export class User {
     default: UserRole.FARMER,
   })
   role: UserRole;
+
+  @Column({ default: 10 })
+  credits: number;
+
+  @Column({
+    type: 'enum',
+    enum: SubscriptionPlan,
+    default: SubscriptionPlan.FREE,
+  })
+  plan: SubscriptionPlan;
+
+  @Column({
+    type: 'enum',
+    enum: SubscriptionStatus,
+    default: SubscriptionStatus.TRIAL,
+  })
+  subscriptionStatus: SubscriptionStatus;
+
+  @Column({ nullable: true })
+  subscriptionExpiry: Date;
+
+  @Column({ nullable: true })
+  trialStartedAt: Date;
 
   @Column({ default: true })
   isActive: boolean;

@@ -51,7 +51,10 @@ export function LightingControlPanel({ deviceId }: LightingControlPanelProps) {
         method: 'POST',
       });
 
-      if (!res.ok) throw new Error('Failed to control light');
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: 'Failed to control light' }));
+        throw new Error(errorData.message || 'Failed to control light');
+      }
 
       toast({
         title: action === 'on' ? '💡 Đã bật đèn' : '🌑 Đã tắt đèn',
@@ -65,10 +68,10 @@ export function LightingControlPanel({ deviceId }: LightingControlPanelProps) {
         fetchAutoConfig();
       }
 
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: '❌ Lỗi',
-        description: 'Không thể điều khiển đèn',
+        description: error.message || 'Không thể điều khiển đèn',
         variant: 'destructive',
       });
     } finally {
@@ -84,7 +87,10 @@ export function LightingControlPanel({ deviceId }: LightingControlPanelProps) {
         body: JSON.stringify({ enabled }),
       });
 
-      if (!res.ok) throw new Error('Failed to toggle auto mode');
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: 'Failed to toggle auto mode' }));
+        throw new Error(errorData.message || 'Failed to toggle auto mode');
+      }
 
       const data = await res.json();
       setAutoConfig(prev => prev ? { ...prev, lightEnabled: data.lightEnabled } : null);
@@ -95,10 +101,10 @@ export function LightingControlPanel({ deviceId }: LightingControlPanelProps) {
           ? `Đèn sẽ bật khi độ sáng < ${autoConfig?.lightThreshold} lux`
           : 'Chế độ tự động đã tắt',
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: '❌ Lỗi',
-        description: 'Không thể thay đổi chế độ tự động',
+        description: error.message || 'Không thể thay đổi chế độ tự động',
         variant: 'destructive',
       });
     }
@@ -117,16 +123,19 @@ export function LightingControlPanel({ deviceId }: LightingControlPanelProps) {
         }),
       });
 
-      if (!res.ok) throw new Error('Failed to update threshold');
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ message: 'Failed to update threshold' }));
+        throw new Error(errorData.message || 'Failed to update threshold');
+      }
 
       toast({
         title: '✅ Đã cập nhật ngưỡng',
         description: `Ngưỡng độ sáng: ${autoConfig.lightThreshold} lux`,
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: '❌ Lỗi',
-        description: 'Không thể cập nhật cấu hình',
+        description: error.message || 'Không thể cập nhật cấu hình',
         variant: 'destructive',
       });
     } finally {

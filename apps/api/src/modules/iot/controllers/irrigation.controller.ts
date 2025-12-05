@@ -10,6 +10,7 @@ import {
   Request,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { PremiumSubscriptionGuard } from '../../auth/guards/premium-subscription.guard';
 import { IrrigationService } from '../services/irrigation.service';
 import {
   UpdateAutoConfigDto,
@@ -18,7 +19,7 @@ import {
 } from '../dto/irrigation.dto';
 
 @Controller('iot/devices/:deviceId/irrigation')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, PremiumSubscriptionGuard)
 export class IrrigationController {
   constructor(private readonly irrigationService: IrrigationService) {}
 

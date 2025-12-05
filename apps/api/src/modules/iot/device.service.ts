@@ -4,12 +4,15 @@ import { Repository } from 'typeorm';
 import { Device, DeviceStatus, DeviceType } from './entities/device.entity';
 import { CreateDeviceDto, UpdateDeviceDto } from './dto/device.dto';
 import { ActivateDeviceDto } from './dto/installation-request.dto';
+import { InstallationRequest } from './entities/installation-request.entity';
 
 @Injectable()
 export class DeviceService {
   constructor(
     @InjectRepository(Device)
     private deviceRepository: Repository<Device>,
+    @InjectRepository(InstallationRequest)
+    private installationRequestRepository: Repository<InstallationRequest>,
   ) {}
 
   async findAll(farmId?: string) {
@@ -78,7 +81,7 @@ export class DeviceService {
     return this.deviceRepository.save(device);
   }
 
-  async activateDevice(dto: ActivateDeviceDto, technicianId: string) {
+  async activateDevice(dto: ActivateDeviceDto & { isPaid?: boolean }, technicianId: string) {
     let device = await this.deviceRepository.findOne({
       where: { serialNumber: dto.serialNumber },
     });
@@ -105,7 +108,24 @@ export class DeviceService {
     device.activatedBy = technicianId;
     device.activatedAt = new Date();
 
-    return this.deviceRepository.save(device);
+    const savedDevice = await this.deviceRepository.save(device);
+
+    // Update InstallationRequest with isPaid if provided
+    if (dto.installationRequestId && dto.isPaid !== undefined) {
+      const request = await this.installationRequestRepository.findOne({
+        where: { id: dto.installationRequestId },
+      });
+
+      if (request) {
+        request.isPaid = dto.isPaid;
+        if (dto.isPaid) {
+          request.paymentDate = new Date();
+        }
+        await this.installationRequestRepository.save(request);
+      }
+    }
+
+    return savedDevice;
   }
 
   async findByStatus(status: DeviceStatus) {

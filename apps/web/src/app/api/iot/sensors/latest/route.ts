@@ -28,8 +28,9 @@ export async function GET(request: NextRequest) {
     });
 
     if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Failed to fetch sensor data' }));
       return NextResponse.json(
-        { error: 'Failed to fetch sensor data' },
+        { message: errorData.message || 'Failed to fetch sensor data' },
         { status: response.status }
       );
     }

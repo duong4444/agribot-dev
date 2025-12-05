@@ -10,6 +10,7 @@ import { User } from '../users/entities/user.entity';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
+import { PremiumSubscriptionGuard } from './guards/premium-subscription.guard';
 import { getJwtConfig } from '../../common/config/jwt.config';
 import { EmailService } from '../../common/services/email.service';
 
@@ -25,7 +26,7 @@ import { EmailService } from '../../common/services/email.service';
     UsersModule, // import để sử dụng UsersService, để có thể inject UsersService vào JwtStrategy
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, LocalStrategy, GoogleStrategy, EmailService], // 
-  exports: [AuthService], // export để module khác có thể sử dụng AuthService
+  providers: [AuthService, JwtStrategy, LocalStrategy, GoogleStrategy, PremiumSubscriptionGuard, EmailService], // 
+  exports: [AuthService, PremiumSubscriptionGuard], // export để module khác có thể sử dụng AuthService
 })
 export class AuthModule {}

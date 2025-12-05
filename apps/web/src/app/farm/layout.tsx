@@ -36,6 +36,11 @@ const navigationTabs = [
     href: '/farm/installation-requests', 
     icon: LayoutDashboard 
   },
+  {
+    label: 'Gói cước',
+    href: '/farm/subscription',
+    icon: DollarSign
+  },
 ];
 
 export default function FarmLayout({
@@ -66,10 +71,10 @@ export default function FarmLayout({
       }
     };
 
-    if (session) {
+    if (session?.user?.email) {
       checkFarm();
     }
-  }, [session]);
+  }, [session?.user?.email]);
 
   const handleFarmCreated = (newFarm: any) => {
     setHasFarm(true);

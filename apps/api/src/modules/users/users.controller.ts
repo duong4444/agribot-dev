@@ -60,6 +60,19 @@ export class UsersController {
     };
   }
 
+  // kma
+  @Post('subscription/upgrade')
+  @ApiOperation({ summary: 'Upgrade to Premium (Mock)' })
+  @ApiResponse({ status: 200, description: 'Subscription upgraded successfully' })
+  async upgradeSubscription(@CurrentUser() user: any) {
+    const updatedUser = await this.usersService.upgradeSubscription(user.id);
+    return {
+      success: true,
+      data: updatedUser,
+      message: 'Subscription upgraded to Premium successfully',
+    };
+  }
+
   @Get(':id')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)

@@ -25,6 +25,8 @@ import { IrrigationController } from './controllers/irrigation.controller';
 import { LightingController } from './controllers/lighting.controller';
 import { Area } from '../farms/entities/area.entity';
 import { User } from '../users/entities/user.entity';
+import { UsersModule } from '../users/users.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -38,6 +40,8 @@ import { User } from '../users/entities/user.entity';
       Area,
       User,
     ]),
+    UsersModule,
+    AuthModule,
   ],
   controllers: [
     IoTController,

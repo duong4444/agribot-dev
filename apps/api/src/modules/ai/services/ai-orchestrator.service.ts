@@ -1,5 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { User } from '../../users/entities/user.entity';
+import {
+  User,
+  SubscriptionPlan,
+  SubscriptionStatus,
+} from '../../users/entities/user.entity';
+import { UsersService } from '../../users/users.service';
 import {
   AIResponse,
   IntentType,
@@ -27,9 +32,10 @@ export class AIOrchestrator {
   constructor(
     private readonly intentClassifier: IntentClassifierService,
     private readonly exactMatch: ExactMatchV2Service,
-    private readonly rag: RAGService, 
+    private readonly rag: RAGService,
     private readonly llmFallback: LLMFallbackService,
     private readonly actionRouter: ActionRouterService,
+    private readonly usersService: UsersService,
   ) {}
 
   /**
@@ -67,6 +73,36 @@ export class AIOrchestrator {
         `Intent: ${intentResult.intent}, Confidence: ${intentResult.confidence.toFixed(2)}, Entities: ${intentResult.entities.length}`,
       );
 
+      // ==========================================================================================
+      // SUBSCRIPTION & ACCESS CONTROL CHECK
+      // ==========================================================================================
+      const accessCheck = await this.checkAccessAndDeductCredit(
+        user,
+        intentResult.intent,
+      );
+      console.log("ACCESS CHECK trong orchest: ",accessCheck);
+      // có message trong TH access denied
+      if (!accessCheck.allowed) {
+        this.logger.warn(
+          `Access denied for user ${user.id}: ${accessCheck.message}`,
+        );
+        return {
+          success: false,
+          message:
+            accessCheck.message ||
+            'Bạn không có quyền thực hiện hành động này.',
+          intent: intentResult.intent,
+          processingLayer: ProcessingLayer.LLM_FALLBACK,
+          confidence: 0,
+          responseTime: Date.now() - startTime,
+          error: {
+            code: 'ACCESS_DENIED',
+            message: accessCheck.message || 'Access denied',
+            layer: ProcessingLayer.LLM_FALLBACK,
+          },
+        };
+      }
+
       // Step 2: Route based on intent category
       console.log(
         'STEP2 trong orchest=============== UNKNOWN || CHECK <ACTION || KNOWLEDGE>=============',
@@ -77,21 +113,20 @@ export class AIOrchestrator {
         console.log(
           '======================UNKNOWN_INTENT=======================',
         );
-        this.logger.log(
-          'Unknown intent detected, validating query scope',
-        );
+        this.logger.log('Unknown intent detected, validating query scope');
 
         // Validate if query is agriculture-related or acceptable
         const validationResult = this.validateUnknownQuery(query);
-        
+
         if (!validationResult.isValid) {
           // Reject off-topic or spam queries
           this.logger.warn(`Query rejected: ${validationResult.reason}`);
-          console.log("PROMPT REJECTED: ", validationResult.reason);
-          
+          console.log('PROMPT REJECTED: ', validationResult.reason);
+
           return {
             success: false,
-            message: 'Xin lỗi, tôi chỉ có thể hỗ trợ các câu hỏi liên quan đến nông nghiệp. Vui lòng hỏi về cây trồng, chăm sóc, thiết bị, hoặc quản lý nông trại.',
+            message:
+              'Xin lỗi, tôi chỉ có thể hỗ trợ các câu hỏi liên quan đến nông nghiệp. Vui lòng hỏi về cây trồng, chăm sóc, thiết bị, hoặc quản lý nông trại.',
             intent: IntentType.UNKNOWN,
             processingLayer: ProcessingLayer.LLM_FALLBACK,
             confidence: 0,
@@ -192,8 +227,8 @@ export class AIOrchestrator {
       entities: intentResult.entities, // truyền entities từ NER để lọc
     });
     console.log('_orchestrator_ exactResult_layer1_FTS: ', exactResult);
-    console.log("exactResult.confidence: ",exactResult.confidence);
-    
+    console.log('exactResult.confidence: ', exactResult.confidence);
+
     // Check if exact match is confident enough
     if (
       exactResult.found &&
@@ -232,11 +267,15 @@ export class AIOrchestrator {
       threshold: DEFAULT_AI_CONFIG.ragSimilarityThreshold, // 0.4
     });
     console.log('ragResult_layer2_RAG: ', ragResult);
-    console.log("RESULT TỪ RAG: ",ragResult.confidence);
-    
-    console.log("RAG_CONFIDENCE_THRESHOLD: ",DEFAULT_AI_CONFIG.ragConfidenceThreshold);
-    
-    if (ragResult.confidence >= DEFAULT_AI_CONFIG.ragConfidenceThreshold) { // 0.5
+    console.log('RESULT TỪ RAG: ', ragResult.confidence);
+
+    console.log(
+      'RAG_CONFIDENCE_THRESHOLD: ',
+      DEFAULT_AI_CONFIG.ragConfidenceThreshold,
+    );
+
+    if (ragResult.confidence >= DEFAULT_AI_CONFIG.ragConfidenceThreshold) {
+      // 0.5
       this.logger.log('✓ Layer 2 (RAG) succeeded');
       console.log('PROCESSING LAYER2 RAG');
 
@@ -248,7 +287,7 @@ export class AIOrchestrator {
         confidence: ragResult.confidence,
         responseTime: Date.now() - startTime,
         ragResult,
-        sources: ragResult.sources.map(s => ({
+        sources: ragResult.sources.map((s) => ({
           type: 'rag_document' as const,
           reference: this.formatSourceName(s.documentName),
           confidence: s.similarity,
@@ -271,7 +310,8 @@ export class AIOrchestrator {
 
     this.logger.debug('Layer 2 RAG failed, attempting Layer 3: LLM Fallback');
     const llmResult = await this.llmFallback.generateResponse(query, {
-      reason: 'Layer 1 FTS and Layer 2 RAG failed - no relevant documents found',
+      reason:
+        'Layer 1 FTS and Layer 2 RAG failed - no relevant documents found',
     });
     console.log('llmResult_layer3_LLM_FALLBACK: ', llmResult);
 
@@ -304,8 +344,8 @@ export class AIOrchestrator {
     startTime: number,
   ): Promise<AIResponse> {
     const { intent, entities, originalQuery: query } = intentResult;
-    console.log("PROCESSSSSSSSSSSS ACTIONNNNNNNNNNNNNNNNNN");
-    
+    console.log('PROCESSSSSSSSSSSS ACTIONNNNNNNNNNNNNNNNNN');
+
     this.logger.log(`Processing action intent: ${intent}`);
 
     // Route to action handler
@@ -342,86 +382,174 @@ export class AIOrchestrator {
   /**
    * Validate UNKNOWN queries to prevent abuse and off-topic requests
    */
-  private validateUnknownQuery(query: string): { isValid: boolean; reason?: string } {
+  private validateUnknownQuery(query: string): {
+    isValid: boolean;
+    reason?: string;
+  } {
     const queryLower = query.toLowerCase().trim();
-    
+
     // 1. Allow common greetings and polite phrases (short phrases)
     const allowedGreetings = [
-      'xin chào', 'chào', 'hello', 'hi', 'hey',
-      'cảm ơn', 'thanks', 'thank you', 'cám ơn',
-      'tạm biệt', 'bye', 'goodbye', 'chào tạm biệt',
-      'ok', 'okay', 'được', 'rồi', 'oke',
+      'xin chào',
+      'chào',
+      'hello',
+      'hi',
+      'hey',
+      'cảm ơn',
+      'thanks',
+      'thank you',
+      'cám ơn',
+      'tạm biệt',
+      'bye',
+      'goodbye',
+      'chào tạm biệt',
+      'ok',
+      'okay',
+      'được',
+      'rồi',
+      'oke',
     ];
-    
-    if (allowedGreetings.some(greeting => queryLower === greeting || queryLower.includes(greeting)) && queryLower.length < 30) {
+
+    if (
+      allowedGreetings.some(
+        (greeting) => queryLower === greeting || queryLower.includes(greeting),
+      ) &&
+      queryLower.length < 30
+    ) {
       return { isValid: true };
     }
-    
+
     // 2. Reject obvious programming/coding queries
     const codingKeywords = [
-      'viết chương trình', 'code', 'programming', 'python', 'javascript', 'java', 'c++',
-      'html', 'css', 'function', 'class', 'algorithm', 'thuật toán',
-      'lập trình', 'debug', 'compile', 'syntax', 'hello world',
-      'code', 'script', 'php', 'ruby', 'sql query', 'database schema',
+      'viết chương trình',
+      'code',
+      'programming',
+      'python',
+      'javascript',
+      'java',
+      'c++',
+      'html',
+      'css',
+      'function',
+      'class',
+      'algorithm',
+      'thuật toán',
+      'lập trình',
+      'debug',
+      'compile',
+      'syntax',
+      'hello world',
+      'code',
+      'script',
+      'php',
+      'ruby',
+      'sql query',
+      'database schema',
     ];
-    
-    if (codingKeywords.some(keyword => queryLower.includes(keyword))) {
-      return { 
-        isValid: false, 
-        reason: 'Programming/coding query detected - out of agriculture scope' 
+
+    if (codingKeywords.some((keyword) => queryLower.includes(keyword))) {
+      return {
+        isValid: false,
+        reason: 'Programming/coding query detected - out of agriculture scope',
       };
     }
-    
+
     // 3. Reject other non-agriculture topics
     const offTopicKeywords = [
-      'toán học', 'vật lý', 'hóa học', 'math', 'physics', 'chemistry',
-      'giải phương trình', 'tính tích phân', 'integral', 'derivative',
-      'lịch sử', 'địa lý', 'history', 'geography',
-      'bóng đá', 'football', 'soccer', 'basketball',
-      'điện ảnh', 'phim', 'movie', 'film',
-      'âm nhạc', 'music', 'bài hát', 'song',
-      'du lịch', 'travel', 'khách sạn', 'hotel',
-      'y tế', 'bệnh viện', 'thuốc', 'medicine', 'doctor',
+      'toán học',
+      'vật lý',
+      'hóa học',
+      'math',
+      'physics',
+      'chemistry',
+      'giải phương trình',
+      'tính tích phân',
+      'integral',
+      'derivative',
+      'lịch sử',
+      'địa lý',
+      'history',
+      'geography',
+      'bóng đá',
+      'football',
+      'soccer',
+      'basketball',
+      'điện ảnh',
+      'phim',
+      'movie',
+      'film',
+      'âm nhạc',
+      'music',
+      'bài hát',
+      'song',
+      'du lịch',
+      'travel',
+      'khách sạn',
+      'hotel',
+      'y tế',
+      'bệnh viện',
+      'thuốc',
+      'medicine',
+      'doctor',
     ];
-    
-    if (offTopicKeywords.some(keyword => queryLower.includes(keyword))) {
-      return { 
-        isValid: false, 
-        reason: 'Off-topic query detected - not related to agriculture' 
+
+    if (offTopicKeywords.some((keyword) => queryLower.includes(keyword))) {
+      return {
+        isValid: false,
+        reason: 'Off-topic query detected - not related to agriculture',
       };
     }
-    
+
     // 4. Check if query might be agriculture-related (fuzzy match)
     const agricultureKeywords = [
       // General
-      'nông', 'farm', 'crop', 'plant', 'trồng', 'cây',
+      'nông',
+      'farm',
+      'crop',
+      'plant',
+      'trồng',
+      'cây',
       // Specific
-      'lúa', 'rau', 'cà', 'đất', 'phân', 'bón', 'tưới',
-      'máy', 'thiết bị', 'cảm biến', 'nhiệt độ', 'độ ẩm',
-      'thu hoạch', 'gieo', 'chăm sóc', 'vườn', 'ruộng',
+      'lúa',
+      'rau',
+      'cà',
+      'đất',
+      'phân',
+      'bón',
+      'tưới',
+      'máy',
+      'thiết bị',
+      'cảm biến',
+      'nhiệt độ',
+      'độ ẩm',
+      'thu hoạch',
+      'gieo',
+      'chăm sóc',
+      'vườn',
+      'ruộng',
     ];
-    
-    const hasAgricultureKeyword = agricultureKeywords.some(keyword => 
-      queryLower.includes(keyword)
+
+    const hasAgricultureKeyword = agricultureKeywords.some((keyword) =>
+      queryLower.includes(keyword),
     );
-    
+
     if (hasAgricultureKeyword) {
       return { isValid: true };
     }
-    
+
     // 5. Allow short queries (might be follow-up questions or unclear)
     // But limit very long queries (likely spam)
     if (queryLower.length < 10) {
       return { isValid: true }; // Allow short unclear queries
     }
-    
+
     if (queryLower.length > 200) {
-      return { 
-        isValid: false, 
-        reason: 'Query too long - possible spam or off-topic' 
+      return {
+        isValid: false,
+        reason: 'Query too long - possible spam or off-topic',
       };
     }
-    
+
     // 6. Default: Allow but with caution (might be agriculture-related but unclear)
     // LLM will be prompted to stay in agriculture domain
     return { isValid: true };
@@ -451,7 +579,7 @@ export class AIOrchestrator {
 
     // Remove file extensions for cleaner display
     const nameWithoutExt = originalName.replace(/\.(txt|pdf|docx?|md)$/i, '');
-    
+
     // Convert underscores and hyphens to spaces
     const friendlyName = nameWithoutExt
       .replace(/[_-]/g, ' ')
@@ -461,9 +589,78 @@ export class AIOrchestrator {
     // Capitalize first letter of each word for better readability
     const capitalizedName = friendlyName
       .split(' ')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
       .join(' ');
 
     return capitalizedName;
+  }
+
+  /**
+   * Check subscription access and deduct credits if necessary
+   */
+  private async checkAccessAndDeductCredit(
+    user: User,
+    intent: IntentType,
+  ): Promise<{ allowed: boolean; message?: string }> {
+    // 1. Financial Query is always allowed (Operational data)
+    if (intent === IntentType.FINANCIAL_QUERY) {
+      return { allowed: true };
+    }
+
+    const plan = user.plan || SubscriptionPlan.FREE;
+    console.log('user plan: ', plan);
+
+    const status = user.subscriptionStatus || SubscriptionStatus.TRIAL;
+    console.log('user status: ', status);
+
+    //PREMIUM & TRIAL case 7d
+    //PREMIUM & ACTIVE case 30d
+    // check PREMIUM && (ACTIVE || TRIAL)
+    const isPremiumActive =
+      plan === SubscriptionPlan.PREMIUM &&
+      (status === SubscriptionStatus.ACTIVE ||
+        status === SubscriptionStatus.TRIAL);
+    console.log('isPremiumActive: ', isPremiumActive);
+    // FREE là chưa có IoT
+    // PREMIUM là chắc chắn đã lắp IoT
+    // 2. IoT Control & Sensor Query
+    if (
+      intent === IntentType.DEVICE_CONTROL ||
+      intent === IntentType.SENSOR_QUERY
+    ) {
+      // CASE PREMIUM & INACTIVE => fail
+      if (isPremiumActive) {
+        return { allowed: true };
+      } else {
+        return {
+          allowed: false,
+          message:
+            'Tính năng điều khiển IoT và xem cảm biến chỉ dành cho gói Premium. Vui lòng nâng cấp để sử dụng.',
+        };
+      }
+    }
+    // check còn credit không
+    // 3. Knowledge Query & Unknown (Chatbot Q&A)
+    if (
+      intent === IntentType.KNOWLEDGE_QUERY ||
+      intent === IntentType.UNKNOWN
+    ) {
+      // Check credits
+      if (user.credits > 0) {
+        // Deduct 1 credit
+        await this.usersService.update(user.id, { credits: user.credits - 1 });
+        return { allowed: true };
+      } else {
+        return {
+          allowed: false,
+          message: isPremiumActive
+            ? 'Bạn đã hết credit. Vui lòng mua thêm credit để tiếp tục sử dụng !'
+            : 'Bạn đã hết 10 lượt hỏi miễn phí. Vui lòng nâng cấp lên gói Premium để nhận 200 credit/tháng.',
+        };
+      }
+    }
+
+    // Default allow for other intents (if any)
+    return { allowed: true };
   }
 }

@@ -8,6 +8,10 @@ declare module 'next-auth' {
       name?: string | null;
       image?: string | null;
       role: string;
+      credits: number;
+      plan: string;
+      subscriptionStatus: string;
+      subscriptionExpiry?: string | null;
     };
     accessToken: string;
     refreshToken: string;
@@ -18,6 +22,10 @@ declare module 'next-auth' {
     email: string;
     name?: string | null;
     role: string;
+    credits: number;
+    plan: string;
+    subscriptionStatus: string;
+    subscriptionExpiry?: string | null;
     accessToken: string;
     refreshToken: string;
   }
@@ -26,6 +34,10 @@ declare module 'next-auth' {
 declare module 'next-auth/jwt' {
   interface JWT {
     role: string;
+    credits: number;
+    plan: string;
+    subscriptionStatus: string;
+    subscriptionExpiry?: string | null;
     accessToken: string;
     refreshToken: string;
   }

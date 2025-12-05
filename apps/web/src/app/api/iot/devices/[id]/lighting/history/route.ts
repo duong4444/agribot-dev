@@ -29,7 +29,11 @@ export async function GET(
     );
 
     if (!response.ok) {
-      throw new Error('Failed to fetch lighting history');
+      const errorData = await response.json().catch(() => ({ message: 'Failed to fetch lighting history' }));
+      return NextResponse.json(
+        { message: errorData.message || 'Failed to fetch lighting history' },
+        { status: response.status }
+      );
     }
 
     const data = await response.json();
@@ -37,7 +41,7 @@ export async function GET(
   } catch (error) {
     console.error('Error fetching lighting history:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch lighting history' },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }

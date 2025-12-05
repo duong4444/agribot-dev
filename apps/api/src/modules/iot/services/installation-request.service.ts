@@ -6,6 +6,7 @@ import { InstallationRequest, InstallationRequestStatus } from '../entities/inst
 import { CreateInstallationRequestDto, AssignTechnicianDto } from '../dto/installation-request.dto';
 import { User, UserRole } from '../../users/entities/user.entity';
 import { Area } from '../../farms/entities/area.entity';
+import { Device } from '../entities/device.entity';
 
 @Injectable()
 export class InstallationRequestService {
@@ -16,6 +17,8 @@ export class InstallationRequestService {
     private areaRepository: Repository<Area>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(Device)
+    private deviceRepository: Repository<Device>,
   ) {}
 
   async create(farmerId: string, dto: CreateInstallationRequestDto): Promise<InstallationRequest> {
@@ -101,9 +104,54 @@ export class InstallationRequestService {
     return this.installationRequestRepository.save(request);
   }
 
-  async updateStatus(requestId: string, status: InstallationRequestStatus): Promise<InstallationRequest> {
+  async updateStatus(requestId: string, status: InstallationRequestStatus, isPaid?: boolean): Promise<InstallationRequest> {
     const request = await this.findOne(requestId);
+    
+    // Validate completion requirements
+    if (status === InstallationRequestStatus.COMPLETED) {
+      // Check if payment is confirmed
+      if (!request.isPaid) {
+        throw new BadRequestException('Không thể hoàn thành: Chưa xác nhận thanh toán phần cứng. Vui lòng kích hoạt thiết bị và xác nhận thanh toán trước.');
+      }
+
+      // Check if device has been activated for this request
+      const device = await this.deviceRepository.findOne({
+        where: { 
+          areaId: request.areaId,
+          status: 'ACTIVE' as any,
+        },
+      });
+
+      if (!device) {
+        throw new BadRequestException('Không thể hoàn thành: Chưa có thiết bị nào được kích hoạt cho khu vực này. Vui lòng kích hoạt thiết bị trước.');
+      }
+    }
+
     request.status = status;
+    
+    if (isPaid !== undefined) {
+      request.isPaid = isPaid;
+    }
+
+    // Trigger Trial Activation if Completed and Paid
+    if (status === InstallationRequestStatus.COMPLETED && request.isPaid) {
+      const user = await this.userRepository.findOne({ where: { id: request.farmerId } });
+      
+      // Only activate trial if user hasn't used trial before
+      if (user && !user.trialStartedAt) {
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 7); // 7 days trial
+
+        user.plan = 'PREMIUM' as any;
+        user.subscriptionStatus = 'TRIAL' as any;
+        user.subscriptionExpiry = expiryDate;
+        user.credits = 50;
+        user.trialStartedAt = new Date();
+        
+        await this.userRepository.save(user);
+      }
+    }
+
     return this.installationRequestRepository.save(request);
   }
 

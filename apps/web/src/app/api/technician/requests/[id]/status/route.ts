@@ -33,12 +33,15 @@ export async function PUT(
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${session.accessToken}`,
+        'Content-Type': 'application/json',
       },
+      body: status === 'COMPLETED' ? JSON.stringify({ isPaid: body.isPaid }) : undefined,
     });
 
     if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Failed to update status' }));
       return NextResponse.json(
-        { error: 'Failed to update status' },
+        { message: errorData.message || 'Failed to update status' },
         { status: response.status }
       );
     }
