@@ -635,7 +635,7 @@ export class AIOrchestrator {
         return {
           allowed: false,
           message:
-            'Tính năng điều khiển IoT và xem cảm biến chỉ dành cho gói Premium. Vui lòng nâng cấp để sử dụng.',
+            'Tính năng điều khiển IoT và xem cảm biến chỉ dành cho gói Premium. Vui lòng nâng cấp hoặc gia hạn để sử dụng.',
         };
       }
     }
@@ -651,11 +651,22 @@ export class AIOrchestrator {
         await this.usersService.update(user.id, { credits: user.credits - 1 });
         return { allowed: true };
       } else {
+        let message = '';
+
+        if (isPremiumActive) {
+          message =
+            'Bạn đã hết credit. Vui lòng mua thêm credit để tiếp tục sử dụng !';
+        } else if (plan === SubscriptionPlan.PREMIUM) {
+          message =
+            'Gói Premium của bạn đã hết hạn hoặc bị vô hiệu hóa. Vui lòng gia hạn để tiếp tục sử dụng.';
+        } else {
+          message =
+            'Bạn đã hết 10 lượt hỏi miễn phí. Vui lòng nâng cấp lên gói Premium để nhận 200 credit/tháng.';
+        }
+
         return {
           allowed: false,
-          message: isPremiumActive
-            ? 'Bạn đã hết credit. Vui lòng mua thêm credit để tiếp tục sử dụng !'
-            : 'Bạn đã hết 10 lượt hỏi miễn phí. Vui lòng nâng cấp lên gói Premium để nhận 200 credit/tháng.',
+          message,
         };
       }
     }
