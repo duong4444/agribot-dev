@@ -20,6 +20,9 @@ export class AuthService {
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.userRepository.findOne({ where: { email } });
     if (user && await user.validatePassword(password)) {
+      if (!user.isActive) {
+        throw new UnauthorizedException('Tài khoản của bạn đã bị vô hiệu hóa');
+      }
       const { password: _, ...result } = user;
       return result;
     }

@@ -34,7 +34,7 @@ export class UsersService implements OnModuleInit {
   async findAll(role?: UserRole): Promise<User[]> {
     const where = role ? { role } : {};
     return this.userRepository.find({
-      select: ['id', 'email', 'fullName', 'role', 'isActive', 'createdAt', 'updatedAt'],
+      select: ['id', 'email', 'fullName', 'role', 'isActive', 'createdAt', 'updatedAt', 'plan', 'subscriptionStatus', 'credits', 'subscriptionExpiry'],
       where,
     });
   }

@@ -38,7 +38,11 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError("Email hoặc mật khẩu không đúng");
+        if (result.error === "CredentialsSignin") {
+           setError("Email hoặc mật khẩu không đúng");
+        } else {
+           setError(result.error);
+        }
       } else {
         // Get the session to check user role
         const session = await getSession();

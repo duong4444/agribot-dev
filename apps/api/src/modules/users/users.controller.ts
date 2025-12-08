@@ -120,7 +120,7 @@ export class UsersController {
     return {
       success: true,
       data: user,
-      message: 'User activated successfully',
+      message: 'Kích hoạt user thành công',
     };
   }
 
@@ -132,7 +132,7 @@ export class UsersController {
     return {
       success: true,
       data: user,
-      message: 'User deactivated successfully',
+      message: 'Vô hiệu hoá user thành công',
     };
   }
 
@@ -143,7 +143,15 @@ export class UsersController {
   @ApiParam({ name: 'id', description: 'User ID' })
   @ApiResponse({ status: 200, description: 'User updated successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async update(@Param('id') id: string, @Body() updateData: { email?: string; fullName?: string; phoneNumber?: string }) {
+  async update(@Param('id') id: string, @Body() updateData: { 
+    email?: string; 
+    fullName?: string; 
+    phoneNumber?: string;
+    plan?: any;
+    subscriptionStatus?: any;
+    credits?: number;
+    subscriptionExpiry?: Date;
+  }) {
     const user = await this.usersService.update(id, updateData);
     return {
       success: true,

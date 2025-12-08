@@ -115,7 +115,7 @@ export default function PricingPage() {
 
   if (isPremium) {
     return (
-      <div className="container py-12 flex justify-center items-center h-full">
+      <div className="container py-12 flex justify-start items-start h-full">
         <div className="max-w-md w-full">
           <Card className="border-2 border-primary/50 bg-primary/5 shadow-lg">
             <CardHeader>
@@ -159,7 +159,7 @@ export default function PricingPage() {
               </div>
               
               <div className="text-sm text-muted-foreground pt-4 border-t">
-                 Hết hạn vào: {user?.subscriptionExpiry ? new Date(user.subscriptionExpiry).toLocaleDateString('vi-VN') : 'Không xác định'}
+                 Hết hạn vào: {user?.subscriptionExpiry ? new Date(user.subscriptionExpiry).toLocaleString('vi-VN') : 'Không xác định'}
               </div>
             </CardContent>
           </Card>
@@ -169,14 +169,11 @@ export default function PricingPage() {
   }
 
   return (
-    <div className="container py-12 flex justify-center items-center h-full">
+    <div className="container py-12 flex justify-start items-start h-full">
       <div className="max-w-md w-full">
-        <h1 className="text-3xl font-bold text-center mb-2">Nâng cấp gói Premium</h1>
-        <p className="text-gray-500 text-center mb-8">Trải nghiệm đầy đủ tính năng của hệ thống nông nghiệp thông minh</p>
-        
         <Card className="border-2 border-primary/20 shadow-lg relative overflow-hidden">
           <CardHeader>
-            <CardTitle className="text-2xl">Gói Premium</CardTitle>
+            <CardTitle className="text-2xl">Gói Premium (30 ngày)</CardTitle>
             <CardDescription>Dành cho các chủ nông trại chuyên nghiệp</CardDescription>
           </CardHeader>
           <CardContent>
