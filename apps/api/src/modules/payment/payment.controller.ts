@@ -78,12 +78,6 @@ export class PaymentController {
     }
   }
 
-  @Post('verify-callback')
-  @ApiOperation({ summary: 'Verify VNPAY callback from frontend' })
-  async verifyCallback(@Body() query: any) {
-    return this.paymentService.handleCallback(query);
-  }
-
   @Get('vnpay-ipn')
   @ApiOperation({ summary: 'Handle VNPAY IPN (server-to-server)' })
   async vnpayIpn(@Query() query: any) {

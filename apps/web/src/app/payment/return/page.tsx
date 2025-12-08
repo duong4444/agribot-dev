@@ -15,56 +15,23 @@ export default function PaymentReturnPage() {
   const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
-    const verifyPayment = async () => {
-      // Check if we have VNPAY params (vnp_ResponseCode indicates VNPAY redirect)
-      const vnpResponseCode = searchParams.get('vnp_ResponseCode');
-      const statusParam = searchParams.get('status');
-      
-      if (statusParam) {
-        // Already processed (redirected from backend)
-        setStatus(statusParam as any);
-        if (statusParam === 'success') {
-          update();
-        }
-        return;
-      }
-
-      if (vnpResponseCode) {
-        // This is a direct VNPAY redirect, need to verify with backend
-        try {
-          // Convert searchParams to object
-          const params: Record<string, string> = {};
-          searchParams.forEach((value, key) => {
-            params[key] = value;
-          });
-
-          const response = await fetch('/api/payment/verify-callback', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(params),
-          });
-
-          const data = await response.json();
-
-          if (data.success) {
-            setStatus('success');
-            update(); // Refresh session
-          } else {
-            setStatus('failed');
+    // Backend redirects here with ?status=success|failed|error
+    const statusParam = searchParams.get('status');
+    
+    if (statusParam) {
+      // Validate status param
+      if (['success', 'failed', 'error'].includes(statusParam)) {
+          setStatus(statusParam as any);
+          if (statusParam === 'success') {
+            update(); // Refresh session to reflect new subscription
           }
-        } catch (error) {
-          console.error('Payment verification error:', error);
-          setStatus('error');
-        }
       } else {
-        // No status and no VNPAY params - unknown state
-        setStatus('error');
+          setStatus('error');
       }
-    };
-
-    verifyPayment();
+    } else {
+      // No status param - invalid state or direct access
+       setStatus('error');
+    }
   }, [searchParams, update]);
 
   useEffect(() => {
