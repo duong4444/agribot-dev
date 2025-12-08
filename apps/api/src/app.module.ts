@@ -16,6 +16,7 @@ import { FarmsModule } from './modules/farms/farms.module';
 import { AIRefactoredModule } from './modules/ai/ai-refactored.module';
 import { IoTModule } from './modules/iot/iot.module';
 import { WeatherModule } from './modules/weather/weather.module';
+import { PaymentModule } from './modules/payment/payment.module';
 // import { KnowledgeModule } from './modules/knowledge/knowledge.module';
 
 @Module({
@@ -54,6 +55,7 @@ import { WeatherModule } from './modules/weather/weather.module';
     AIRefactoredModule,
     IoTModule,
     WeatherModule,
+    PaymentModule,
     // KnowledgeModule,
   ],
   controllers: [AppController],

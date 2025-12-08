@@ -21,7 +21,8 @@ export const DEFAULT_AI_CONFIG: AIConfig = {
   chunkOverlap: 1, // sentences
   
   // LLM settings
-  llmModel: 'gemini-2.0-flash-exp',
+  // kma
+  llmModel: 'gemini-2.5-flash',
   llmTemperature: 0.7,
   llmMaxTokens: 4096,
   

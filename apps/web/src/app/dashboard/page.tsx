@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { AuthGuard } from '@/components/auth/auth-guard';
 import { DashboardHeader, ChatInterface, DashboardSidebar, useChat } from '@/components/dashboard';
-import { TrialBanner } from '@/components/subscription/TrialBanner';
+// import { TrialBanner } from '@/components/subscription/TrialBanner';
 import { Loader2 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -90,9 +90,9 @@ const Dashboard = () => {
         {/* Main Content */}
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           {/* Trial Banner */}
-          <div className="mb-6">
+          {/* <div className="mb-6">
             <TrialBanner />
-          </div>
+          </div> */}
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Chat Interface - Takes more space on larger screens */}

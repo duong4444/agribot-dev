@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, OnModuleInit, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, UserRole } from './entities/user.entity';
+import { User, UserRole, SubscriptionPlan, SubscriptionStatus } from './entities/user.entity';
 import { InstallationRequest } from '../iot/entities/installation-request.entity';
 
 @Injectable()
@@ -138,5 +138,21 @@ export class UsersService implements OnModuleInit {
       });
       console.log(`[Subscription] Deactivated user ${user.email} due to expiry. Credits reset to 0.`);
     }
+  }
+
+  async activatePremiumSubscription(userId: string): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const now = new Date();
+    const expiryDate = new Date(now);
+    expiryDate.setDate(now.getDate() + 30); // Add 30 days
+
+    user.plan = SubscriptionPlan.PREMIUM;
+    user.subscriptionStatus = SubscriptionStatus.ACTIVE;
+    user.subscriptionExpiry = expiryDate;
+    user.credits = 200; 
+
+    return this.userRepository.save(user);
   }
 }

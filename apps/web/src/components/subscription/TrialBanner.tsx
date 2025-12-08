@@ -49,7 +49,7 @@ export const TrialBanner = () => {
           <Button 
             size="sm" 
             className="shrink-0"
-            onClick={() => router.push("/farm/subscription")}
+            onClick={() => router.push("/farm/pricing")}
           >
             Nâng cấp ngay
           </Button>

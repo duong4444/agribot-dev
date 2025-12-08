@@ -19,8 +19,6 @@ export enum InstallationRequestStatus {
   CANCELLED = 'CANCELLED',
 }
 
-
-
 @Entity('installation_requests')
 export class InstallationRequest {
   @PrimaryGeneratedColumn('uuid')
@@ -46,8 +44,6 @@ export class InstallationRequest {
   @ManyToOne(() => Area, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'areaId' })
   area: Area;
-
-
 
   @Column({ type: 'text', nullable: true })
   notes: string;

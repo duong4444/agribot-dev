@@ -38,7 +38,7 @@ const navigationTabs = [
   },
   {
     label: 'Gói cước',
-    href: '/farm/subscription',
+    href: '/farm/pricing',
     icon: DollarSign
   },
 ];
