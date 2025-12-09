@@ -18,6 +18,9 @@ export class PaymentTransaction {
   type: 'SUBSCRIPTION' | 'CREDITS';
 
   @Column({ nullable: true })
+  planType: 'MONTHLY' | 'YEARLY';
+
+  @Column({ nullable: true })
   vnpayTxnRef: string;
 
   @Column({ nullable: true })

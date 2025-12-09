@@ -22,7 +22,11 @@ export class PaymentService {
     private readonly usersService: UsersService,
   ) {}
 
-  async createSubscriptionPaymentUrl(userId: string, ipAddr: string): Promise<string> {
+  async createSubscriptionPaymentUrl(
+    userId: string, 
+    ipAddr: string,
+    planType: 'MONTHLY' | 'YEARLY' = 'MONTHLY'
+  ): Promise<string> {
     //1. CHECK ĐÃ LẮP IOT
     const hasHardware = await this.installationRequestRepository.findOne({
       where: {
@@ -35,7 +39,8 @@ export class PaymentService {
       throw new ForbiddenException('Vui lòng lắp đặt thiết bị phần cứng trước khi đăng ký gói Premium.');
     }
 
-    const amount = 200000; // 200,000 VND
+    // Set amount based on plan type
+    const amount = planType === 'YEARLY' ? 2000000 : 200000; // 2,000,000 VND or 200,000 VND
     const locale: VnpLocale = VnpLocale.VN;
 
     //2. 
@@ -44,6 +49,7 @@ export class PaymentService {
       amount,
       status: 'PENDING',
       type: 'SUBSCRIPTION',
+      planType, // Store plan type for callback
     });
     await this.transactionRepository.save(transaction);
     
@@ -99,7 +105,10 @@ export class PaymentService {
       
       // Activate subscription
       if (transaction.type === 'SUBSCRIPTION') {
-        await this.usersService.activatePremiumSubscription(transaction.userId);
+        await this.usersService.activatePremiumSubscription(
+          transaction.userId,
+          transaction.planType || 'MONTHLY'
+        );
       }
       
       return { success: true, message: 'Payment success' };
