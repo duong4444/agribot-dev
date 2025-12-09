@@ -96,8 +96,24 @@ export class FarmsController {
     @CurrentUser() user: User,
     @Query('limit') limit?: number,
     @Query('offset') offset?: number,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('type') type?: string,
+    @Query('areaId') areaId?: string,
+    @Query('cropName') cropName?: string,
+    @Query('search') search?: string,
   ) {
-    return this.farmsService.getActivities(user, limit, offset);
+    return this.farmsService.getActivities(
+      user,
+      limit,
+      offset,
+      startDate,
+      endDate,
+      type,
+      areaId,
+      cropName,
+      search,
+    );
   }
 
   @Get('stats')
@@ -108,6 +124,16 @@ export class FarmsController {
     @Query('endDate') endDate?: string,
   ) {
     return this.farmsService.getFinancialStats(user, startDate, endDate);
+  }
+
+  @Get('finance/breakdown')
+  @ApiOperation({ summary: 'Get detailed financial breakdown' })
+  getFinancialBreakdown(
+    @CurrentUser() user: User,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.farmsService.getFinancialBreakdown(user, startDate, endDate);
   }
 
   @Patch('activities/:id')

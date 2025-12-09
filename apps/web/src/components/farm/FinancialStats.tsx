@@ -3,7 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, subYears } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { 
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  PieChart, Pie, Cell
+} from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
@@ -18,17 +21,48 @@ interface FinancialStatsProps {
 
 type DateRangeType = 'this_month' | 'last_month' | 'this_year' | 'last_year' | 'custom';
 
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+
+const ACTIVITY_LABELS: Record<string, string> = {
+  seeding: 'Gieo trồng',
+  pesticide: 'Phun thuốc',
+  fertilize: 'Bón phân',
+  harvest: 'Thu hoạch',
+  other: 'Khác',
+  pruning: 'Cắt tỉa',
+  watering: 'Tưới nước',
+};
+
+const formatActivityName = (name: string) => {
+  return ACTIVITY_LABELS[name.toLowerCase()] || name;
+};
+
+const formatCurrencyCompact = (value: number) => {
+  if (value >= 1000000000) {
+    return (value / 1000000000).toFixed(1) + ' tỷ';
+  }
+  if (value >= 1000000) {
+    return (value / 1000000).toFixed(1) + ' tr';
+  }
+  if (value >= 1000) {
+    return (value / 1000).toFixed(0) + ' k';
+  }
+  return value.toString();
+};
+
 export const FinancialStats: React.FC<FinancialStatsProps> = ({ onDateRangeChange }) => {
-  const [selectedRange, setSelectedRange] = useState<DateRangeType>('this_month');
+  const [selectedRange, setSelectedRange] = useState<DateRangeType>('this_year');
   const [stats, setStats] = useState<any>(null);
+  const [breakdown, setBreakdown] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [startDate, setStartDate] = useState<Date | null>(startOfMonth(new Date()));
-  const [endDate, setEndDate] = useState<Date | null>(endOfMonth(new Date()));
+  const [startDate, setStartDate] = useState<Date | null>(startOfYear(new Date()));
+  const [endDate, setEndDate] = useState<Date | null>(endOfYear(new Date()));
 
   const getDateRange = (range: DateRangeType): { startDate: string; endDate: string } | null => {
     const now = new Date();
     let start: Date, end: Date;
 
+    // Reset logic
     switch (range) {
       case 'this_month':
         start = startOfMonth(now);
@@ -75,10 +109,17 @@ export const FinancialStats: React.FC<FinancialStatsProps> = ({ onDateRangeChang
       setIsLoading(true);
       const { startDate: start, endDate: end } = dateRange;
       
-      const response = await fetch(`/api/farms/stats?startDate=${start}&endDate=${end}`);
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data);
+      const [statsRes, breakdownRes] = await Promise.all([
+        fetch(`/api/farms/stats?startDate=${start}&endDate=${end}`),
+        fetch(`/api/farms/finance/breakdown?startDate=${start}&endDate=${end}`)
+      ]);
+
+      if (statsRes.ok && breakdownRes.ok) {
+        const statsData = await statsRes.json();
+        const breakdownData = await breakdownRes.json();
+        
+        setStats(statsData);
+        setBreakdown(breakdownData);
         
         if (onDateRangeChange) {
           onDateRangeChange(start, end);
@@ -120,7 +161,7 @@ export const FinancialStats: React.FC<FinancialStatsProps> = ({ onDateRangeChang
         {/* Date Range Filter */}
         <div className="flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h3 className="text-lg font-semibold">Báo cáo tài chính</h3>
+            <h3 className="text-lg font-semibold">Tổng quan tài chính</h3>
             
             <Select value={selectedRange} onValueChange={(value) => handleRangeChange(value as DateRangeType)}>
               <SelectTrigger className="w-[180px]">
@@ -144,10 +185,7 @@ export const FinancialStats: React.FC<FinancialStatsProps> = ({ onDateRangeChang
                   value={startDate}
                   onChange={(newValue) => setStartDate(newValue)}
                   slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      size: 'small',
-                    },
+                    textField: { fullWidth: true, size: 'small' },
                   }}
                 />
               </div>
@@ -159,10 +197,7 @@ export const FinancialStats: React.FC<FinancialStatsProps> = ({ onDateRangeChang
                   onChange={(newValue) => setEndDate(newValue)}
                   minDate={startDate || undefined}
                   slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      size: 'small',
-                    },
+                    textField: { fullWidth: true, size: 'small' },
                   }}
                 />
               </div>
@@ -224,73 +259,98 @@ export const FinancialStats: React.FC<FinancialStatsProps> = ({ onDateRangeChang
 
         {/* Charts */}
         <div className="grid gap-6 md:grid-cols-2">
-          <Card>
+          {/* Monthly Trend - using real data */}
+          <Card className="col-span-2">
             <CardHeader>
-              <CardTitle>Chi phí vs Doanh thu</CardTitle>
-              <CardDescription>So sánh tổng chi phí và doanh thu</CardDescription>
+              <CardTitle>Biến động theo tháng</CardTitle>
+              <CardDescription>Chi phí và doanh thu qua các tháng</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart
-                  data={[
-                    {
-                      name: 'Tài chính',
-                      'Chi phí': stats?.totalCost || 0,
-                      'Doanh thu': stats?.totalRevenue || 0,
-                    },
-                  ]}
-                  margin={{ top: 5, right: 20, left: 60, bottom: 5 }}
+                  data={breakdown?.monthly || []}
+                  margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip 
-                    formatter={(value: number) => value.toLocaleString('vi-VN') + ' đ'}
+                  <YAxis 
+                    width={80}
+                    tickFormatter={formatCurrencyCompact}
                   />
+                  <Tooltip formatter={(value: number) => value.toLocaleString('vi-VN') + ' đ'} />
                   <Legend />
-                  <Bar dataKey="Chi phí" fill="#ef4444" />
-                  <Bar dataKey="Doanh thu" fill="#22c55e" />
+                  <Bar dataKey="cost" name="Chi phí" fill="#ef4444" />
+                  <Bar dataKey="revenue" name="Doanh thu" fill="#22c55e" />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
+          {/* Breakdown by Activity Type */}
           <Card>
             <CardHeader>
-              <CardTitle>Xu hướng lợi nhuận</CardTitle>
-              <CardDescription>Biểu đồ lợi nhuận theo thời gian</CardDescription>
+              <CardTitle>Phân bổ chi phí</CardTitle>
+              <CardDescription>Theo loại hoạt động</CardDescription>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={300}>
-                <LineChart
-                  data={[
-                    { name: 'Kỳ trước', profit: 0 },
-                    { name: 'Hiện tại', profit: profit },
-                  ]}
-                  margin={{ top: 5, right: 20, left: 60, bottom: 5 }}
+                <PieChart>
+                  <Pie
+                    data={(breakdown?.byType || []).filter((i: any) => i.cost > 0)}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="cost"
+                    nameKey="name"
+                    label={({ name, percent }) => `${formatActivityName(name)} ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {(breakdown?.byType || [])
+                      .filter((i: any) => i.cost > 0)
+                      .map((entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    formatter={(value: number, name: string) => [
+                      value.toLocaleString('vi-VN') + ' đ',
+                      formatActivityName(name)
+                    ]} 
+                  />
+                  <Legend formatter={(value) => formatActivityName(value)} />
+                </PieChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Breakdown by Area */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Hiệu quả theo khu vực</CardTitle>
+              <CardDescription>Lợi nhuận từng khu vực</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart
+                  data={breakdown?.byArea || []}
+                  layout="vertical"
+                  margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip 
-                    formatter={(value: number) => value.toLocaleString('vi-VN') + ' đ'}
-                  />
+                  <XAxis type="number" tickFormatter={formatCurrencyCompact} />
+                  <YAxis dataKey="name" type="category" width={100} />
+                  <Tooltip formatter={(value: number) => value.toLocaleString('vi-VN') + ' đ'} />
                   <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="profit" 
-                    stroke={isProfitable ? '#22c55e' : '#ef4444'} 
-                    strokeWidth={2}
-                    name="Lợi nhuận"
-                  />
-                </LineChart>
+                  <Bar dataKey="profit" name="Lợi nhuận" fill="#8884d8" />
+                </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>
 
         {/* Empty State */}
-        {stats && stats.totalCost === 0 && stats.totalRevenue === 0 && (
+        {(!stats || (stats.totalCost === 0 && stats.totalRevenue === 0)) && (
           <Card>
             <CardContent className="pt-6">
               <div className="text-center text-muted-foreground">

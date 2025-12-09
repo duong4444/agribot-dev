@@ -13,10 +13,29 @@ export async function GET(request: NextRequest) {
     }
 
     const url = new URL(request.url);
-    const limit = url.searchParams.get('limit') || '20';
+    const limit = url.searchParams.get('limit') || '100'; // Increased default
     const offset = url.searchParams.get('offset') || '0';
+    
+    // Filter params
+    const startDate = url.searchParams.get('startDate');
+    const endDate = url.searchParams.get('endDate');
+    const type = url.searchParams.get('type');
+    const areaId = url.searchParams.get('areaId');
+    const cropName = url.searchParams.get('cropName');
+    const search = url.searchParams.get('search');
 
-    const response = await fetch(`${API_URL}/farms/activities?limit=${limit}&offset=${offset}`, {
+    // Build query params
+    const params = new URLSearchParams();
+    params.append('limit', limit);
+    params.append('offset', offset);
+    if (startDate) params.append('startDate', startDate);
+    if (endDate) params.append('endDate', endDate);
+    if (type) params.append('type', type);
+    if (areaId) params.append('areaId', areaId);
+    if (cropName) params.append('cropName', cropName);
+    if (search) params.append('search', search);
+
+    const response = await fetch(`${API_URL}/farms/activities?${params.toString()}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${session.accessToken}`,

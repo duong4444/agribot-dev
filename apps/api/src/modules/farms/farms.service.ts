@@ -156,15 +156,58 @@ export class FarmsService implements OnModuleInit {
     return this.activitiesRepository.save(activity);
   }
 
-  async getActivities(user: User, limit: number = 20, offset: number = 0): Promise<FarmActivity[]> {
+  async getActivities(
+    user: User,
+    limit: number = 100,
+    offset: number = 0,
+    startDate?: string,
+    endDate?: string,
+    type?: string,
+    areaId?: string,
+    cropName?: string,
+    search?: string,
+  ): Promise<FarmActivity[]> {
     const farm = await this.getFarmByUser(user);
-    return this.activitiesRepository.find({
-      where: { farmId: farm.id },
-      order: { date: 'DESC' },
-      take: limit,
-      skip: offset,
-      relations: ['area', 'crop'],
-    });
+    
+    const query = this.activitiesRepository
+      .createQueryBuilder('activity')
+      .leftJoinAndSelect('activity.area', 'area')
+      .leftJoinAndSelect('activity.crop', 'crop')
+      .where('activity.farmId = :farmId', { farmId: farm.id });
+
+    // Date filters
+    if (startDate) {
+      query.andWhere('activity.date >= :startDate', { startDate });
+    }
+    if (endDate) {
+      query.andWhere('activity.date <= :endDate', { endDate });
+    }
+
+    // Type filter (cast enum to text for LOWER)
+    if (type) {
+      query.andWhere('LOWER(activity.type::text) = LOWER(:type)', { type });
+    }
+
+    // Area filter
+    if (areaId) {
+      query.andWhere('activity.areaId = :areaId', { areaId });
+    }
+
+    // Crop name filter
+    if (cropName) {
+      query.andWhere('LOWER(activity.cropName) = LOWER(:cropName)', { cropName });
+    }
+
+    // Search in description
+    if (search) {
+      query.andWhere('activity.description ILIKE :search', { search: `%${search}%` });
+    }
+
+    return query
+      .orderBy('activity.date', 'DESC')
+      .take(limit)
+      .skip(offset)
+      .getMany();
   }
 
   async getFinancialStats(user: User, startDate?: string, endDate?: string) {
@@ -188,6 +231,86 @@ export class FarmsService implements OnModuleInit {
       totalCost: parseFloat(result.totalCost || '0'),
       totalRevenue: parseFloat(result.totalRevenue || '0'),
       profit: parseFloat(result.totalRevenue || '0') - parseFloat(result.totalCost || '0'),
+    };
+  }
+
+  async getFinancialBreakdown(user: User, startDate?: string, endDate?: string) {
+    const farm = await this.getFarmByUser(user);
+    
+    // Base query
+    const createBaseQuery = () => {
+      const query = this.activitiesRepository.createQueryBuilder('activity')
+        .where('activity.farmId = :farmId', { farmId: farm.id });
+      
+      if (startDate) {
+        query.andWhere('activity.date >= :startDate', { startDate });
+      }
+      if (endDate) {
+        query.andWhere('activity.date <= :endDate', { endDate });
+      }
+      return query;
+    };
+
+    // Group by Month
+    const monthlyData = await createBaseQuery()
+      .select("TO_CHAR(activity.date, 'YYYY-MM')", 'month')
+      .addSelect('SUM(activity.cost)', 'cost')
+      .addSelect('SUM(activity.revenue)', 'revenue')
+      .groupBy('month')
+      .orderBy('month', 'ASC')
+      .getRawMany();
+
+    // Group by Activity Type
+    const typeData = await createBaseQuery()
+      .select('activity.type', 'type')
+      .addSelect('SUM(activity.cost)', 'cost')
+      .addSelect('SUM(activity.revenue)', 'revenue')
+      .groupBy('activity.type')
+      .getRawMany();
+
+    // Group by Area
+    const areaData = await createBaseQuery()
+      .leftJoin('activity.area', 'area')
+      .select('area.name', 'areaName')
+      .addSelect('SUM(activity.cost)', 'cost')
+      .addSelect('SUM(activity.revenue)', 'revenue')
+      .groupBy('area.name')
+      .getRawMany();
+
+    // Group by Crop
+    const cropData = await createBaseQuery()
+      .select('activity.cropName', 'cropName')
+      .addSelect('SUM(activity.cost)', 'cost')
+      .addSelect('SUM(activity.revenue)', 'revenue')
+      .groupBy('activity.cropName')
+      .getRawMany();
+
+    // Format data for frontend
+    return {
+      monthly: monthlyData.map(item => ({
+        name: item.month,
+        cost: parseFloat(item.cost || '0'),
+        revenue: parseFloat(item.revenue || '0'),
+        profit: parseFloat(item.revenue || '0') - parseFloat(item.cost || '0'),
+      })),
+      byType: typeData.map(item => ({
+        name: item.type,
+        cost: parseFloat(item.cost || '0'),
+        revenue: parseFloat(item.revenue || '0'),
+        profit: parseFloat(item.revenue || '0') - parseFloat(item.cost || '0'),
+      })),
+      byArea: areaData.map(item => ({
+        name: item.areaName || 'Unknown',
+        cost: parseFloat(item.cost || '0'),
+        revenue: parseFloat(item.revenue || '0'),
+        profit: parseFloat(item.revenue || '0') - parseFloat(item.cost || '0'),
+      })),
+      byCrop: cropData.filter(i => i.cropName).map(item => ({
+        name: item.cropName,
+        cost: parseFloat(item.cost || '0'),
+        revenue: parseFloat(item.revenue || '0'),
+        profit: parseFloat(item.revenue || '0') - parseFloat(item.cost || '0'),
+      })),
     };
   }
 
