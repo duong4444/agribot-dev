@@ -18,13 +18,13 @@ export class UpdateAutoConfigDto {
   moistureThreshold?: number;
 
   @IsNumber()
-  @Min(60)
+  @Min(0)
   @Max(7200)
   @IsOptional()
   irrigationDuration?: number;
 
   @IsNumber()
-  @Min(300)
+  @Min(0)
   @Max(86400)
   @IsOptional()
   cooldownPeriod?: number;

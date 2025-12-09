@@ -304,13 +304,13 @@ export function IrrigationControlPanel({ deviceId, onActionComplete }: Irrigatio
               <Input
                 id="auto-duration"
                 type="number"
-                min="60"
+                min="0"
                 max="7200"
-                value={autoConfig.irrigationDuration}
+                value={autoConfig.irrigationDuration || ''}
                 onChange={(e) =>
                   setAutoConfig({
                     ...autoConfig,
-                    irrigationDuration: parseInt(e.target.value) || 600,
+                    irrigationDuration: e.target.value === '' ? 0 : parseInt(e.target.value),
                   })
                 }
                 disabled={!autoConfig.enabled}
@@ -322,13 +322,13 @@ export function IrrigationControlPanel({ deviceId, onActionComplete }: Irrigatio
               <Input
                 id="cooldown"
                 type="number"
-                min="300"
+                min="0"
                 max="86400"
-                value={autoConfig.cooldownPeriod}
+                value={autoConfig.cooldownPeriod || ''}
                 onChange={(e) =>
                   setAutoConfig({
                     ...autoConfig,
-                    cooldownPeriod: parseInt(e.target.value) || 3600,
+                    cooldownPeriod: e.target.value === '' ? 0 : parseInt(e.target.value),
                   })
                 }
                 disabled={!autoConfig.enabled}
