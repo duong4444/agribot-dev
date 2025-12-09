@@ -267,13 +267,13 @@ export class AIOrchestrator {
       threshold: DEFAULT_AI_CONFIG.ragSimilarityThreshold, // 0.4
     });
     console.log('ragResult_layer2_RAG: ', ragResult);
-    console.log('RESULT TỪ RAG: ', ragResult.confidence);
-
+    console.log('RESULT TỪ RAG _confidence: ', ragResult.confidence);
+    console.log("check >= thì return kqua luôn");
     console.log(
       'RAG_CONFIDENCE_THRESHOLD: ',
       DEFAULT_AI_CONFIG.ragConfidenceThreshold,
     );
-
+    
     if (ragResult.confidence >= DEFAULT_AI_CONFIG.ragConfidenceThreshold) {
       // 0.5
       this.logger.log('✓ Layer 2 (RAG) succeeded');

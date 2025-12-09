@@ -89,14 +89,14 @@ export class RAGService {
     const avgSimilarity = chunks.reduce((sum, c) => sum + (c.similarity || 0), 0) / chunks.length;
     console.log("avgSimilarity: ",avgSimilarity);
     
-    const minRequiredSimilarity = 0.45; // Threshold for meaningful retrieval
+    const minRequiredSimilarity = 0.48; // Threshold for meaningful retrieval
     
     if (avgSimilarity < minRequiredSimilarity) {
       this.logger.log(
         `Low average similarity (${avgSimilarity.toFixed(3)} < ${minRequiredSimilarity}) - ` +
         `skipping LLM synthesis to save cost`
       );
-      console.log("TBC CHUNKS < 0.45 FALLBACK THẲNG LLM");
+      console.log("TBC CHUNKS < 0.48 FALLBACK THẲNG LLM");
       
       return {
         answer: `Tài liệu hiện có không chứa thông tin liên quan đến "${query}". ` +
@@ -328,7 +328,7 @@ Các tài liệu trên được tìm kiếm bằng semantic search (tìm kiếm 
     
     // Short specific queries need higher precision
     if (query.length < 30) {
-      return Math.min(baseThreshold + 0.1, 0.5); // 0.45 max
+      return Math.min(baseThreshold + 0.1, 0.5); // 0.48 max
     }
     
     // Complex analytical queries can use lower threshold  
@@ -338,7 +338,7 @@ Các tài liệu trên được tìm kiếm bằng semantic search (tìm kiếm 
     
     // Technical term queries need higher precision
     if (query.includes('hoạt chất') || query.includes('kỹ thuật') || query.includes('nguyên tắc')) {
-      return Math.min(baseThreshold + 0.05, 0.45);
+      return Math.min(baseThreshold + 0.05, 0.48);
     }
     
     return baseThreshold;
