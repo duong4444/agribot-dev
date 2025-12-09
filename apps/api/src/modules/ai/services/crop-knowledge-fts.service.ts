@@ -109,7 +109,14 @@ export class CropKnowledgeFTSService {
         return { found: false, confidence: 0 };
       }
 
-      const topMatch = results[0];
+      // Re-rank results based on disease/pest keyword matches in title
+      const diseaseKeywords = this.extractDiseaseKeywords(query);
+      const rerankedResults = this.rerankByTitleMatch(results, diseaseKeywords);
+      if (diseaseKeywords.length > 0) {
+        this.logger.debug(`🔄 Re-ranking with disease keywords: [${diseaseKeywords.join(', ')}]`);
+      }
+
+      const topMatch = rerankedResults[0];
       const confidence = this.calculateConfidence(topMatch, query);
       console.log("confidence của FTS: ",confidence);
       const processingTime = Date.now() - startTime;
@@ -825,5 +832,104 @@ export class CropKnowledgeFTSService {
 
     // 3. No heading match found
     return null;
+  }
+
+  /**
+   * Extract disease/pest keywords from query for re-ranking
+   * Patterns: "bệnh X", "sâu X", "nhện X", "rầy X"
+   */
+  private extractDiseaseKeywords(query: string): string[] {
+    // Use removeVietnameseAccents for ASCII-based regex matching
+    const normalizedQuery = normalizeText(query);
+    const asciiQuery = this.removeAccents(normalizedQuery);
+    const keywords: string[] = [];
+    
+    this.logger.debug(`🔍 extractDiseaseKeywords: query="${query}" → ascii="${asciiQuery}"`);
+    
+    // Pattern: "bệnh X" → extract X (e.g., loet, thoi re, greening)
+    const benhMatch = asciiQuery.match(/benh\s+(\w+(?:\s+\w+)?)/i);
+    if (benhMatch) {
+      keywords.push(benhMatch[1]);
+      this.logger.debug(`🎯 Matched disease: "${benhMatch[1]}"`);
+    }
+    
+    // Pattern: "sâu X", "nhện X", "rầy X" → extract full phrase
+    const pestPatterns = [
+      /sau\s+(\w+(?:\s+\w+)?)/i,  // sâu đục thân, sâu vẽ bùa
+      /nhen\s+(\w+)/i,            // nhện đỏ
+      /ray\s+(\w+(?:\s+\w+)?)/i,  // rầy chổng cánh
+    ];
+    
+    for (const pattern of pestPatterns) {
+      const match = asciiQuery.match(pattern);
+      if (match) {
+        keywords.push(match[0]); // Include the prefix (sau, nhen, ray)
+        this.logger.debug(`🎯 Matched pest: "${match[0]}"`);
+      }
+    }
+    
+    return keywords;
+  }
+
+  /**
+   * Simple accent removal helper (inline)
+   */
+  private removeAccents(text: string): string {
+    const AccentsMap: Record<string, string> = {
+      'à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ': 'a',
+      'è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ': 'e',
+      'ì|í|ị|ỉ|ĩ': 'i',
+      'ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ': 'o',
+      'ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ': 'u',
+      'ỳ|ý|ỵ|ỷ|ỹ': 'y',
+      'đ': 'd',
+    };
+
+    let result = text;
+    Object.keys(AccentsMap).forEach(key => {
+      const regex = new RegExp(key, 'g');
+      result = result.replace(regex, AccentsMap[key]);
+    });
+
+    return result;
+  }
+
+  /**
+   * Re-rank FTS results by boosting chunks with disease/pest keywords in title
+   */
+  private rerankByTitleMatch(
+    results: SearchResult[],
+    diseaseKeywords: string[],
+  ): SearchResult[] {
+    if (diseaseKeywords.length === 0) {
+      return results;
+    }
+    
+    return results.map(result => {
+      // Convert title to ASCII for comparison
+      const titleAscii = this.removeAccents(normalizeText(result.tieuDeChunk));
+      let rankBoost = 0;
+      
+      for (const keyword of diseaseKeywords) {
+        if (titleAscii.includes(keyword)) {
+          rankBoost = Math.max(rankBoost, 2.0); // Full match in title
+          this.logger.debug(`📈 Boosting "${result.tieuDeChunk}" +2.0 (matched: "${keyword}" in "${titleAscii}")`);
+        } else {
+          // Check partial match (any word from keyword)
+          const keywordWords = keyword.split(' ');
+          const partialMatch = keywordWords.some(w => 
+            w.length > 2 && titleAscii.includes(w)
+          );
+          if (partialMatch) {
+            rankBoost = Math.max(rankBoost, 1.0); // Partial match
+          }
+        }
+      }
+      
+      return {
+        ...result,
+        rank: result.rank + rankBoost,
+      };
+    }).sort((a, b) => b.rank - a.rank);
   }
 }
