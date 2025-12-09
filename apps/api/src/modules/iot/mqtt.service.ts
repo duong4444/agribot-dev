@@ -137,6 +137,7 @@ export class MqttService implements OnModuleInit {
       // Find device - NO AUTO-CREATE, device must be activated by technician
       const device = await this.deviceRepository.findOne({
         where: { serialNumber },
+        relations: ['area', 'area.farm', 'area.farm.user'], // Load owner info
       });
 
       if (!device) {
@@ -144,6 +145,18 @@ export class MqttService implements OnModuleInit {
           `Unauthorized device attempted to publish: ${serialNumber}`,
         );
         return; // Reject data from unregistered devices
+      }
+
+      // Check Subscription Status
+      // If user is PREMIUM but INACTIVE (expired), do not save data
+      const owner = device.area?.farm?.user;
+      if (owner) {
+        if (owner.plan === 'PREMIUM' && owner.subscriptionStatus === 'INACTIVE') {
+          this.logger.warn(
+            `Dropped data from ${serialNumber} because owner ${owner.email} has expired subscription.`,
+          );
+          return;
+        }
       }
 
       // Security check: Only accept data from ACTIVE devices

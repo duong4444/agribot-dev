@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, Settings, Cpu } from "lucide-react";
@@ -33,9 +34,11 @@ interface AreaDetail {
 export default function AreaDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { data: session } = useSession();
   const [area, setArea] = useState<AreaDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshHistoryKey, setRefreshHistoryKey] = useState(0);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
     const fetchArea = async () => {
@@ -54,10 +57,35 @@ export default function AreaDetailPage() {
       }
     };
 
+    const fetchUserProfile = async () => {
+      if (!session?.accessToken) return;
+      
+      try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/profile`, {
+          headers: {
+            Authorization: `Bearer ${session.accessToken}`,
+          },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          console.log("UserProfile Fetch Result:", data); // Debug log
+          if (data.success) {
+            console.log("Setting user profile:", data.data); // Debug log
+            setUserProfile(data.data);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+      }
+    };
+
     if (params.id) {
       fetchArea();
+      if (session?.accessToken) {
+        fetchUserProfile();
+      }
     }
-  }, [params.id]);
+  }, [params.id, session?.accessToken]);
 
   if (loading) {
     return (
@@ -96,6 +124,31 @@ export default function AreaDetailPage() {
 
       {area.description && (
         <p className="text-muted-foreground">{area.description}</p>
+      )}
+
+      {/* Subscription Expiry Alert */}
+      {(() => {
+        console.log("Alert Condition Check:", {
+           plan: userProfile?.plan,
+           status: userProfile?.subscriptionStatus,
+           show: userProfile?.plan === 'PREMIUM' && userProfile?.subscriptionStatus === 'INACTIVE'
+        });
+        return null;
+      })()}
+      {userProfile?.plan === 'PREMIUM' && userProfile?.subscriptionStatus === 'INACTIVE' && (
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 flex items-start gap-3">
+          <div className="p-1 bg-yellow-100 dark:bg-yellow-900/50 rounded-full">
+            <Settings className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
+              Gói Premium đã hết hạn
+            </h3>
+            <p className="text-sm text-yellow-700 dark:text-yellow-400 mt-1">
+              Vui lòng gia hạn gói cước để tiếp tục sử dụng đầy đủ tính năng của hệ thống.
+            </p>
+          </div>
+        </div>
       )}
 
       {/* Sensor Dashboard */}
