@@ -1,72 +1,77 @@
 Context: 1. Mục tiêu đề tài
 Xây dựng chatbot có khả năng:
--	Hỏi – đáp kiến thức nông nghiệp: cung cấp thông tin về cây trồng, kỹ thuật trồng trọt. <____DONE>
+-	Hỏi – đáp kiến thức nông nghiệp: cung cấp thông tin về cây trồng, kỹ thuật trồng trọt. 
 -	Hỗ trợ tưới tiêu & chăm sóc cây trồng: kết nối với hệ thống IoT (cảm biến độ ẩm, nhiệt độ, ánh sáng) để 
-	tương tác điều khiển tưới, <____DONE> qua UI nhưng qua CHATBOT CHƯA CÓ   <_____NOT_DONE>
-	truy vấn dữ liệu cảm biến thời gian thực <____DONE> qua UI nhưng qua CHATBOT CHƯA CÓ <_____NOT_DONE>
--	Quản lý dữ liệu nông trại: ghi nhận, lưu trữ và phân tích dữ liệu sản xuất (thời gian gieo trồng, phân bón,...).<____DONE>
+	tương tác điều khiển tưới, qua UI  , qua CHATBOT
+	truy vấn dữ liệu cảm biến thời gian thực , qua UI  ,qua CHATBOT 
+-	Quản lý dữ liệu nông trại: ghi nhận, lưu trữ và tính doanh thu,chi phí,lợi nhuận(thời gian gieo trồng, phân bón,...).
 2. Nội dung nghiên cứu
 2.1. Chatbot hỏi – đáp nông nghiệp
--	Xây dựng cơ sở dữ liệu kiến thức: thông tin cây trồng, kỹ thuật trồng các loại cây, lịch mùa vụ. <____DONE>
--	Tích hợp chatbot hỗ trợ trả lời bằng ngôn ngữ tự nhiên (tiếng Việt). <____DONE>
--	Cho phép user nhập câu hỏi bằng tin nhắn văn bản. <____DONE>
+-	Xây dựng cơ sở dữ liệu kiến thức: thông tin cây trồng, kỹ thuật trồng các loại cây, lịch mùa vụ. 
+-	Tích hợp chatbot hỗ trợ trả lời bằng ngôn ngữ tự nhiên (tiếng Việt). 
+-	Cho phép user nhập câu hỏi bằng tin nhắn văn bản. 
 2.2. Hỗ trợ tưới tiêu & chăm sóc (IoT)
 Triển khai hệ thống IoT trong nông trại:
--	Cảm biến độ ẩm đất.   <Cái này thuộc phía thành viên làm phần cứng>
--	Cảm biến nhiệt độ, ánh sáng. <Cái này thuộc phía thành viên làm phần cứng>
--	Bộ điều khiển bơm nước. <Cái này thuộc phía thành viên làm phần cứng>
+-	Cảm biến độ ẩm đất.   
+-	Cảm biến nhiệt độ, ánh sáng. 
+-	Bộ điều khiển bơm nước. 
 Chatbot có thể:
--	Hiển thị dữ liệu cảm biến theo thời gian thực. <_____NOT_DONE> qua Chatbot
--	Tự động điều khiển tưới khi User cho phép. <_____NOT_DONE> qua Chatbot
-- 	Tương tác với IOT ví dụ bật tắt máy bơm, đèn <_____NOT_DONE> qua chatbot
+-	Hiển thị dữ liệu cảm biến theo thời gian thực. 
+-	Tự động điều khiển tưới khi User cho phép. 
+- 	Tương tác với IOT ví dụ bật tắt máy bơm, đèn 
 2.3. Quản lý dữ liệu nông trại
--	Xây dựng dashboard quản lý  <____DONE>
--	Lưu lịch sử gieo trồng, bón phân, phun thuốc,... <____DONE>
--	Theo dõi chi phí – lợi nhuận. <____DONE>
+-	Xây dựng dashboard quản lý  
+-	Lưu lịch sử gieo trồng, bón phân, phun thuốc,... 
+-	Theo dõi chi phí – lợi nhuận. 
 +) NGHIỆP VỤ HỆ THỐNG
 1. Tác nhân (Actors)
--	User(Mỗi user chỉ được sở hữu 1 nông trại): sử dụng chatbot để hỏi đáp kiến thức nông nghiệp <____DONE>
-	, theo dõi và điều khiển IOT (qua chatbot <_____NOT_DONE> hoặc thủ công bằng panel UI kiểu các button bật,tắt,... <____DONE>) 
-    , chức năng đăng ký gói subcription <_____NOT_DONE>
+-	User(Mỗi user chỉ được sở hữu 1 nông trại): sử dụng chatbot để hỏi đáp kiến thức nông nghiệp  , hỏi đáp doanh thu của tháng,năm , hỏi dữ liệu cảm biến của khu vực canh tác 
+	, theo dõi và điều khiển IOT (qua chatbot  hoặc thủ công bằng panel UI kiểu các button bật,tắt,... ) 
 -	Chatbot: giao tiếp với User qua văn bản 
--   Technician:các usecase hiện tại là <____DONE>
 -	Hệ thống IoT: cảm biến (nhiệt độ, độ ẩm, ánh sáng), bộ điều khiển tưới.
--	CSDL (Database): lưu trữ dữ liệu nông trại, dữ liệu IoT, kiến thức nông nghiệp. <____DONE>
--	Quản trị viên: cập nhật dữ liệu kiến thức nông nghiệp <____DONE>
-	, quản lý,phân quyền tài khoản <____DONE>
-	, cấu hình hệ thống <_____NOT_DONE>
-	, quản lý gói đăng ký subcription, <_____NOT_DONE>
-	, quản lý cấu hình IoT <_____NOT_DONE>
+-	CSDL (Database): lưu trữ dữ liệu nông trại, dữ liệu IoT, kiến thức nông nghiệp. 
+-	Quản trị viên: 
+	quản lý dữ liệu kiến thức nông nghiệp 
+	, quản lý,phân quyền tài khoản 
+	, quản lý yêu cầu lắp đặt và phân công kỹ thuật viên 
+	, quản lý gói đăng ký, 
+	, quản lý thiết bị 
+	, xem danh sách nông trại 
+-  	Kỹ thuật viên: 
+	Lắp đặt & kích hoạt thiết bị 
 2. Nghiệp vụ chính
-2.1. Hỏi – đáp kiến thức nông nghiệp <____DONE>
+2.1. Hỏi – đáp kiến thức nông nghiệp 
 -	Mục tiêu: Cung cấp thông tin cây trồng, kỹ thuật canh tác, mùa vụ. 
 -	Luồng nghiệp vụ:
 -	User đặt câu hỏi cho chatbot
 -	Chatbot NLP phân tích câu hỏi → xác định intent & NER.
 -	Backend truy vấn CSDL kiến thức hoặc AI model để tìm câu trả lời.
 -	Chatbot phản hồi lại.
-2.2. Hỗ trợ tưới tiêu & chăm sóc (IoT) <Hiện tại có bật/tắt tưới , bật tưới theo duration, bật tưới tự động , hiển thị dữ liệu trong trang /farm/areas/id, bật/tắt đèn, bật đèn tự động>
--	Mục tiêu: Giám sát dữ liệu cảm biến và điều khiển tưới tiêu. <____DONE> nhưng mới chỉ qua UI chưa qua chatbot
--	Luồng nghiệp vụ (Truy vấn dữ liệu qua chatbot): <_____NOT_DONE>
-	User: “Độ ẩm đất hiện tại ở khu A là bao nhiêu?”
-	Chatbot NLP → intent = sensor_query. NER extract ra đúng dữ liệu để trả về
-	Backend lấy dữ liệu mới nhất từ MQTT/Database IoT.
--	Luồng nghiệp vụ (Điều khiển tưới qua chatbot): <_____NOT_DONE>
-    User: “Bật bơm ở khu A trong 10 phút.”
-    Chatbot NLP → intent = device_control. NER cần extract đúng entity
-    Backend publish lệnh qua MQTT.
-    Thiết bị nhận lệnh → bật bơm.
-    Thiết bị gửi trạng thái → Backend lưu DB.
-    Chatbot xác nhận: “Đã bật bơm 10 phút.”
+2.2. Hỗ trợ tưới tiêu & chăm sóc (IoT) <bật/tắt tưới , bật tưới theo duration ,bật/tắt tự động, bật/tắt đèn, bật đèn tự động, hiển thị dữ liệu trong trang /farm/areas/id> 
+-	Mục tiêu: Giám sát dữ liệu cảm biến và điều khiển tưới tiêu.  qua UI và qua chatbot 
+-	Luồng nghiệp vụ (Truy vấn dữ liệu qua chatbot): 
+-	User: “Độ ẩm đất hiện tại bao nhiêu?”
+-	Chatbot NLP → intent = sensor_query.
+-	Backend lấy dữ liệu mới nhất từ MQTT/Database IoT.
+-	Luồng nghiệp vụ (Điều khiển tưới): 
+	User: “Bật bơm 10 phút.”
+	Chatbot NLP → intent = device_control.
+	Backend publish lệnh bơm trong 10min qua MQTT.
+	Thiết bị nhận lệnh → bật bơm.
+	Thiết bị gửi trạng thái → Backend lưu DB.
+	Chatbot xác nhận: “Đã bật bơm 10 phút.”
 2.3. Quản lý dữ liệu nông trại
--	Mục tiêu: Lưu trữ, theo dõi dữ liệu nông trại. <____DONE>
+-	Mục tiêu: Lưu trữ, theo dõi và tính doanh thu,chi phí,lợi nhuận. 
 Nghiệp vụ chính:
 -	Ghi nhận dữ liệu:
-User nhập thông tin: gieo trồng, phân bón, thuốc, thu hoạch,... <____DONE>
+User nhập thông tin: gieo trồng, phân bón, thuốc, thu hoạch,... 
 -	Hệ thống lưu vào database.
--	Truy vấn dữ liệu qua chatbot:  <_____NOT_DONE>
+-	Truy vấn dữ liệu qua chatbot:
 Người dùng: “Chi phí tháng này là bao nhiêu?” 
-Backend tổng hợp từ DB → chatbot trả lời: “Chi phí là 2,450,000 VNĐ.”
-3. Nghiệp vụ phụ trợ
--	Quản trị dữ liệu kiến thức: Admin thêm/sửa/xoá nội dung nông nghiệp. <____DONE>
--	Đăng nhập & phân quyền: User đăng nhập vào hệ thống để truy cập dữ liệu riêng của nông trại mình .<____DONE>
+Backend tổng hợp từ DB → chatbot trả lời: “Chi phí tháng này là 2,450,000 VNĐ.”
+
+đăng nhập (admin, user, technician)
+đăng ký (user)
+đăng xuất (admin, user, technician)
+đổi mật khẩu (user,technician)
+quên mật khẩu (user)

@@ -27,6 +27,7 @@ export interface AiConfig {
   };
 }
 
+// Chú ý đây chỉ là các thông số general , hiện tại dự án không dùng
 export const getAiConfig = (configService: ConfigService): AiConfig => ({
   openai: {
     apiKey: configService.get<string>('OPENAI_API_KEY') || '',

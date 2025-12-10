@@ -1,0 +1,46 @@
+các usecase ứng với từng Actor
+<<===========================>>
+<ADMIN>
+======
+đăng nhập, đăng xuất
+======
+quản lý yêu cầu lắp đặt: xem yêu cầu ,huỷ yêu cầu , phân công Kỹ thuật viên , tìm kiếm yêu cầu(theo username, tên farm)
+======
+quản lý thiết bị: thêm thiết bị, tìm kiếm thiết bị (theo tên thiết bị, filter theo trạng thái thiết bị) + sửa thông tin thiết bị, xoá, deactive thiết bị
+======
+quản lý dữ liệu tri thức (file md,txt,pdf): Thêm file , xoá file, tìm kiếm file(theo tên file)
+====== 
+quản lý & phân quyền tài khoản: xem danh sách tài khoản,thêm,sửa, xoá tài khoản , vô hiệu hoá tài khoản, phân quyền tài khoản, tìm kiếm tài khoản (theo username, email)
+======
+Xem danh sách nông trại: xem tổng quan nông trại cụ thể, tìm kiếm nông trại (theo địa chỉ,email chủ nông trại, tên chủ nông trại,tên nông trại)
+======
+Quản lý gói đăng ký: xem trạng thái gói đăng ký , sửa trạng thái gói đăng ký.
+<<============================>>
+<TECHNICIAN>
+======
+Đăng nhập (qua email,password) , đăng xuất, đổi mật khẩu
+======
+Xem yêu cầu lắp đặt
+======
+Kích hoạt thiết bị 
+<<==========================>>
+<USER>
+====
+Đăng ký, đăng nhập (qua email,password hoặc google), đăng xuất , quên mật khẩu, đổi mật khẩu
+====
+chỉnh sửa thông tin cá nhân
+====
+Quản lý nông trại: Thêm nông trại, sửa nông trại,quản lý khu vực canh tác ,quản lý hoạt động canh tác, xem dữ liệu tài chính 
+======
+quản lý khu vực canh tác: thêm, sửa,xoá khu vực
+=====
+quản lý hoạt động canh tác : thêm , sửa ,xoá, tìm kiếm hoạt động (theo khu vực, cây trồng,loại hoạt động, khoảng thời gian, mô tả)
+=====
+Yêu cầu lắp đặt thiết bị : tạo yêu cầu, huỷ yêu cầu , sửa yêu cầu
+=====
+Tương tác chat bot: tương tác IoT qua chatbot (lấy dữ liệu cảm biến khu vực, bật tắt thiết bị bơm/đèn ), Hỏi đáp tri thức, lấy dữ liệu tài chính nông trại 
+=====
+Tương tác IoT qua bảng điều khiển: lấy dữ liệu cảm biến khu vực, bật tắt thiết bị bơm/đèn ( bật tắt thủ công , theo duration, tự động)
+=====
+Đăng ký gói trả phí (gói tháng hoặc gói năm) include thanh toán của VNPAY
+====
