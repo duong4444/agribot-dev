@@ -3,7 +3,7 @@
 ## 1. Actors
 - **User (Farmer)**: Can Register, Login (Email/Google), Logout, Forgot Password, Change Password.
 - **Technician**: Can Login (Email only), Logout, Change Password.
-- **Admin**: Can Login (Email only), Logout.
+- **Admin**: Can Login (Email only), Logout, Change Password.
 
 ---
 
@@ -56,9 +56,9 @@
 | Feature | Description |
 | :--- | :--- |
 | **Use Case** | **Change Password** |
-| **Actor** | User, Technician |
+| **Actor** | User, Technician, Admin |
 | **Brief Description** | Authenticated user changes their password. |
-| **Pre-conditions** | User/Technician is logged in. |
+| **Pre-conditions** | User/Technician/Admin is logged in. |
 | **Basic Flows** | 1. User enters Old Password and New Password.<br>2. System validates Old Password.<br>3. System validates New Password rules.<br>4. System updates password hash.<br>5. System confirms success. |
 | **Alternative Flows** | **A1. Wrong Old Password:**<br>1. System rejects change. |
 | **Post-conditions** | Password key updated. |
