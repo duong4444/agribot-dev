@@ -10,10 +10,10 @@
 | :--- | :--- |
 | **Use Case** | **Add Farm** |
 | **Actor** | User |
-| **Brief Description** | User registers a new farm in the system. Note: Each user typically owns one farm, but the system may allow adding one if none exists. |
-| **Pre-conditions** | User is logged in. User does not have a farm (if 1-farm limit applies) or limit not reached. |
-| **Basic Flows** | 1. User navigates to "My Farms" or Dashboard.<br>2. User clicks "Add Farm".<br>3. User enters Farm Name, Address, Description.<br>4. User clicks "Create".<br>5. System validates input.<br>6. System creates farm record.<br>7. System associates farm with User.<br>8. System redirects to Farm Dashboard. |
-| **Alternative Flows** | **A1. Validation Error:**<br>1. Missing required fields.<br>2. System shows error.<br><br>**A2. Limit Reached:**<br>1. User tries to add a second farm (if rule exists).<br>2. System shows "You can only own one farm". |
+| **Brief Description** | User registers a new farm in the system. **Note:** The system strictly enforces a limit of ONE farm per user. |
+| **Pre-conditions** | User is logged in. User does NOT currently own a farm. |
+| **Basic Flows** | 1. User accesses the system (typically via Dashboard).<br>2. System display the registration modal.<br>3. User enters Farm Name (required), Address, Description.<br>4. User clicks "Tạo Nông Trại" (Create).<br>5. System validates payload.<br>6. System checks if user already has a farm.<br>7. System creates new farm record and assigns User as owner.<br>8. System returns new farm data.<br>9. Client shows success message (Toast). |
+| **Alternative Flows** | **A1. Validation Error:**<br>1. Missing name or invalid format.<br>2. System returns Bad Request.<br><br>**A2. User Already Has Farm:**<br>1. Backend detects existing farm for user.<br>2. System throws ForbiddenException (403).<br>3. Client shows error "User already has a farm". |
 | **Post-conditions** | New farm created; User is set as owner. |
 
 ### UC-FARM-02: Edit Farm
@@ -45,26 +45,27 @@
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant FE as Web App
+    participant FE as Web App (Modal)
     participant CTL as FarmController
     participant SVC as FarmService
     participant DB as Database
 
-    U->>FE: Fill Farm Data -> Submit
+    U->>FE: Fill Name/Address/Desc -> Click Create
     FE->>CTL: POST /api/farms
-    CTL->>SVC: create(userId, dto)
+    CTL->>SVC: createFarm(user, dto)
     
-    SVC->>DB: Check Limit (if any)
-    alt Limit OK
+    SVC->>DB: Find existing farm for User
+    alt Already has farm
+        SVC-->>CTL: Throw ForbiddenException (403)
+        CTL-->>FE: Error 403 "User already has a farm"
+        FE-->>U: Show Error Toast
+    else No farm exists
         SVC->>DB: Insert Farm Record
         DB-->>SVC: Success
         SVC-->>CTL: Return New Farm
         CTL-->>FE: Success JSON
-        FE-->>U: Redirect to Dashboard
-    else Limit Exceeded
-        SVC-->>CTL: Throw BadRequestException
-        CTL-->>FE: Error Response
-        FE-->>U: Show Error
+        FE-->>U: Show Success Toast
+        FE->>FE: Update UI / Close Modal
     end
 ```
 
