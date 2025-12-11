@@ -142,7 +142,7 @@ export class UsersService implements OnModuleInit {
 
   async activatePremiumSubscription(
     userId: string,
-    planType: 'MONTHLY' | 'YEARLY' = 'MONTHLY'
+    planInfo: { credits: number; durationDays: number }
   ): Promise<User> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
@@ -150,15 +150,11 @@ export class UsersService implements OnModuleInit {
     const now = new Date();
     const expiryDate = new Date(now);
     
-    // Set credits and duration based on plan type
-    if (planType === 'YEARLY') {
-      expiryDate.setFullYear(now.getFullYear() + 1); // Add 1 year
-      user.credits = 2500;
-    } else {
-      expiryDate.setDate(now.getDate() + 30); // Add 30 days
-      user.credits = 200;
-    }
-
+    // Set expiry based on plan duration (from database)
+    expiryDate.setDate(now.getDate() + planInfo.durationDays);
+    
+    // Set credits from plan (from database)
+    user.credits = planInfo.credits;
     user.plan = SubscriptionPlan.PREMIUM;
     user.subscriptionStatus = SubscriptionStatus.ACTIVE;
     user.subscriptionExpiry = expiryDate;
@@ -166,3 +162,4 @@ export class UsersService implements OnModuleInit {
     return this.userRepository.save(user);
   }
 }
+

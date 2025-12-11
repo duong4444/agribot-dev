@@ -32,7 +32,7 @@ export class PaymentController {
   async createPaymentUrl(
     @CurrentUser() user: any,
     @Req() req: Request,
-    @Body() body: { type: 'SUBSCRIPTION'; planType?: 'MONTHLY' | 'YEARLY' },
+    @Body() body: { type: 'SUBSCRIPTION'; planCode: string },
   ) {
     const ipAddr = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     console.log("[payment.controller]_ ipAddr: ",ipAddr);
@@ -44,7 +44,7 @@ export class PaymentController {
     const url = await this.paymentService.createSubscriptionPaymentUrl(
       user.id,
       ip,
-      body.planType || 'MONTHLY',
+      body.planCode,
     );
     console.log("[payment.controller] url trả về để pass cho FE: ",url);
     

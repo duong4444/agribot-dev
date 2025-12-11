@@ -5,12 +5,15 @@ import { PaymentController } from './payment.controller';
 import { PaymentService } from './payment.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaymentTransaction } from './entities/payment-transaction.entity';
+import { SubscriptionPlan } from './entities/subscription-plan.entity';
 import { InstallationRequest } from '../iot/entities/installation-request.entity';
 import { UsersModule } from '../users/users.module';
+import { SubscriptionPlanService } from './subscription-plan.service';
+import { SubscriptionPlanController } from './subscription-plan.controller';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([PaymentTransaction, InstallationRequest]),
+    TypeOrmModule.forFeature([PaymentTransaction, SubscriptionPlan, InstallationRequest]),
     VnpayModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -24,7 +27,9 @@ import { UsersModule } from '../users/users.module';
     }),
     UsersModule,
   ],
-  controllers: [PaymentController],
-  providers: [PaymentService],
+  controllers: [PaymentController, SubscriptionPlanController],
+  providers: [PaymentService, SubscriptionPlanService],
+  exports: [SubscriptionPlanService],
 })
 export class PaymentModule {}
+

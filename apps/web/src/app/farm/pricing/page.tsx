@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -17,12 +16,26 @@ import { useToast } from "@/components/ui/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Crown, Zap, CheckCircle, Star } from "lucide-react";
 
+interface SubscriptionPlan {
+  id: string;
+  code: string;
+  name: string;
+  description: string | null;
+  price: number;
+  credits: number;
+  durationDays: number;
+  isActive: boolean;
+  displayOrder: number;
+  discountPercent: number | null;
+  badgeText: string | null;
+  isPopular: boolean;
+}
+
 export default function PricingPage() {
   const { data: session, update } = useSession();
-  const router = useRouter();
-  const [loadingPlan, setLoadingPlan] = useState<"MONTHLY" | "YEARLY" | null>(
-    null
-  );
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [loadingPlans, setLoadingPlans] = useState(true);
   const { toast } = useToast();
 
   const fetchProfile = async () => {
@@ -39,7 +52,6 @@ export default function PricingPage() {
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.data) {
-          // Only update if data has changed
           const current = session.user;
           const fresh = data.data;
 
@@ -63,18 +75,42 @@ export default function PricingPage() {
     }
   };
 
+  const fetchPlans = async () => {
+    try {
+      setLoadingPlans(true);
+      const res = await fetch("/api/subscription-plans");
+      const data = await res.json();
+      if (data.success) {
+        // Sort by displayOrder
+        const sortedPlans = data.data.sort(
+          (a: SubscriptionPlan, b: SubscriptionPlan) => a.displayOrder - b.displayOrder
+        );
+        setPlans(sortedPlans);
+      }
+    } catch (error) {
+      console.error("Failed to fetch plans", error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể tải danh sách gói đăng ký",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingPlans(false);
+    }
+  };
+
   useEffect(() => {
     if (session?.accessToken) {
       fetchProfile();
     }
+    fetchPlans();
   }, [session?.accessToken]);
 
-  // Use session data directly
   const user = session?.user;
   const isPremium =
     user?.plan === "PREMIUM" && user?.subscriptionStatus === "ACTIVE";
 
-  const handleSubscribe = async (planType: "MONTHLY" | "YEARLY") => {
+  const handleSubscribe = async (planCode: string) => {
     if (!session) {
       toast({
         title: "Lỗi",
@@ -84,27 +120,23 @@ export default function PricingPage() {
       return;
     }
 
-    setLoadingPlan(planType);
+    setLoadingPlan(planCode);
     try {
       const response = await fetch("/api/payment/create-url", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ type: "SUBSCRIPTION", planType }),
+        body: JSON.stringify({ type: "SUBSCRIPTION", planCode }),
       });
 
       const data = await response.json();
-      console.log("[/farm/pricing/pages.tsx]---data: ", data);
-      console.log("=========================================");
-      console.log("data.url: ", data.url);
 
       if (!response.ok) {
         throw new Error(data.message || "Có lỗi xảy ra");
       }
 
       if (data.url) {
-        // Redirect to VNPAY
         window.location.href = data.url;
       } else {
         throw new Error("Không nhận được link thanh toán");
@@ -117,6 +149,22 @@ export default function PricingPage() {
       });
       setLoadingPlan(null);
     }
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("vi-VN").format(price) + "đ";
+  };
+
+  const formatDuration = (days: number) => {
+    if (days >= 365) {
+      const years = Math.floor(days / 365);
+      return years === 1 ? "năm" : `${years} năm`;
+    }
+    if (days >= 30) {
+      const months = Math.floor(days / 30);
+      return months === 1 ? "tháng" : `${months} tháng`;
+    }
+    return `${days} ngày`;
   };
 
   const features = [
@@ -191,6 +239,25 @@ export default function PricingPage() {
     );
   }
 
+  if (loadingPlans) {
+    return (
+      <div className="container py-12 flex justify-center items-center h-full">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (plans.length === 0) {
+    return (
+      <div className="container py-12 flex justify-center items-center h-full">
+        <div className="text-center text-muted-foreground">
+          <p>Chưa có gói đăng ký nào được cấu hình.</p>
+          <p className="text-sm">Vui lòng liên hệ quản trị viên.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container py-1">
       <div className="text-center mb-10">
@@ -200,129 +267,102 @@ export default function PricingPage() {
         </p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-        {/* Monthly Plan */}
-        <Card className="border-2 border-primary/20 shadow-lg relative overflow-hidden flex flex-col">
-          <CardHeader>
-            <CardTitle className="text-2xl">Gói Tháng</CardTitle>
-            <CardDescription>Thanh toán hàng tháng, linh hoạt</CardDescription>
-          </CardHeader>
-          <CardContent className="flex-1">
-            <div className="flex items-baseline mb-6">
-              <span className="text-4xl font-extrabold">200.000đ</span>
-              <span className="text-gray-500 ml-1">/tháng</span>
-            </div>
-            <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
-              <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
-                <Zap className="h-5 w-5" />
-                <span className="font-semibold">200 Credits AI</span>
+      <div className={`grid gap-6 max-w-4xl mx-auto ${plans.length === 1 ? 'md:grid-cols-1 max-w-md' : plans.length === 2 ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
+        {plans.map((plan) => (
+          <Card
+            key={plan.id}
+            className={`border-2 shadow-lg relative overflow-hidden flex flex-col ${
+              plan.isPopular
+                ? "border-primary bg-gradient-to-br from-primary/5 to-transparent"
+                : "border-primary/20"
+            }`}
+          >
+            {plan.badgeText && (
+              <div className="absolute top-4 right-4">
+                <Badge className="bg-yellow-500 text-yellow-900 flex items-center gap-1">
+                  <Star className="h-3 w-3" />
+                  {plan.badgeText}
+                </Badge>
               </div>
-              <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
-                Thời hạn 30 ngày
-              </p>
-            </div>
-            <ul className="space-y-3">
-              {features.map((feature, index) => (
-                <li key={index} className="flex items-center">
-                  <div className="mr-3 p-1 bg-green-100 dark:bg-green-900 rounded-full">
-                    <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
-                  </div>
-                  <span className="text-sm">{feature}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-          <CardFooter>
-            <Button
-              className="w-full h-12 text-lg font-semibold"
-              variant="outline"
-              onClick={() => handleSubscribe("MONTHLY")}
-              disabled={loadingPlan !== null}
-            >
-              {loadingPlan === "MONTHLY" ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Đang xử lý...
-                </>
-              ) : (
-                "Mua gói Tháng"
-              )}
-            </Button>
-          </CardFooter>
-          <div className="px-6 pb-6 text-center text-xs text-gray-400">
-            Hỗ trợ thanh toán: Thẻ ATM (Napas), QR Code
-            <div className="mt-2 text-[10px] text-gray-300">
-              Secured by VNPAY
-            </div>
-          </div>
-        </Card>
-
-        {/* Yearly Plan */}
-        <Card className="border-2 border-primary shadow-lg relative overflow-hidden bg-gradient-to-br from-primary/5 to-transparent flex flex-col">
-          <div className="absolute top-4 right-4">
-            <Badge className="bg-yellow-500 text-yellow-900 flex items-center gap-1">
-              <Star className="h-3 w-3" />
-              Tiết kiệm 17%
-            </Badge>
-          </div>
-          <CardHeader>
-            <CardTitle className="text-2xl flex items-center gap-2">
-              <Crown className="h-6 w-6 text-yellow-500" />
-              Gói Năm
-            </CardTitle>
-            <CardDescription>Thanh toán 1 lần, tiết kiệm hơn</CardDescription>
-          </CardHeader>
-          <CardContent className="flex-1">
-            <div className="flex items-baseline mb-2">
-              <span className="text-4xl font-extrabold">2.000.000đ</span>
-              <span className="text-gray-500 ml-1">/năm</span>
-            </div>
-            <p className="text-sm text-muted-foreground mb-4">
-              ~167.000đ/tháng
-            </p>
-            <div className="mb-4 p-3 bg-yellow-50 dark:bg-yellow-950 rounded-lg border border-yellow-200 dark:border-yellow-800">
-              <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-300">
-                <Zap className="h-5 w-5" />
-                <span className="font-semibold">2.500 Credits AI</span>
+            )}
+            <CardHeader>
+              <CardTitle className="text-2xl flex items-center gap-2">
+                {plan.isPopular && <Crown className="h-6 w-6 text-yellow-500" />}
+                {plan.name}
+              </CardTitle>
+              <CardDescription>{plan.description}</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1">
+              <div className="flex items-baseline mb-2">
+                <span className="text-4xl font-extrabold">{formatPrice(Number(plan.price))}</span>
+                <span className="text-gray-500 ml-1">/{formatDuration(plan.durationDays)}</span>
               </div>
-              <p className="text-sm text-yellow-600 dark:text-yellow-400 mt-1">
-                Thời hạn 1 năm
-              </p>
-            </div>
-            <ul className="space-y-3">
-              {features.map((feature, index) => (
-                <li key={index} className="flex items-center">
-                  <div className="mr-3 p-1 bg-green-100 dark:bg-green-900 rounded-full">
-                    <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
-                  </div>
-                  <span className="text-sm">{feature}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-          <CardFooter>
-            <Button
-              className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
-              onClick={() => handleSubscribe("YEARLY")}
-              disabled={loadingPlan !== null}
-            >
-              {loadingPlan === "YEARLY" ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  Đang xử lý...
-                </>
-              ) : (
-                "Mua gói Năm"
+              {plan.discountPercent && plan.durationDays >= 365 && (
+                <p className="text-sm text-muted-foreground mb-4">
+                  ~{formatPrice(Math.round(Number(plan.price) / 12))}/tháng
+                </p>
               )}
-            </Button>
-          </CardFooter>
-          <div className="px-6 pb-6 text-center text-xs text-gray-400">
-            Hỗ trợ thanh toán: Thẻ ATM (Napas), QR Code
-            <div className="mt-2 text-[10px] text-gray-300">
-              Secured by VNPAY
+              <div className={`mb-4 p-3 rounded-lg ${
+                plan.isPopular
+                  ? "bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800"
+                  : "bg-blue-50 dark:bg-blue-950"
+              }`}>
+                <div className={`flex items-center gap-2 ${
+                  plan.isPopular
+                    ? "text-yellow-700 dark:text-yellow-300"
+                    : "text-blue-700 dark:text-blue-300"
+                }`}>
+                  <Zap className="h-5 w-5" />
+                  <span className="font-semibold">{plan.credits.toLocaleString()} Credits AI</span>
+                </div>
+                <p className={`text-sm mt-1 ${
+                  plan.isPopular
+                    ? "text-yellow-600 dark:text-yellow-400"
+                    : "text-blue-600 dark:text-blue-400"
+                }`}>
+                  Thời hạn {plan.durationDays} ngày
+                </p>
+              </div>
+              <ul className="space-y-3">
+                {features.map((feature, index) => (
+                  <li key={index} className="flex items-center">
+                    <div className="mr-3 p-1 bg-green-100 dark:bg-green-900 rounded-full">
+                      <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
+                    </div>
+                    <span className="text-sm">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+            <CardFooter>
+              <Button
+                className={`w-full h-12 text-lg font-semibold ${
+                  plan.isPopular
+                    ? "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+                    : ""
+                }`}
+                variant={plan.isPopular ? "default" : "outline"}
+                onClick={() => handleSubscribe(plan.code)}
+                disabled={loadingPlan !== null}
+              >
+                {loadingPlan === plan.code ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Đang xử lý...
+                  </>
+                ) : (
+                  `Mua ${plan.name}`
+                )}
+              </Button>
+            </CardFooter>
+            <div className="px-6 pb-6 text-center text-xs text-gray-400">
+              Hỗ trợ thanh toán: Thẻ ATM (Napas), QR Code
+              <div className="mt-2 text-[10px] text-gray-300">
+                Secured by VNPAY
+              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        ))}
       </div>
     </div>
   );

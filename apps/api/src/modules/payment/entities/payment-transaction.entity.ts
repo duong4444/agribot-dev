@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { SubscriptionPlan } from './subscription-plan.entity';
 
 @Entity('payment_transactions')
 export class PaymentTransaction {
@@ -18,7 +19,14 @@ export class PaymentTransaction {
   type: 'SUBSCRIPTION' | 'CREDITS';
 
   @Column({ nullable: true })
-  planType: 'MONTHLY' | 'YEARLY';
+  planCode: string; // Reference to subscription_plan.code (e.g., 'MONTHLY', 'YEARLY')
+
+  @ManyToOne(() => SubscriptionPlan, { nullable: true })
+  @JoinColumn({ name: 'subscriptionPlanId' })
+  subscriptionPlan: SubscriptionPlan;
+
+  @Column({ nullable: true })
+  subscriptionPlanId: string;
 
   @Column({ nullable: true })
   vnpayTxnRef: string;
@@ -41,3 +49,4 @@ export class PaymentTransaction {
   @UpdateDateColumn()
   updatedAt: Date;
 }
+

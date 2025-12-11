@@ -4,7 +4,7 @@ import React from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Settings, Leaf, Database, Tractor, CreditCard } from 'lucide-react';
+import { Users, Settings, Leaf, Database, Tractor, CreditCard, Package } from 'lucide-react';
 import Link from 'next/link';
 
 const AdminPage = () => {
@@ -66,6 +66,14 @@ const AdminPage = () => {
       href: '/admin/subscriptions',
       color: 'text-purple-600',
       bgColor: 'bg-purple-100 dark:bg-purple-900',
+    },
+    {
+      title: 'Quản Lý Gói Đăng Ký',
+      description: 'Thêm, sửa, xóa các gói subscription và cấu hình giá',
+      icon: Package,
+      href: '/admin/subscription-plans',
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-100 dark:bg-orange-900',
     },
   ];
 

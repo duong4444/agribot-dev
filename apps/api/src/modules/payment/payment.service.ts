@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, BadRequestException, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { VnpayService } from 'nestjs-vnpay';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -7,6 +7,7 @@ import { InstallationRequest } from '../iot/entities/installation-request.entity
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
 import { ReturnQueryFromVNPay, ProductCode, VnpLocale } from 'vnpay';
+import { SubscriptionPlanService } from './subscription-plan.service';
 
 @Injectable()
 export class PaymentService {
@@ -20,14 +21,21 @@ export class PaymentService {
     private readonly installationRequestRepository: Repository<InstallationRequest>,
     private readonly configService: ConfigService,
     private readonly usersService: UsersService,
+    private readonly subscriptionPlanService: SubscriptionPlanService,
   ) {}
 
   async createSubscriptionPaymentUrl(
     userId: string, 
     ipAddr: string,
-    planType: 'MONTHLY' | 'YEARLY' = 'MONTHLY'
+    planCode: string
   ): Promise<string> {
-    //1. CHECK ĐÃ LẮP IOT
+    // 1. Fetch plan from database
+    const plan = await this.subscriptionPlanService.findByCode(planCode);
+    if (!plan.isActive) {
+      throw new BadRequestException('Gói đăng ký này đã ngừng cung cấp');
+    }
+
+    // 2. CHECK ĐÃ LẮP IOT
     const hasHardware = await this.installationRequestRepository.findOne({
       where: {
         farmerId: userId,
@@ -39,17 +47,18 @@ export class PaymentService {
       throw new ForbiddenException('Vui lòng lắp đặt thiết bị phần cứng trước khi đăng ký gói Premium.');
     }
 
-    // Set amount based on plan type
-    const amount = planType === 'YEARLY' ? 2000000 : 200000; // 2,000,000 VND or 200,000 VND
+    // 3. Get amount from plan (dynamic pricing)
+    const amount = Number(plan.price);
     const locale: VnpLocale = VnpLocale.VN;
 
-    //2. 
+    // 4. Create transaction with plan reference
     const transaction = this.transactionRepository.create({
       userId,
       amount,
       status: 'PENDING',
       type: 'SUBSCRIPTION',
-      planType, // Store plan type for callback
+      planCode: plan.code,
+      subscriptionPlanId: plan.id,
     });
     await this.transactionRepository.save(transaction);
     
@@ -58,20 +67,18 @@ export class PaymentService {
     transaction.vnpayTxnRef = txnRef;
     await this.transactionRepository.save(transaction);
 
-    // 2. Build URL
-    // Payload chứa thông tin để build URL thanh toán
+    // 5. Build VNPAY payment URL
     const paymentUrl = this.vnpayService.buildPaymentUrl({
       vnp_Amount: amount, // Library handles multiplication by 100
       vnp_IpAddr: ipAddr === '::1' ? '127.0.0.1' : ipAddr,
       vnp_TxnRef: txnRef,
-      vnp_OrderInfo: `Thanh toan Premium cho user ${userId}`,
+      vnp_OrderInfo: `Thanh toan ${plan.name} cho user ${userId}`,
       vnp_OrderType: ProductCode.Other,
-    // VNPAY_RETURN_URL=http://localhost:3000/payment/vnpay-return
       vnp_ReturnUrl: this.configService.getOrThrow('VNPAY_RETURN_URL'), 
       vnp_Locale: locale,
     });
     
-    this.logger.log(`haha ? ---- Generated VNPAY URL: ${paymentUrl}`);
+    this.logger.log(`Generated VNPAY URL for plan ${plan.code}: ${paymentUrl}`);
     
     return paymentUrl;
   }
@@ -103,11 +110,12 @@ export class PaymentService {
       transaction.status = 'SUCCESS';
       await this.transactionRepository.save(transaction);
       
-      // Activate subscription
-      if (transaction.type === 'SUBSCRIPTION') {
+      // Activate subscription using plan details
+      if (transaction.type === 'SUBSCRIPTION' && transaction.planCode) {
+        const plan = await this.subscriptionPlanService.findByCode(transaction.planCode);
         await this.usersService.activatePremiumSubscription(
           transaction.userId,
-          transaction.planType || 'MONTHLY'
+          { credits: plan.credits, durationDays: plan.durationDays }
         );
       }
       
@@ -142,3 +150,4 @@ export class PaymentService {
      return { RspCode: '00', Message: 'Confirm Success' };
   }
 }
+
