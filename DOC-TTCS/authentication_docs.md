@@ -72,24 +72,26 @@
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant FE as Web App (Next.js)
-    participant BE as API (NestJS)
-    participant DB as Database (Postgres)
+    participant FE as Web App
+    participant CTL as AuthController
+    participant SVC as AuthService
+    participant DB as Database
 
-    U->>FE: Click "Register"
-    FE-->>U: Show Registration Form
-    U->>FE: Input Info (Name, Email, Pass) & Submit
-    FE->>BE: POST /auth/register
-    BE->>DB: Check if Email Exists
+    U->>FE: Submit Registration Form
+    FE->>CTL: POST /auth/register
+    CTL->>SVC: register(dto)
+    
+    SVC->>DB: Check Email Existence
     alt Email already used
-        DB-->>BE: User Found
-        BE-->>FE: Error "Email already exists"
-        FE-->>U: Display Error
-    else Email available
-        BE->>BE: Hash Password
-        BE->>DB: Create User Record
-        DB-->>BE: Success
-        BE-->>FE: Return User Info / Token
+        SVC-->>CTL: ConflictException
+        CTL-->>FE: Error 409
+        FE-->>U: Show "Email exists"
+    else Available
+        SVC->>SVC: Hash Password
+        SVC->>DB: Create User
+        DB-->>SVC: Success
+        SVC-->>CTL: Return User/Token
+        CTL-->>FE: JSON Response
         FE-->>U: Redirect to Dashboard
     end
 ```
@@ -98,67 +100,73 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant A as Actor (User/Admin/Tech)
+    participant A as Actor
     participant FE as Web App
-    participant BE as API
+    participant CTL as AuthController
+    participant SVC as AuthService
     participant G as Google OAuth
     participant DB as Database
 
-    alt Email/Password Login
-        A->>FE: Input Email/Pass & Click Login
-        FE->>BE: POST /auth/login
-        BE->>DB: Find User by Email
-        DB-->>BE: Return User w/ Hash
-        BE->>BE: Compare Passwords
+    alt Email/Password
+        A->>FE: Submit Login
+        FE->>CTL: POST /auth/login
+        CTL->>SVC: validateUser()
+        SVC->>DB: Verify Creds
         alt Valid
-            BE->>BE: Generate JWT
-            BE-->>FE: Return Token & User Role
-            FE-->>A: Redirect to Dashboard
+            SVC->>SVC: Generate JWT
+            SVC-->>CTL: Token
+            CTL-->>FE: Token
+            FE-->>A: Dashboard
         else Invalid
-            BE-->>FE: Error 401
-            FE-->>A: Show "Invalid Credentials"
+            SVC-->>CTL: Unauthorized
+            CTL-->>FE: Error 401
+            FE-->>A: "Invalid ID/Pass"
         end
-    else Google Login (User Only)
+    else Google Login
         A->>FE: Click "Login with Google"
-        FE->>G: Redirect to OAuth Provider
-        G-->>FE: Callback with Auth Code
-        FE->>BE: POST /auth/google/callback
-        BE->>G: Exchange Code for Profile
-        G-->>FE: Return Profile (Email, Name)
-        BE->>DB: Find/Create User
-        BE->>BE: Generate JWT
-        BE-->>FE: Return Token
-        FE-->>A: Redirect to Dashboard
+        FE->>G: Redirect to OAuth
+        G-->>FE: Callback with Code
+        FE->>CTL: POST /auth/google/callback
+        CTL->>SVC: googleLogin(code)
+        SVC->>G: Get Profile
+        SVC->>DB: Find/Create User
+        SVC->>SVC: Generate JWT
+        SVC-->>CTL: Token
+        CTL-->>FE: Token
+        FE-->>A: Dashboard
     end
 ```
 
-### 3.3 Sequence Diagram: Forgot Password (User Only)
+### 3.3 Sequence Diagram: Forgot Password
 
 ```mermaid
 sequenceDiagram
     participant U as User
     participant FE as Web App
-    participant BE as API
+    participant CTL as AuthController
+    participant SVC as AuthService
     participant DB as Database
     participant M as Email Service
 
-    U->>FE: Click "Forgot Password"
-    FE-->>U: Show Email Input
     U->>FE: Submit Email
-    FE->>BE: POST /auth/forgot-password
-    BE->>DB: Find User
-    alt User Exists
-        BE->>DB: Save Reset Token
-        BE->>M: Send Reset Link
-        M-->>U: Email with Link
+    FE->>CTL: POST /auth/forgot-password
+    CTL->>SVC: forgotPassword(email)
+    SVC->>DB: Find User
+    alt Exists
+        SVC->>M: Send Link
+        M-->>U: Email sent
     end
-    BE-->>FE: Show "Check your email" (Always return success to prevent enum)
+    SVC-->>CTL: Success
+    CTL-->>FE: Success
+    FE-->>U: "Check your email"
     
-    U->>FE: Click Link (w/ Token) & Input New Pass
-    FE->>BE: POST /auth/reset-password
-    BE->>DB: Validate Token & Update Password
-    DB-->>BE: Success
-    BE-->>FE: Success Message
+    note right of U: User clicks link & enters new pass
+    U->>FE: Submit New Password
+    FE->>CTL: POST /auth/reset-password
+    CTL->>SVC: resetPassword(token, newPass)
+    SVC->>DB: Update Password
+    SVC-->>CTL: Success
+    CTL-->>FE: Success
     FE-->>U: Redirect to Login
 ```
 
@@ -166,22 +174,25 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant A as Actor (User/Tech)
+    participant A as Actor
     participant FE as Web App
-    participant BE as API
+    participant CTL as AuthController
+    participant SVC as AuthService
     participant DB as Database
 
-    A->>FE: Navigate to Settings
-    A->>FE: Submit Old Pass + New Pass
-    FE->>BE: POST /auth/change-password
-    BE->>DB: Fetch User Hash
-    BE->>BE: Verify Old Pass
-    alt Valid
-        BE->>DB: Update New Password Hash
-        DB-->>BE: Success
-        BE-->>FE: Success Message
-    else Invalid
-        BE-->>FE: Error "Incorrect Old Password"
+    A->>FE: Submit Old & New Pass
+    FE->>CTL: POST /auth/change-password
+    CTL->>SVC: changePassword(userId, dto)
+    SVC->>DB: Verify Old Pass & Update New
+    alt Success
+        DB-->>SVC: Done
+        SVC-->>CTL: Success
+        CTL-->>FE: Success
+        FE-->>A: Toast "Password Changed"
+    else Fail
+        SVC-->>CTL: Error
+        CTL-->>FE: Error
+        FE-->>A: Error Message
     end
 ```
 
@@ -189,13 +200,16 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant A as Actor (User/Admin/Tech)
+    participant A as Actor
     participant FE as Web App
-    participant BE as API
+    participant CTL as AuthController
+    participant SVC as AuthService
 
-    A->>FE: Click "Logout"
-    FE->>BE: POST /auth/logout
-    BE-->>FE: Success (Cookies/Session Cleared)
-    FE->>FE: Remove Local Tokens
-    FE-->>A: Redirect to Login Page
+    A->>FE: Click Logout
+    FE->>CTL: POST /auth/logout
+    CTL->>SVC: logout(userId)
+    SVC-->>CTL: Success
+    CTL-->>FE: Success
+    FE->>FE: Clear Tokens/Cookies
+    FE-->>A: Redirect to Login
 ```

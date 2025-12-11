@@ -46,18 +46,26 @@
 sequenceDiagram
     participant U as User
     participant FE as Web App
-    participant BE as API
+    participant CTL as InstallationRequestController
+    participant SVC as InstallationRequestService
     participant DB as Database
 
-    U->>FE: Click "New Request"
-    FE-->>U: Show Form
-    U->>FE: Select Area, Type, Notes -> Submit
-    FE->>BE: POST /api/installation-requests
-    BE->>BE: Validate Data
-    BE->>DB: Insert Request (Status=PENDING)
-    DB-->>BE: Success
-    BE-->>FE: Return Request Object
-    FE-->>U: Show "Request Submitted"
+    U->>FE: Fill Request Form -> Submit
+    FE->>CTL: POST /api/installation-requests
+    CTL->>SVC: create(userId, dto)
+    
+    SVC->>DB: Verify Area Ownership
+    alt Valid Area
+        SVC->>DB: Insert Request (Status=PENDING)
+        DB-->>SVC: Success
+        SVC-->>CTL: Return Created Request
+        CTL-->>FE: Success JSON
+        FE-->>U: Show "Request Submitted"
+    else Invalid Area
+        SVC-->>CTL: Throw Forbidden/NotFound
+        CTL-->>FE: Error Response
+        FE-->>U: Show Error Message
+    end
 ```
 
 ### 3.2 Sequence Diagram: Edit Installation Request
@@ -66,20 +74,25 @@ sequenceDiagram
 sequenceDiagram
     participant U as User
     participant FE as Web App
-    participant BE as API
+    participant CTL as InstallationRequestController
+    participant SVC as InstallationRequestService
     participant DB as Database
 
-    U->>FE: Edit Request -> Save
-    FE->>BE: PUT /api/installation-requests/:id
-    BE->>DB: Fetch Current Status
+    U->>FE: Update Details -> Click Save
+    FE->>CTL: PUT /api/installation-requests/:id
+    CTL->>SVC: update(id, userId, dto)
+    
+    SVC->>DB: Fetch Request & Check Status
     alt Status is PENDING
-        BE->>DB: Update Request Details
-        DB-->>BE: Success
-        BE-->>FE: Success Message
-        FE-->>U: Show "Updated Successfully"
-    else Status is ASSIGNED/COMPLETED
-        BE-->>FE: Error "Cannot edit processed request"
-        FE-->>U: Show Error
+        SVC->>DB: Update Details
+        DB-->>SVC: Success
+        SVC-->>CTL: Return Updated Request
+        CTL-->>FE: Success JSON
+        FE-->>U: Show "Success"
+    else Processed
+        SVC-->>CTL: Throw BadRequestException
+        CTL-->>FE: Error Response
+        FE-->>U: Show "Cannot edit processed request"
     end
 ```
 
@@ -89,19 +102,24 @@ sequenceDiagram
 sequenceDiagram
     participant U as User
     participant FE as Web App
-    participant BE as API
+    participant CTL as InstallationRequestController
+    participant SVC as InstallationRequestService
     participant DB as Database
 
     U->>FE: Click Cancel -> Confirm
-    FE->>BE: PATCH /api/installation-requests/:id/cancel
-    BE->>DB: Fetch Current Status
+    FE->>CTL: PATCH /api/installation-requests/:id/cancel
+    CTL->>SVC: cancel(id, userId)
+    
+    SVC->>DB: Fetch Request & Check Status
     alt Status is PENDING
-        BE->>DB: Update Status = CANCELLED
-        DB-->>BE: Success
-        BE-->>FE: Success Message
+        SVC->>DB: Update Status = CANCELLED
+        DB-->>SVC: Success
+        SVC-->>CTL: Return Success
+        CTL-->>FE: Success JSON
         FE-->>U: Show "Request Cancelled"
-    else Status cannot be cancelled
-        BE-->>FE: Error "Cannot cancel this request"
-        FE-->>U: Show Error
+    else Cannot Cancel
+        SVC-->>CTL: Throw BadRequestException
+        CTL-->>FE: Error Response
+        FE-->>U: Show Error Message
     end
 ```

@@ -45,17 +45,19 @@
 sequenceDiagram
     participant U as User
     participant FE as Web App
-    participant BE as API
+    participant CTL as AreaController
+    participant SVC as AreaService
     participant DB as Database
 
-    U->>FE: Click "Add Area"
-    FE-->>U: Show Form
-    U->>FE: Enter Details (Name, Type) & Save
-    FE->>BE: POST /api/areas
-    BE->>BE: Validate & Check Farm Ownership
-    BE->>DB: Insert Area Record
-    DB-->>BE: Success
-    BE-->>FE: Return Created Area
+    U->>FE: Fill Area Form -> Submit
+    FE->>CTL: POST /api/areas
+    CTL->>SVC: create(userId, dto)
+    
+    SVC->>DB: Validate Farm Ownership
+    SVC->>DB: Insert Area Record
+    DB-->>SVC: Success
+    SVC-->>CTL: Return New Area
+    CTL-->>FE: Success JSON
     FE-->>U: Show "Area Created"
 ```
 
@@ -65,14 +67,18 @@ sequenceDiagram
 sequenceDiagram
     participant U as User
     participant FE as Web App
-    participant BE as API
+    participant CTL as AreaController
+    participant SVC as AreaService
     participant DB as Database
 
-    U->>FE: Edit Area Details -> Click Save
-    FE->>BE: PUT /api/areas/:id
-    BE->>DB: Update Record
-    DB-->>BE: Success
-    BE-->>FE: Return Updated Area
+    U->>FE: Edit Area Info -> Save
+    FE->>CTL: PUT /api/areas/:id
+    CTL->>SVC: update(id, userId, dto)
+    
+    SVC->>DB: Update Record
+    DB-->>SVC: Success
+    SVC-->>CTL: Return Updated Area
+    CTL-->>FE: Success JSON
     FE-->>U: Show "Area Updated"
 ```
 
@@ -82,19 +88,24 @@ sequenceDiagram
 sequenceDiagram
     participant U as User
     participant FE as Web App
-    participant BE as API
+    participant CTL as AreaController
+    participant SVC as AreaService
     participant DB as Database
 
     U->>FE: Click Delete -> Confirm
-    FE->>BE: DELETE /api/areas/:id
-    BE->>DB: Check Dependencies (Devices/Activities)
+    FE->>CTL: DELETE /api/areas/:id
+    CTL->>SVC: delete(id, userId)
+    
+    SVC->>DB: Check Dependencies (Active Devices)
     alt No Dependencies
-        BE->>DB: Delete Record
-        DB-->>BE: Success
-        BE-->>FE: Success Message
-        FE->>FE: Update List
+        SVC->>DB: Delete Record
+        DB-->>SVC: Success
+        SVC-->>CTL: Return Success
+        CTL-->>FE: Success JSON
+        FE-->>U: Remove from List
     else Has Dependencies
-        BE-->>FE: Error "Cannot delete area with active devices"
-        FE-->>U: Show Error
+        SVC-->>CTL: Throw BadRequestException
+        CTL-->>FE: Error Response
+        FE-->>U: Show Error Message
     end
 ```

@@ -46,23 +46,25 @@
 sequenceDiagram
     participant U as User
     participant FE as Web App
-    participant BE as API
+    participant CTL as FarmController
+    participant SVC as FarmService
     participant DB as Database
 
-    U->>FE: Click "Add Farm"
-    FE-->>U: Show Farm Creation Form
-    U->>FE: Enter Details (Name, Addr) & Submit
-    FE->>BE: POST /api/farms
-    BE->>BE: Validate & Check User Limits
-    alt Valid & Limit OK
-        BE->>DB: Insert Farm Record
-        DB-->>BE: Success (FarmID)
-        BE->>DB: Link User as Owner
-        BE-->>FE: Return Farm Data
-        FE-->>U: Redirect to Farm Dashboard
-    else Validation Fail / Limit Exceeded
-        BE-->>FE: Error Message
-        FE-->>U: Display Error
+    U->>FE: Fill Farm Data -> Submit
+    FE->>CTL: POST /api/farms
+    CTL->>SVC: create(userId, dto)
+    
+    SVC->>DB: Check Limit (if any)
+    alt Limit OK
+        SVC->>DB: Insert Farm Record
+        DB-->>SVC: Success
+        SVC-->>CTL: Return New Farm
+        CTL-->>FE: Success JSON
+        FE-->>U: Redirect to Dashboard
+    else Limit Exceeded
+        SVC-->>CTL: Throw BadRequestException
+        CTL-->>FE: Error Response
+        FE-->>U: Show Error
     end
 ```
 
@@ -72,18 +74,18 @@ sequenceDiagram
 sequenceDiagram
     participant U as User
     participant FE as Web App
-    participant BE as API
+    participant CTL as FarmController
+    participant SVC as FarmService
     participant DB as Database
 
-    U->>FE: Open Farm Settings
-    FE->>BE: GET /api/farms/:id
-    BE-->>FE: Current Farm Info
-    U->>FE: Edit fields & Save
-    FE->>BE: PUT /api/farms/:id
-    BE->>BE: Validate Input
-    BE->>DB: Update Farm Record
-    DB-->>BE: Success
-    BE-->>FE: Success Message
+    U->>FE: Edit Farm Info -> Save
+    FE->>CTL: PUT /api/farms/:id
+    CTL->>SVC: update(id, userId, dto)
+    
+    SVC->>DB: Update Record
+    DB-->>SVC: Success
+    SVC-->>CTL: Return Updated Farm
+    CTL-->>FE: Success JSON
     FE-->>U: Show "Farm Updated"
 ```
 
@@ -93,20 +95,22 @@ sequenceDiagram
 sequenceDiagram
     participant U as User
     participant FE as Web App
-    participant BE as API
+    participant CTL as FarmController
+    participant SVC as FarmService
     participant DB as Database
 
-    U->>FE: Navigate to Financials
-    U->>FE: Select Period (e.g., current month)
-    FE->>BE: GET /api/farms/:id/stats?period=month
+    U->>FE: Select Period -> View Stats
+    FE->>CTL: GET /api/farms/:id/stats
+    CTL->>SVC: getStats(farmId, period)
     
     par Fetch Revenue & Expenses
-        BE->>DB: Sum(Harvest Revenues) in Period
-        BE->>DB: Sum(Input Expenses) in Period
+        SVC->>DB: Sum(Harvest Revenues)
+        SVC->>DB: Sum(Input Expenses)
     end
     
-    DB-->>BE: Return Totals
-    BE->>BE: Calculate Profit
-    BE-->>FE: JSON { revenue, expense, profit }
-    FE-->>U: Render Charts/Tables
+    DB-->>SVC: Return Computations
+    SVC->>SVC: Calculate Profit
+    SVC-->>CTL: Return Stats (Rev, Exp, Prof)
+    CTL-->>FE: JSON Response
+    FE-->>U: Render Charts
 ```

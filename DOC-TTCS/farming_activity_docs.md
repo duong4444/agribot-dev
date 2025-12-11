@@ -55,19 +55,26 @@
 sequenceDiagram
     participant U as User
     participant FE as Web App
-    participant BE as API
+    participant CTL as FarmingActivityController
+    participant SVC as FarmingActivityService
     participant DB as Database
 
-    U->>FE: Click "Add Activity"
-    FE-->>U: Show Form
-    U->>FE: Input(Type, Area, Date, Desc) & Submit
-    FE->>BE: POST /api/activities
-    BE->>BE: Validate Data
-    note right of BE: Check if Area belongs to User
-    BE->>DB: Insert Activity Record
-    DB-->>BE: Success (ID)
-    BE-->>FE: Return Created Activity
-    FE-->>U: Show Success Toast
+    U->>FE: Fill Activity Form -> Submit
+    FE->>CTL: POST /api/activities
+    CTL->>SVC: create(userId, dto)
+    
+    SVC->>DB: Validate Area Ownership
+    alt Owned by User
+        SVC->>DB: Insert Activity Record
+        DB-->>SVC: Success
+        SVC-->>CTL: Return Created Activity
+        CTL-->>FE: Success JSON
+        FE-->>U: Show "Activity Added"
+    else Not Owned
+        SVC-->>CTL: Throw ForbiddenException
+        CTL-->>FE: Error Response
+        FE-->>U: Show Error
+    end
 ```
 
 ### 3.2 Sequence Diagram: Search Activities
@@ -76,19 +83,18 @@ sequenceDiagram
 sequenceDiagram
     participant U as User
     participant FE as Web App
-    participant BE as API
+    participant CTL as FarmingActivityController
+    participant SVC as FarmingActivityService
     participant DB as Database
 
-    U->>FE: Open Activity Log
-    U->>FE: Set Filters (Area=A1, Type=Harvest, Date=LastWeek)
-    U->>FE: Click "Search"
-    FE->>BE: GET /api/activities
-    note right of FE: Query Params: ?areaId=A1&type=Harvest&from=...&to=...
+    U->>FE: Select Filters -> Click Search
+    FE->>CTL: GET /api/activities (params)
+    CTL->>SVC: findAll(userId, queryDto)
     
-    BE->>BE: Build Query from Filters
-    BE->>DB: Execute Search Query
-    DB-->>BE: Return List [Activity1, Activity2...]
-    BE-->>FE: Return JSON List
+    SVC->>DB: Execute Query with Filters
+    DB-->>SVC: Return Activity List
+    SVC-->>CTL: Return List
+    CTL-->>FE: JSON List
     FE-->>U: Render Activity Table
 ```
 
@@ -98,15 +104,19 @@ sequenceDiagram
 sequenceDiagram
     participant U as User
     participant FE as Web App
-    participant BE as API
+    participant CTL as FarmingActivityController
+    participant SVC as FarmingActivityService
     participant DB as Database
 
-    U->>FE: Update Data -> Click Save
-    FE->>BE: PUT /api/activities/:id
-    BE->>DB: Update Record
-    DB-->>BE: Success
-    BE-->>FE: Success Message
-    FE-->>U: Show "Activity Updated"
+    U->>FE: Edit Details -> Click Save
+    FE->>CTL: PUT /api/activities/:id
+    CTL->>SVC: update(id, userId, dto)
+    
+    SVC->>DB: Find & Update Record
+    DB-->>SVC: Success
+    SVC-->>CTL: Return Updated Activity
+    CTL-->>FE: Success JSON
+    FE-->>U: Show "Updated Successfully"
 ```
 
 ### 3.4 Sequence Diagram: Delete Activity
@@ -115,13 +125,17 @@ sequenceDiagram
 sequenceDiagram
     participant U as User
     participant FE as Web App
-    participant BE as API
+    participant CTL as FarmingActivityController
+    participant SVC as FarmingActivityService
     participant DB as Database
 
     U->>FE: Click Delete -> Confirm
-    FE->>BE: DELETE /api/activities/:id
-    BE->>DB: Remove Record
-    DB-->>BE: Success
-    BE-->>FE: Success Message
-    FE->>FE: Remove from UI List
+    FE->>CTL: DELETE /api/activities/:id
+    CTL->>SVC: delete(id, userId)
+    
+    SVC->>DB: Remove Record
+    DB-->>SVC: Success
+    SVC-->>CTL: Return Success
+    CTL-->>FE: Success Message
+    FE-->>U: Remove Item from List
 ```

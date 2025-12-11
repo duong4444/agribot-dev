@@ -23,29 +23,25 @@
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant FE as Web App (Next.js)
-    participant BE as API (NestJS)
-    participant DB as Database (Postgres)
+    participant FE as Web App
+    participant CTL as UsersController
+    participant SVC as UsersService
+    participant DB as Database
 
-    U->>FE: Navigate to Settings
-    FE->>BE: GET /api/users/profile
-    BE->>DB: Fetch User Table (id, name, phone, etc.)
-    DB-->>BE: Return User Data
-    BE-->>FE: Display Profile Form
+    U->>FE: Edit Fields -> Click "Save"
+    FE->>CTL: PUT /api/users/profile (body: name, phone)
+    CTL->>SVC: updateProfile(userId, updateDto)
     
-    U->>FE: Edit Fields (Name, Phone, Address)
-    U->>FE: Click "Save Changes"
-    FE->>BE: PUT /api/users/profile
-    note right of FE: Payload: { name, phone, address }
-    
-    BE->>BE: Validate Input Data
+    SVC->>SVC: Validate Input Data
     alt Validation Passed
-        BE->>DB: Update User Record
-        DB-->>BE: Success
-        BE-->>FE: Return Updated Profile Object
-        FE-->>U: Show Toast "Success" & Update View
+        SVC->>DB: Update User Record
+        DB-->>SVC: Success
+        SVC-->>CTL: Return Updated User
+        CTL-->>FE: Success Message
+        FE-->>U: Show "Profile Updated"
     else Validation Failed
-        BE-->>FE: Error 400 (Bad Request)
+        SVC-->>CTL: Throw BadRequestException
+        CTL-->>FE: Error 400
         FE-->>U: Show Validation Errors
     end
 ```
