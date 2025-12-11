@@ -28,7 +28,7 @@ const AdminPage = () => {
       bgColor: 'bg-teal-100 dark:bg-teal-900',
     },
     {
-      title: 'Kiến thức Cây trồng',
+      title: 'Kiến Thức Cây Trồng',
       description: 'Upload file .md với structural chunking cho Layer 1 FTS',
       icon: Leaf,
       href: '/admin/documents',
@@ -44,7 +44,7 @@ const AdminPage = () => {
       bgColor: 'bg-indigo-100 dark:bg-indigo-900',
     },
     {
-      title: 'Quản lý Người dùng',
+      title: 'Quản Lý Người Dùng',
       description: 'Quản lý tài khoản người dùng và phân quyền',
       icon: Users,
       href: '/admin/users',
@@ -52,7 +52,7 @@ const AdminPage = () => {
       bgColor: 'bg-blue-100 dark:bg-blue-900',
     },
     {
-      title: 'Quản lý Nông trại',
+      title: 'Quản Lý Nông Trại',
       description: 'Xem danh sách và thông tin cơ bản các nông trại',
       icon: Tractor,
       href: '/admin/farms',
@@ -60,7 +60,7 @@ const AdminPage = () => {
       bgColor: 'bg-amber-100 dark:bg-brown-900',
     },
     {
-      title: 'Quản lý Gói Đăng Ký',
+      title: 'Quản Lý Danh Sách Đăng Ký',
       description: 'Quản lý, gia hạn và theo dõi trạng thái gói cước thành viên',
       icon: CreditCard,
       href: '/admin/subscriptions',

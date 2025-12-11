@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { AuthGuard } from '@/components/auth/auth-guard';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { LogOut, Shield } from 'lucide-react';
+import { LogOut, Shield, Settings } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AdminLayout({
@@ -43,6 +43,14 @@ export default function AdminLayout({
                 <div className="hidden sm:block text-sm text-gray-600 dark:text-gray-400">
                   {session?.user?.name || session?.user?.email}
                 </div>
+                <Button
+                  variant="outline"
+                  onClick={() => router.push('/settings')}
+                  className="flex items-center space-x-2"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span className="hidden sm:inline">Cài đặt</span>
+                </Button>
                 <Button
                   variant="outline"
                   onClick={handleSignOut}
