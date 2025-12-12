@@ -182,13 +182,11 @@ sequenceDiagram
     participant DB as Database
 
     A->>FE: Navigate to RAG documents managent page
-    Note over FE: Page Load
     FE->>CTL: GET /api/admin/rag-documents
     CTL->>DB: Fetch ALL RagDocuments
     DB-->>CTL: List []
     CTL-->>FE: JSON List
     
-    Note over FE: User Interaction
     A->>FE: Type "Fertilizer"
     FE->>FE: Filter local array (doc.name.includes("Fertilizer"))
     FE-->>A: Update displayed list instantly

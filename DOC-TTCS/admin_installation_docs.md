@@ -61,7 +61,6 @@ sequenceDiagram
     
     SVC-->>CTL: Return List
     
-    note right of FE: List includes Farmer Name & Farm Name
     CTL-->>FE: JSON Response
     FE-->>A: Display Request List
 ```

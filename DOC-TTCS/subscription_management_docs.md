@@ -47,7 +47,6 @@ sequenceDiagram
     participant SVC as UsersService
     participant DB as Database
     A->>FE: Navigate to Subscriptions
-    Note over FE: Page Load
     FE->>CTL: GET /api/admin/users
     CTL->>SVC: findAll()
     SVC->>DB: SELECT * FROM users
@@ -65,7 +64,6 @@ sequenceDiagram
     participant SVC as UsersService
     participant DB as Database
     A->>FE: Navigate to Subscriptions
-    Note over FE: Page Load
     FE->>CTL: GET /api/admin/users
     CTL->>SVC: findAll()
     SVC->>DB: SELECT * FROM users
@@ -74,7 +72,6 @@ sequenceDiagram
     CTL-->>FE: JSON Data
     FE-->>A: Display Table
     
-    Note over FE: User Interaction
     A->>FE: Type user's name or user's email
     FE->>FE: Filter local list
     FE-->>A: Update displayed list instantly
@@ -89,7 +86,6 @@ sequenceDiagram
     participant DB as Database
     A->>FE: Click Edit -> Modify Status/Plan -> Save
     FE->>CTL: PUT /api/admin/users/:id
-    Note right of FE: Body: { plan, subscriptionStatus, credits, subscriptionExpiry }
     CTL->>SVC: update(id, data)
     SVC->>DB: UPDATE users SET ...
     DB-->>SVC: Updated User

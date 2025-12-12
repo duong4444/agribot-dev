@@ -101,7 +101,6 @@ sequenceDiagram
     participant DB as Database
 
     A->>FE: Navigate to User Management
-    Note over FE: Page Load
     FE->>CTL: GET /api/admin/users
     CTL->>SVC: findAll()
     SVC->>DB: SELECT * FROM users
@@ -122,7 +121,6 @@ sequenceDiagram
     participant DB as Database
 
     A->>FE: Navigate to User Management
-    Note over FE: Page Load
     FE->>CTL: GET /api/admin/users
     CTL->>SVC: findAll()
     SVC->>DB: SELECT * FROM users
@@ -130,7 +128,6 @@ sequenceDiagram
     SVC-->>CTL: User List []
     CTL-->>FE: JSON User List
     
-    Note over FE: User Interaction
     A->>FE: Type "Nguyen" in Search Bar
     FE->>FE: Filter local array (name/email match "Nguyen")
     FE-->>A: Update displayed list instantly

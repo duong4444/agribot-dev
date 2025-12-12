@@ -59,7 +59,6 @@ sequenceDiagram
     participant DB as Database
 
     A->>FE: Navigate to Farm Management
-    Note over FE: Page Load
     FE->>CTL: GET /api/admin/farms (via /farms/all endpoint)
     CTL->>SVC: getAllFarms()
     SVC->>DB: SELECT * FROM farms JOIN users, areas
@@ -80,7 +79,6 @@ sequenceDiagram
     participant DB as Database
 
     A->>FE: Navigate to Farm Management
-    Note over FE: Page Load
     FE->>CTL: GET /api/admin/farms (via /farms/all endpoint)
     CTL->>SVC: getAllFarms()
     SVC->>DB: SELECT * FROM farms JOIN users, areas
@@ -89,10 +87,8 @@ sequenceDiagram
     CTL-->>FE: JSON Farm List
     FE-->>A: Display Farm Table
     
-    Note over FE: User Interaction
     A->>FE: Search by farm name,farm address,OwnerName,OwnerEmail
     FE->>FE: Filter local list
-    Note right of FE: Check Name OR Address OR OwnerName OR OwnerEmail
     FE-->>A: Update displayed list instantly
 ```
 

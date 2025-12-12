@@ -106,7 +106,6 @@ sequenceDiagram
     SVC-->>CTL: Return List
     CTL-->>FE: JSON Response
     
-    note right of FE: Client-side Filter
     A->>FE: Enter "Sensor 1" or Filter "ACTIVE"
     FE->>FE: Filter List by properties
     FE-->>A: Display Filtered Results
@@ -144,7 +143,6 @@ sequenceDiagram
 
     A->>FE: Click Deactivate
     FE->>CTL: PUT /admin/device-inventory/:id
-    note right of FE: Request Body: { status: 'INACTIVE', isActive: false }
     CTL->>SVC: update(id, body)
     
     SVC->>DB: Update (Set Status = INACTIVE)

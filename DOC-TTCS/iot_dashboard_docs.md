@@ -131,7 +131,6 @@ sequenceDiagram
     SVC-->>CTL: Return Success
     CTL-->>FE: Show "Irrigation Started"
     
-    note right of DV: After 10 mins
     DV->>DV: Stop Pump
     DV-->>MQ: Report "irrigation_completed"
     MQ->>SVC: Update Event Status -> COMPLETED
@@ -163,7 +162,6 @@ sequenceDiagram
     SVC-->>CTL: Return Updated Config
     CTL-->>FE: Show "Config Saved"
     
-    note right of DV: Device now runs autonomously
     DV->>DV: Read Sensor -> Check Threshold -> Auto Irrigate
     DV-->>MQ: Report "auto_irrigation_triggered"
 ```

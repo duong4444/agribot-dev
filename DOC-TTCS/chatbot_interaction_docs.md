@@ -64,19 +64,16 @@ sequenceDiagram
         US->>US: Deduct 1 Credit
         US-->>BE: Access Allowed
         
-        note right of BE: Layer 1: Exact Match
         BE->>FTS: Find Exact Document (Entities)
         alt Confidence >= 0.9
             FTS-->>BE: Return Document Content
             BE-->>U: Return Answer (Source: Doc)
         else Layer 1 Failed
-            note right of BE: Layer 2: RAG
             BE->>RAG: Vector Search & Generate
             alt Confidence >= 0.5
                 RAG-->>BE: Return AI Answer
                 BE-->>U: Return Answer (Source: RAG)
             else Layer 2 Failed
-                note right of BE: Layer 3: LLM Fallback
                 BE->>LLM: Generate Pure AI Response
                 LLM-->>BE: Return Answer
                 BE-->>U: Return Answer (Source: LLM)

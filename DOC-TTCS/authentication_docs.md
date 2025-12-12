@@ -160,7 +160,6 @@ sequenceDiagram
     CTL-->>FE: Success
     FE-->>U: "Check your email"
     
-    note right of U: User clicks link & enters new pass
     U->>FE: Submit New Password
     FE->>CTL: POST /auth/reset-password
     CTL->>SVC: resetPassword(token, newPass)
