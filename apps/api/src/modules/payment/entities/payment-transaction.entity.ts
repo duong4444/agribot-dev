@@ -1,13 +1,18 @@
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { SubscriptionPlan } from './subscription-plan.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Entity('payment_transactions')
 export class PaymentTransaction {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({ nullable: true })
   userId: string;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'userId' })
+  user: User;
 
   @Column()
   amount: number;
