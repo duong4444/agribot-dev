@@ -120,7 +120,6 @@ export const useChat = () => {
   };
 
   const loadConversation = async (conversationId: string) => {
-    setIsLoading(true);
     try {
       const response = await fetch(`/api/chat/conversations/${conversationId}/messages`);
       
@@ -147,8 +146,6 @@ export const useChat = () => {
       setMessages(loadedMessages);
     } catch (error) {
       console.error("Error loading conversation:", error);
-    } finally {
-      setIsLoading(false);
     }
   };
 

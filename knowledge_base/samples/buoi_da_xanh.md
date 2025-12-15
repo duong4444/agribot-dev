@@ -11,9 +11,9 @@ Bưởi Da Xanh (Tên khoa học: Citrus maxima) có nguồn gốc tại xã Tha
 Bưởi Da Xanh là loại cây ăn quả có giá trị kinh tế cao, là mặt hàng xuất khẩu chủ lực (đặc biệt sang EU, Canada, Trung Quốc) nhờ khả năng đáp ứng các tiêu chuẩn khắt khe như GlobalG.A.P. hoặc VietG.A.P. Nhu cầu thị trường nội địa và xuất khẩu luôn ở mức cao và ổn định, mang lại thu nhập tốt cho nông dân. Đây là cây trồng xóa đói giảm nghèo và làm giàu cho nhiều địa phương, thường là sản phẩm OCOP (Mỗi xã một sản phẩm) chủ lực. Quả có thể bảo quản lâu sau thu hoạch (2-3 tuần ở nhiệt độ thường), thuận lợi cho vận chuyển xa.
 
 ### 1.3. Yêu cầu Sinh thái (Khí hậu & Đất)
-Cây Bưởi Da Xanh thích hợp với khí hậu nhiệt đới, nhiệt độ từ 23-29°C và tổng lượng mưa 1.500 - 2.500 mm/năm. Cây cần nhiều ánh sáng (ít nhất 6 giờ nắng trực tiếp/ngày). Đất trồng phải tơi xốp, giàu mùn (hàm lượng hữu cơ > 3%), tầng canh tác dày (trên 1m) và đặc biệt phải thoát nước tốt (rất quan trọng vì cây cực kỳ nhạy cảm với bệnh thối rễ do nấm). Độ pH lý tưởng của đất là từ 5.5 đến 6.5. Cây không chịu được ngập úng (dù chỉ 2-3 ngày) và đất phèn, mặn (độ mặn trong đất không quá 0.2% hay 2‰).
+Cây Bưởi Da Xanh thích hợp với khí hậu nhiệt đới, nhiệt độ từ 23-29°C và tổng lượng mưa 1.500 - 2.500 mm/năm. Cây cần nhiều ánh sáng (ít nhất 6 giờ nắng trực tiếp/ngày). Đất trồng phải tơi xốp, giàu mùn (hàm lượng hữu cơ > 3%), tầng canh tác dày (trên 1m) và đặc biệt phải thoát nước tốt (rất quan trọng vì cây cực kỳ nhạy cảm với bệnh thối rễ do nấm). Độ pH lý tưởng của đất là từ 5.5 đến 6.5. Cây không chịu được ngập úng (dù chỉ 2-3 ngày) và đất phèn, mặn (độ mặn trong đất không quá 0.2% hay 2%).
 
-## 2. Kỹ thuật Trồng trọt
+## 2. Cách trồng
 
 ### 2.1. Tiêu chuẩn chọn giống
 Phải chọn cây giống sạch bệnh, đặc biệt là bệnh Greening (vàng lá gân xanh) và Tristeza. Giống phổ biến là cây ghép mắt, gốc ghép phải tương thích tốt (thường là gốc bưởi chua, cam đắng để tăng khả năng thích nghi với đất phèn, mặn nhẹ và kháng bệnh thối rễ). Cây giống khỏe mạnh cần có chiều cao 60-80cm, lá xanh tốt, không dị dạng, đúng độ tuổi (6-8 tháng sau ghép), vị trí mắt ghép đã liền sẹo tốt và cao cách mặt bầu 15-20cm.
@@ -28,7 +28,7 @@ Phải chọn cây giống sạch bệnh, đặc biệt là bệnh Greening (và
 ### 2.4. Kỹ thuật đặt cây con
 Rạch bỏ túi bầu nilon (cẩn thận tránh vỡ bầu đất). Đặt cây con vào giữa hố sao cho mặt bầu cao hơn mặt đất 5-10cm (tránh đọng nước, nấm bệnh tấn công cổ rễ). Lấp đất và nén chặt xung quanh gốc. Tưới đẫm nước ngay sau khi trồng và dùng cọc cố định cây để tránh gió lay làm đứt rễ non. Nên dùng rơm rạ hoặc cỏ khô tủ gốc ngay sau khi trồng để giữ ẩm và giữ mát cho đất.
 
-## 3. Chăm sóc Định kỳ
+## 3. Cách chăm sóc
 
 ### 3.1. Tưới nước
 - Giai đoạn cây con (1-3 năm): Cần tưới thường xuyên 2-3 ngày/lần để đảm bảo độ ẩm đất luôn đạt 60-70%. Đặc biệt mùa khô phải tăng cường tưới và tủ gốc.
@@ -43,7 +43,7 @@ Tỉa cành là bắt buộc để cây thông thoáng, giảm sâu bệnh và t
 - Quản lý cỏ dại: Cần giữ sạch cỏ quanh gốc (đường kính 1-1.5m) để tránh cạnh tranh dinh dưỡng. Bằng cách làm cỏ thủ công hoặc máy cắt cỏ, hạn chế dùng thuốc diệt cỏ vì có thể gây hại rễ tơ của bưởi. Phần còn lại của vườn nên cắt cỏ và giữ thảm thực vật để chống xói mòn, giữ ẩm và tạo nơi trú ẩn cho thiên địch.
 - Tủ gốc: Vào mùa khô, dùng rơm rạ, cỏ khô, hoặc màng phủ nông nghiệp để tủ gốc. Lưu ý: tủ cách gốc 10-15cm để tránh làm ẩm gốc, tạo điều kiện cho bệnh thối gốc phát triển.
 
-## 4. Quản lý Phân bón
+## 4. Cách bón phân
 
 ### 4.1. Bón phân giai đoạn cây tơ (Năm 1-3)
 Giai đoạn này cây cần nhiều Đạm (N) và Lân (P) để phát triển thân, lá, rễ. Sử dụng NPK (ví dụ: 20-20-15 hoặc 16-16-8) với liều lượng 0.5 - 1.5kg/cây/năm, tăng dần theo tuổi cây (Ví dụ: Năm 1: 0.5kg, Năm 2: 1kg, Năm 3: 1.5kg). Chia làm 4-5 lần bón trong năm, rải quanh tán (cách gốc 30-50cm) và tưới nước. Có thể bổ sung phân hữu cơ (2-5kg/gốc) hàng năm.
@@ -57,7 +57,7 @@ Ngừng tưới nước để "siết nước" khoảng 15-20 ngày, đến khi 
 ### 4.4. Bón phân nuôi quả
 Sau khi quả đậu (bằng ngón tay), bón NPK cân bằng (ví dụ: 15-15-15 hoặc 17-17-17) để nuôi quả, giúp quả lớn nhanh, tròn đều, chia làm 2-3 lần bón trong giai đoạn quả lớn. Trước khi thu hoạch 1-2 tháng, bón tăng cường Kali (K2SO4) hoặc Kali trắng (KNO3) để tăng độ ngọt (tăng Brix), tép bưởi lên màu hồng đỏ đẹp hơn và vỏ quả cứng cáp, dễ bảo quản. Giai đoạn này cũng cần chú ý bổ sung Canxi (Ca) và Boron (B) qua lá để chống nứt quả, thối đít quả.
 
-## 5. Phòng trừ Sâu bệnh hại chính
+## 5. Cách phòng trừ sâu hại chính
 
 ### 5.1. Sâu vẽ bùa
 - Triệu chứng: Sâu non đục vào lá non, tạo đường hầm ngoằn ngoèo. Lá bị quăn queo, biến dạng, giảm quang hợp. Vết đục cũng là cửa ngõ cho bệnh loét xâm nhập.

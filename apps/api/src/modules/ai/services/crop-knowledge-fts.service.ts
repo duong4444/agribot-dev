@@ -111,9 +111,19 @@ export class CropKnowledgeFTSService {
 
       // Re-rank results based on disease/pest keyword matches in title
       const diseaseKeywords = this.extractDiseaseKeywords(query);
-      const rerankedResults = this.rerankByTitleMatch(results, diseaseKeywords);
+      const { results: rerankedResults, hasMatch } = this.rerankByTitleMatch(results, diseaseKeywords);
       if (diseaseKeywords.length > 0) {
         this.logger.debug(`🔄 Re-ranking with disease keywords: [${diseaseKeywords.join(', ')}]`);
+      }
+
+      // If user asked about specific disease but no title matched → fallback to LLM
+      if (diseaseKeywords.length > 0 && !hasMatch) {
+        this.logger.debug(`⚠️ Disease "${diseaseKeywords.join(', ')}" not found in KB - falling back to LLM`);
+        return { 
+          found: false, 
+          confidence: 0, 
+          metadata: { reason: 'disease_not_in_kb', diseaseKeywords }
+        };
       }
 
       const topMatch = rerankedResults[0];
@@ -739,16 +749,35 @@ export class CropKnowledgeFTSService {
       // SỐ TỪ (topicWords MATCH VS queryWord) / tổng số topicWord
       const score = topicWords.length > 0 ? matchCount / topicWords.length : 0;
 
-      if (score > 0) {
+      // BOOST: If query contains disease keywords, boost disease-related topics
+      let adjustedScore = score;
+      const asciiQuery = this.removeAccents(normalizedQuery);
+      const isQueryAboutDisease = asciiQuery.includes('benh') || 
+                                   asciiQuery.includes('phong') || 
+                                   asciiQuery.includes('tri');
+      
+      if (isQueryAboutDisease) {
+        const topicAscii = this.removeAccents(normalizedTopic);
+        const isDiseaseRelatedTopic = topicAscii.includes('benh') || 
+                                      topicAscii.includes('phong tru') || 
+                                      topicAscii.includes('sau hai') ||
+                                      topicAscii.includes('sau benh');
+        if (isDiseaseRelatedTopic) {
+          adjustedScore += 0.4; // Significant boost for disease-related topics
+          this.logger.debug(`🏥 Boosting disease topic "${chunk.chuDeLon}" by +0.4`);
+        }
+      }
+
+      if (adjustedScore > 0) {
         topicScores.set(topicKey, {
           loaiCay: chunk.loaiCay,
           chuDeLon: chunk.chuDeLon,
-          score,
+          score: adjustedScore,
           matchedWords,
         });
         
         this.logger.log(
-          `📊 Topic: "${chunk.chuDeLon}" | Score: ${(score * 100).toFixed(0)}% | ` +
+          `📊 Topic: "${chunk.chuDeLon}" | Score: ${(adjustedScore * 100).toFixed(0)}% | ` +
           `Matched: [${matchedWords.join(', ')}] / [${topicWords.join(', ')}]`
         );
       }
@@ -835,36 +864,85 @@ export class CropKnowledgeFTSService {
   }
 
   /**
+   * Known disease/pest names for accurate matching
+   */
+  private readonly KNOWN_DISEASES = [
+    // Bệnh phổ biến (multi-word first for priority matching)
+    'thoi re', 'thoi goc', 'gi sat', 'nam hong', 'phan trang', 
+    'than thu', 'chay la', 'dom la', 'vang la', 'heo xanh',
+    // Single word diseases
+    'loet', 'greening', 'tristeza', 'mosaic', 'phytophthora',
+  ];
+
+  private readonly KNOWN_PESTS = [
+    // Sâu hại
+    've bua', 'duc than', 'duc qua', 'cuon la', 'xanh da',
+    // Nhện
+    'do', 'vang',
+    // Rầy
+    'chong canh', 'mem', 'nau',
+  ];
+
+  private readonly STOPWORDS = [
+    'cay', 'o', 'cho', 'tren', 'cua', 've', 'voi', 'la', 'va', 'co',
+    'duoc', 'den', 'tu', 'nhu', 'khi', 'trong', 'ngoai', 'sau', 'truoc'
+  ];
+
+  /**
    * Extract disease/pest keywords from query for re-ranking
-   * Patterns: "bệnh X", "sâu X", "nhện X", "rầy X"
+   * Uses known diseases dictionary for accurate matching
    */
   private extractDiseaseKeywords(query: string): string[] {
-    // Use removeVietnameseAccents for ASCII-based regex matching
     const normalizedQuery = normalizeText(query);
     const asciiQuery = this.removeAccents(normalizedQuery);
     const keywords: string[] = [];
     
     this.logger.debug(`🔍 extractDiseaseKeywords: query="${query}" → ascii="${asciiQuery}"`);
     
-    // Pattern: "bệnh X" → extract X (e.g., loet, thoi re, greening)
-    const benhMatch = asciiQuery.match(/benh\s+(\w+(?:\s+\w+)?)/i);
-    if (benhMatch) {
-      keywords.push(benhMatch[1]);
-      this.logger.debug(`🎯 Matched disease: "${benhMatch[1]}"`);
+    // 1. Check for known diseases first (priority matching)
+    for (const disease of this.KNOWN_DISEASES) {
+      if (asciiQuery.includes(`benh ${disease}`) || asciiQuery.includes(disease)) {
+        keywords.push(disease);
+        this.logger.debug(`🎯 Matched known disease: "${disease}"`);
+        break; // Only one disease per query
+      }
     }
     
-    // Pattern: "sâu X", "nhện X", "rầy X" → extract full phrase
+    // 2. Fallback: extract single word after "bệnh" if no known disease found
+    if (keywords.length === 0) {
+      const benhMatch = asciiQuery.match(/benh\s+(\w+)/i);
+      if (benhMatch) {
+        const extracted = benhMatch[1];
+        // Filter out stopwords
+        if (!this.STOPWORDS.includes(extracted)) {
+          keywords.push(extracted);
+          this.logger.debug(`🎯 Extracted disease (fallback): "${extracted}"`);
+        } else {
+          this.logger.debug(`⚠️ Skipped stopword: "${extracted}"`);
+        }
+      }
+    }
+    
+    // 3. Check for pests: "sâu X", "nhện X", "rầy X"
     const pestPatterns = [
-      /sau\s+(\w+(?:\s+\w+)?)/i,  // sâu đục thân, sâu vẽ bùa
-      /nhen\s+(\w+)/i,            // nhện đỏ
-      /ray\s+(\w+(?:\s+\w+)?)/i,  // rầy chổng cánh
+      { pattern: /sau\s+(\w+(?:\s+\w+)?)/i, prefix: 'sau' },
+      { pattern: /nhen\s+(\w+)/i, prefix: 'nhen' },
+      { pattern: /ray\s+(\w+(?:\s+\w+)?)/i, prefix: 'ray' },
     ];
     
-    for (const pattern of pestPatterns) {
+    for (const { pattern, prefix } of pestPatterns) {
       const match = asciiQuery.match(pattern);
       if (match) {
-        keywords.push(match[0]); // Include the prefix (sau, nhen, ray)
-        this.logger.debug(`🎯 Matched pest: "${match[0]}"`);
+        const pestName = match[1];
+        // Check if it's a known pest or filter stopwords
+        const fullPest = `${prefix} ${pestName}`;
+        if (this.KNOWN_PESTS.some(p => pestName.includes(p) || fullPest.includes(p))) {
+          keywords.push(fullPest);
+          this.logger.debug(`🎯 Matched known pest: "${fullPest}"`);
+        } else if (!this.STOPWORDS.includes(pestName.split(' ')[0])) {
+          keywords.push(fullPest);
+          this.logger.debug(`🎯 Extracted pest: "${fullPest}"`);
+        }
       }
     }
     
@@ -896,24 +974,41 @@ export class CropKnowledgeFTSService {
 
   /**
    * Re-rank FTS results by boosting chunks with disease/pest keywords in title
+   * Returns { results, hasMatch } to indicate if any title matched
    */
   private rerankByTitleMatch(
     results: SearchResult[],
     diseaseKeywords: string[],
-  ): SearchResult[] {
+  ): { results: SearchResult[], hasMatch: boolean } {
     if (diseaseKeywords.length === 0) {
-      return results;
+      return { results, hasMatch: true }; // No disease query, proceed normally
     }
     
-    return results.map(result => {
+    let anyTitleMatched = false;
+    
+    const reranked = results.map(result => {
       // Convert title to ASCII for comparison
       const titleAscii = this.removeAccents(normalizeText(result.tieuDeChunk));
+      // Also check chuDeLon (main topic)
+      const topicAscii = this.removeAccents(normalizeText(result.chuDeLon));
       let rankBoost = 0;
       
       for (const keyword of diseaseKeywords) {
         if (titleAscii.includes(keyword)) {
           rankBoost = Math.max(rankBoost, 2.0); // Full match in title
+          anyTitleMatched = true;
           this.logger.debug(`📈 Boosting "${result.tieuDeChunk}" +2.0 (matched: "${keyword}" in "${titleAscii}")`);
+        } else if (topicAscii.includes('benh') || topicAscii.includes('phong tru') || topicAscii.includes('sau hai')) {
+          // Boost disease/pest topic even if not exact match
+          const keywordWords = keyword.split(' ');
+          const partialMatch = keywordWords.some(w => 
+            w.length > 2 && (titleAscii.includes(w) || topicAscii.includes(w))
+          );
+          if (partialMatch) {
+            rankBoost = Math.max(rankBoost, 1.5); // Topic + partial match
+            anyTitleMatched = true;
+            this.logger.debug(`📈 Boosting "${result.tieuDeChunk}" +1.5 (disease topic + partial match)`);
+          }
         } else {
           // Check partial match (any word from keyword)
           const keywordWords = keyword.split(' ');
@@ -931,5 +1026,11 @@ export class CropKnowledgeFTSService {
         rank: result.rank + rankBoost,
       };
     }).sort((a, b) => b.rank - a.rank);
+    
+    if (!anyTitleMatched) {
+      this.logger.debug(`⚠️ Disease keywords [${diseaseKeywords.join(', ')}] not found in any title - will fallback to LLM`);
+    }
+    
+    return { results: reranked, hasMatch: anyTitleMatched };
   }
 }

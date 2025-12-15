@@ -1,0 +1,287 @@
+api:dev: user_prompt:  Mưa nhiều liên tục trong thời gian cà phê ra hoa thì nên làm gì
+api:dev: direct đến Orchest để xử lý
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [AIOrchestrator] Processing query: "Mưa nhiều liên tục trong thời gian cà phê ra hoa thì nên làm gì" for user b5a0dfd6-579c-4a90-833d-f4145e03c292
+api:dev: STEP1 trong orchest==========INTENT CLASSIFIER & NER ==================
+api:dev: user_query || prompt:  Mưa nhiều liên tục trong thời gian cà phê ra hoa thì nên làm gì
+api:dev: normalize_prompt_text:  mưa nhiều liên tục trong thời gian cà phê ra hoa thì nên làm gì
+api:dev: post đến 8000/analyze..........................................
+api:dev: INTENT trả về từ 8000/analyze:  knowledge_query
+api:dev: entities trả về từ 8000/analyze:  [
+api:dev:   {
+api:dev:     type: 'crop_name',
+api:dev:     value: 'cà phê',
+api:dev:     raw: 'cà phê',
+api:dev:     confidence: 0.95,
+api:dev:     start: 35,
+api:dev:     end: 41
+api:dev:   }
+api:dev: ]
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM   DEBUG [PythonAIClientService] Python AI Analysis: Intent=knowledge_query, Entities=1, Time=142ms
+api:dev: pythonResult:  knowledge_query
+api:dev: pythonResult_entities_!!!!!!!!!!!!!:  [
+api:dev:   {
+api:dev:     type: 'crop_name',
+api:dev:     value: 'cà phê',
+api:dev:     raw: 'cà phê',
+api:dev:     confidence: 0.95,
+api:dev:     start: 35,
+api:dev:     end: 41
+api:dev:   }
+api:dev: ]
+api:dev: !!!DÙNG PYTHON CHO INENT CLASSIFIER!!!
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM   DEBUG [IntentClassifierService] Using Python AI Service (PhoBERT) classification
+api:dev: intent_convertToIntentType_aka_intent_trả_về_step1_orchest:  knowledge_query
+api:dev: entities_convertToEntity_aka_entities_trả_về_step1_orchest:  [
+api:dev:   {
+api:dev:     type: 'crop_name',
+api:dev:     value: 'cà phê',
+api:dev:     raw: 'cà phê',
+api:dev:     confidence: 0.95,
+api:dev:     position: { start: 35, end: 41 }
+api:dev:   }
+api:dev: ]
+api:dev: !!!!intent_result_ai_orchestrator!!!!:  {
+api:dev:   intent: 'knowledge_query',
+api:dev:   confidence: 0.999561607837677,
+api:dev:   entities: [
+api:dev:     {
+api:dev:       type: 'crop_name',
+api:dev:       value: 'cà phê',
+api:dev:       raw: 'cà phê',
+api:dev:       confidence: 0.95,
+api:dev:       position: [Object]
+api:dev:     }
+api:dev:   ],
+api:dev:   originalQuery: 'Mưa nhiều liên tục trong thời gian cà phê ra hoa thì nên làm gì',
+api:dev:   normalizedQuery: 'mưa nhiều liên tục trong thời gian cà phê ra hoa thì nên làm gì'
+api:dev: }
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM   DEBUG [AIOrchestrator] Intent: knowledge_query, Confidence: 1.00, Entities: 1
+api:dev: user plan:  PREMIUM
+api:dev: user status:  ACTIVE
+api:dev: isPremiumActive:  true
+api:dev: ACCESS CHECK trong orchest:  { allowed: true }
+api:dev: STEP2 trong orchest=============== UNKNOWN || CHECK <ACTION || KNOWLEDGE>=============
+api:dev: intent_category_|->ACTION || KNOWLEDGE<-|_ai_orchestrator:  knowledge
+api:dev: ======================KNOWLEDGE_CATEGORY=======================
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM   DEBUG [AIOrchestrator] Attempting Layer 1: Exact Match
+api:dev: .............................TRY LAYER1_FTS..................................................
+api:dev: chạy vào findExactMatch của exact-match-v2.service do orchestrator gọi
+api:dev: words:  [
+api:dev:   'Mưa',  'nhiều', 'liên',
+api:dev:   'tục',  'trong', 'thời',
+api:dev:   'gian', 'cà',    'phê',
+api:dev:   'ra',   'hoa',   'thì',
+api:dev:   'nên',  'làm',   'gì'
+api:dev: ]
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM   DEBUG [QueryPreprocessorService] Query cleaned: "Mưa nhiều liên tục trong thời gian cà phê ra hoa thì nên làm gì" → "mưa nhiều liên tục trong thời gian cà phê ra hoa thì nên làm gì"
+api:dev: keywords:  [
+api:dev:   'mưa',  'nhiều',
+api:dev:   'liên', 'tục',
+api:dev:   'thời', 'gian',
+api:dev:   'phê',  'hoa',
+api:dev:   'làm'
+api:dev: ]
+api:dev: noiseWordCoint:  6
+api:dev: hasNoiseWords:  true
+api:dev: recommedProcessing:  true
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM   DEBUG [QueryPreprocessorService] Query cleaned: "Mưa nhiều liên tục trong thời gian cà phê ra hoa thì nên làm gì" → "mưa nhiều liên tục trong thời gian cà phê ra hoa thì nên làm gì"
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM   DEBUG [QueryPreprocessorService] Query cleaned: "Mưa nhiều liên tục trong thời gian cà phê ra hoa thì nên làm gì" → "mưa nhiều liên tục trong thời gian cà phê ra hoa thì nên làm gì"
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM   DEBUG [ExactMatchV2Service] !!!! Query preprocessed:
+api:dev:   Original: "Mưa nhiều liên tục trong thời gian cà phê ra hoa thì nên làm gì"
+api:dev:   Cleaned: "mưa nhiều liên tục trong thời gian cà phê ra hoa thì nên làm gì"
+api:dev:   Keywords: [mưa, nhiều, liên, tục, thời, gian, phê, hoa, làm]
+api:dev:   Noise words removed: 6
+api:dev: option.useFuzzyFallback:  undefined
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM   DEBUG [ExactMatchV2Service] Detected crop filter from NER: "cà phê"
+api:dev: Trying Crop Knowledge FTS...
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] Searching for: "mưa nhiều liên tục trong thời gian cà phê ra hoa thì nên làm gì"
+api:dev: -------------------SEARCH BẰNG HEADING-----------------------
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] 🔍 Heading search - Query: "mưa nhiều liên tục trong thời gian cà phê ra hoa thì nên làm gì" → Normalized: "mưa nhiều liên tục trong thời gian cà phê ra hoa thì nên làm gì"
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] 📝 Query words (>2 chars): [mưa, nhiều, liên, tục, trong, thời, gian, phê, hoa, thì, nên, làm]
+api:dev: ALLCHUNKS LÀ CÁC ROW TRONG crop_knowledge_chunks mà có loai_cay = |crop_name - NER|
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] 📚 Found 22 total chunks to analyze
+api:dev: topicKey:  Cà Phê::1. Thông tin chung về Cây Cà Phê
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] 🔎 Analyzing topic: "1. Thông tin chung về Cây Cà Phê" → normalized: "1. thông tin chung về cây cà phê" → words: [thông, tin, chung, cây, phê]
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] 📊 Topic: "1. Thông tin chung về Cây Cà Phê" | Score: 20% | Matched: [phê] / [thông, tin, chung, cây, phê]
+api:dev: topicKey:  Cà Phê::1. Thông tin chung về Cây Cà Phê
+api:dev: topicKey:  Cà Phê::1. Thông tin chung về Cây Cà Phê
+api:dev: topicKey:  Cà Phê::2. Cách trồng
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] 🔎 Analyzing topic: "2. Cách trồng" → normalized: "2. cách trồng" → words: [cách, trồng]
+api:dev: topicKey:  Cà Phê::2. Cách trồng
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] 🔎 Analyzing topic: "2. Cách trồng" → normalized: "2. cách trồng" → words: [cách, trồng]
+api:dev: topicKey:  Cà Phê::2. Cách trồng
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] 🔎 Analyzing topic: "2. Cách trồng" → normalized: "2. cách trồng" → words: [cách, trồng]
+api:dev: topicKey:  Cà Phê::2. Cách trồng
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] 🔎 Analyzing topic: "2. Cách trồng" → normalized: "2. cách trồng" → words: [cách, trồng]
+api:dev: topicKey:  Cà Phê::3. Cách chăm sóc
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] 🔎 Analyzing topic: "3. Cách chăm sóc" → normalized: "3. cách chăm sóc" → words: [cách, chăm, sóc]
+api:dev: topicKey:  Cà Phê::3. Cách chăm sóc
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] 🔎 Analyzing topic: "3. Cách chăm sóc" → normalized: "3. cách chăm sóc" → words: [cách, chăm, sóc]
+api:dev: topicKey:  Cà Phê::3. Cách chăm sóc
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] 🔎 Analyzing topic: "3. Cách chăm sóc" → normalized: "3. cách chăm sóc" → words: [cách, chăm, sóc]
+api:dev: topicKey:  Cà Phê::3. Cách chăm sóc
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] 🔎 Analyzing topic: "3. Cách chăm sóc" → normalized: "3. cách chăm sóc" → words: [cách, chăm, sóc]
+api:dev: topicKey:  Cà Phê::4. Cách bón phân
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] 🔎 Analyzing topic: "4. Cách bón phân" → normalized: "4. cách bón phân" → words: [cách, bón, phân]
+api:dev: topicKey:  Cà Phê::4. Cách bón phân
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] 🔎 Analyzing topic: "4. Cách bón phân" → normalized: "4. cách bón phân" → words: [cách, bón, phân]
+api:dev: topicKey:  Cà Phê::4. Cách bón phân
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] 🔎 Analyzing topic: "4. Cách bón phân" → normalized: "4. cách bón phân" → words: [cách, bón, phân]
+api:dev: topicKey:  Cà Phê::5. Cách phòng trừ sâu hại chính
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] 🔎 Analyzing topic: "5. Cách phòng trừ sâu hại chính" → normalized: "5. cách phòng trừ sâu hại chính" → words: [cách, phòng, trừ, sâu, hại, chính]
+api:dev: topicKey:  Cà Phê::5. Cách phòng trừ sâu hại chính
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] 🔎 Analyzing topic: "5. Cách phòng trừ sâu hại chính" → normalized: "5. cách phòng trừ sâu hại chính" → words: [cách, phòng, trừ, sâu, hại, chính]
+api:dev: topicKey:  Cà Phê::5. Cách phòng trừ sâu hại chính
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] 🔎 Analyzing topic: "5. Cách phòng trừ sâu hại chính" → normalized: "5. cách phòng trừ sâu hại chính" → words: [cách, phòng, trừ, sâu, hại, chính]
+api:dev: topicKey:  Cà Phê::5. Cách phòng trừ sâu hại chính
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] 🔎 Analyzing topic: "5. Cách phòng trừ sâu hại chính" → normalized: "5. cách phòng trừ sâu hại chính" → words: [cách, phòng, trừ, sâu, hại, chính]
+api:dev: topicKey:  Cà Phê::5. Cách phòng trừ sâu hại chính
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] 🔎 Analyzing topic: "5. Cách phòng trừ sâu hại chính" → normalized: "5. cách phòng trừ sâu hại chính" → words: [cách, phòng, trừ, sâu, hại, chính]
+api:dev: topicKey:  Cà Phê::6. Thu hoạch và Sơ chế
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] 🔎 Analyzing topic: "6. Thu hoạch và Sơ chế" → normalized: "6. thu hoạch và sơ chế" → words: [thu, hoạch, chế]
+api:dev: topicKey:  Cà Phê::6. Thu hoạch và Sơ chế
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] 🔎 Analyzing topic: "6. Thu hoạch và Sơ chế" → normalized: "6. thu hoạch và sơ chế" → words: [thu, hoạch, chế]
+api:dev: topicKey:  Cà Phê::6. Thu hoạch và Sơ chế
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] 🔎 Analyzing topic: "6. Thu hoạch và Sơ chế" → normalized: "6. thu hoạch và sơ chế" → words: [thu, hoạch, chế]
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] ❌❌❌❌❌❌ No main topic match found (no topic with score >= 70%)
+api:dev: subTopicMatch:  null
+api:dev: ------------kqua trả về của searchByHeadings-------------------:  null
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM   DEBUG [CropKnowledgeFTSService] ==================No heading match, falling back to Layer 2 FTS===================
+api:dev: ...........................FULL-TEXT SEARCH TỚI CHƠI..................................
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM   DEBUG [CropKnowledgeFTSService] ______________Executing FTS: query="mưa nhiều liên tục trong thời gian cà phê ra hoa thì nên làm gì", userId=undefined, limit=5, minRank=0.01, cropFilter=cà phê
+api:dev: ==========================================================
+api:dev: ==========results trong FTS!heading:  [
+api:dev:   {
+api:dev:     chunkId: 'ca_phe_008',
+api:dev:     loaiCay: 'Cà Phê',
+api:dev:     chuDeLon: '3. Cách chăm sóc',
+api:dev:     tieuDeChunk: '3.1. Tưới nước',
+api:dev:     noiDung: 'Đây là kỹ thuật quan trọng nhất ở Tây Nguyên (vùng trồng Robusta).\r- Mùa khô: Cần tưới 3-4 đợt, mỗi đợt cách nhau 20-30 ngày. Lượng nước 400-600 lít/gốc/lần tưới, đảm bảo đất ẩm sâu 50-70cm.\r- Siết nước: Cần một giai đoạn khô hạn (siết nước) 2-3 tháng cuối mùa khô để cây phân hóa mầm hoa.\r- Tưới ra hoa: Đợt tưới đầu tiên sau mùa khô (thường vào tháng 1-2) là quan trọng nhất, mang tính quyết định để hoa nở đồng loạt, tỷ lệ đậu quả cao. Tưới muộn hoặc không đủ nước sẽ làm hoa nở lác đác, hoa chanh (hoa không thụ phấn), năng suất giảm.',
+api:dev:     metadata: {
+api:dev:       has_bold: false,
+api:dev:       has_list: true,
+api:dev:       char_count: 541,
+api:dev:       word_count: 113
+api:dev:     },
+api:dev:     rank: 1.7647059,
+api:dev:     headline: '<b>hoa</b> nở đồng loạt, tỷ lệ đậu quả cao. Tưới muộn hoặc không đủ nước sẽ làm <b>hoa</b> nở lác đác, <b>hoa</b> chanh (<b>hoa</b> không'
+api:dev:   },
+api:dev:   {
+api:dev:     chunkId: 'ca_phe_007',
+api:dev:     loaiCay: 'Cà Phê',
+api:dev:     chuDeLon: '2. Cách trồng',
+api:dev:     tieuDeChunk: '2.4. Kỹ thuật trồng',
+api:dev:     noiDung: 'Rạch bỏ túi bầu (tránh làm vỡ bầu). Đặt cây vào giữa hố sao cho mặt bầu ngang bằng mặt đất, hướng lá ghép (nếu là cây ghép) về phía gió chính. Lấp đất, nén chặt xung quanh gốc. Tưới đẫm nước (20-30 lít/gốc) ngay sau khi trồng. Phải làm bồn và tủ gốc bằng cỏ khô, rơm rạ (tủ cách gốc 10cm). Trồng cây che bóng tạm thời (ví dụ: chuối, muồng) ngay sau khi trồng cà phê.',
+api:dev:     metadata: {
+api:dev:       has_bold: false,
+api:dev:       has_list: false,
+api:dev:       char_count: 366,
+api:dev:       word_count: 79
+api:dev:     },
+api:dev:     rank: 1.7647059,
+api:dev:     headline: 'Rạch bỏ túi bầu (tránh làm vỡ bầu). Đặt cây vào giữa hố sao cho mặt bầu ngang bằng mặt đất, hướng lá ghép (nếu'
+api:dev:   },
+api:dev:   {
+api:dev:     chunkId: 'ca_phe_001',
+api:dev:     loaiCay: 'Cà Phê',
+api:dev:     chuDeLon: '1. Thông tin chung về Cây Cà Phê',
+api:dev:     tieuDeChunk: '1.1. Nguồn gốc và Phân loại',
+api:dev:     noiDung: 'Cây cà phê (Tên khoa học: Coffea) là một chi thực vật thuộc họ Thiến thảo (Rubiaceae). Có nhiều loài, nhưng hai loài có giá trị kinh tế quan trọng nhất trên toàn cầu và tại Việt Nam là:\r- Cà phê Robusta:\r- Nguồn gốc: Vùng cận Sahara, châu Phi.\r- Đặc điểm: Cây dạng bụi hoặc cây gỗ nhỏ, lá to, rễ nông. Hàm lượng caffeine cao (2% - 4%). Hạt tròn, nhỏ.\r- Đặc tính: Khả năng kháng bệnh (đặc biệt là gỉ sắt) tốt hơn Arabica, chịu được khí hậu nóng ẩm, yêu cầu lượng mưa cao. Thường được dùng cho cà phê hòa tan và phối trộn.\r- Cà phê Arabica:\r- Nguồn gốc: Vùng cao nguyên Tây Nam Ethiopia.\r- Đặc điểm: Cây nhỏ, lá nhỏ hơn Robusta. Hàm lượng caffeine thấp (1% - 2%). Hạt dài, dẹt.\r- Đặc tính: Hương vị thơm, phong phú, phức tạp, có vị chua thanh. Yêu cầu khắt khe về sinh thái, phải trồng ở độ cao lớn, khí hậu mát mẻ. Rất mẫn cảm với bệnh gỉ sắt. Đây là dòng cà phê chính cho "cà phê đặc sản" (Specialty Coffee). Các giống phổ biến: Catimor, Typica, Bourbon...',
+api:dev:     metadata: {
+api:dev:       has_bold: false,
+api:dev:       has_list: true,
+api:dev:       char_count: 988,
+api:dev:       word_count: 202
+api:dev:     },
+api:dev:     rank: 1.7424242,
+api:dev:     headline: 'Cây cà phê (Tên khoa học: Coffea) là một chi thực vật thuộc họ Thiến thảo (Rubiaceae). Có nhiều loài, nhưng hai loài có giá'
+api:dev:   },
+api:dev:   {
+api:dev:     chunkId: 'ca_phe_003',
+api:dev:     loaiCay: 'Cà Phê',
+api:dev:     chuDeLon: '1. Thông tin chung về Cây Cà Phê',
+api:dev:     tieuDeChunk: '1.3. Yêu cầu Sinh thái (Khí hậu & Đất)',
+api:dev:     noiDung: '- Cà phê Robusta:\r- Độ cao: Thích hợp ở độ cao dưới 1000m (phổ biến 500-800m).\r- Nhiệt độ: Ưa khí hậu nóng ẩm, nhiệt độ trung bình 22-26°C.\r- Lượng mưa: Cần 1.500 - 2.500 mm/năm, và đặc biệt cần một mùa khô rõ rệt (2-3 tháng) để phân hóa mầm hoa.\r- Đất: Cần tầng canh tác dày (trên 1m), tơi xốp, giàu hữu cơ, thoát nước tốt. Độ pH lý tưởng 5.0 - 6.5.\r- Cà phê Arabica:\r- Độ cao: Bắt buộc trồng ở độ cao trên 1000m (lý tưởng là 1.200 - 1.800m) để phát triển hương vị.\r- Nhiệt độ: Ưa khí hậu mát mẻ, nhiệt độ trung bình 18-22°C. Nhiệt độ cao làm quả chín nhanh, tích lũy đường kém, giảm chất lượng.\r- Lượng mưa: Cần 1.200 - 2.000 mm/năm, phân bố đều, không cần mùa khô rõ rệt như Robusta.\r- Đất: Tương tự Robusta nhưng yêu cầu khắt khe hơn về hàm lượng mùn và độ tơi xốp.',
+api:dev:     metadata: {
+api:dev:       has_bold: false,
+api:dev:       has_list: true,
+api:dev:       char_count: 810,
+api:dev:       word_count: 169
+api:dev:     },
+api:dev:     rank: 1.71875,
+api:dev:     headline: '<b>hoa</b>.\r- Đất: Cần tầng canh tác dày (trên 1m), tơi xốp, giàu hữu cơ, thoát nước tốt. Độ pH lý tưởng 5.0 - 6.5.\r- Cà phê'
+api:dev:   },
+api:dev:   {
+api:dev:     chunkId: 'ca_phe_005',
+api:dev:     loaiCay: 'Cà Phê',
+api:dev:     chuDeLon: '2. Cách trồng',
+api:dev:     tieuDeChunk: '2.2. Thời vụ và Mật độ',
+api:dev:     noiDung: '- Thời vụ: Trồng vào đầu mùa mưa (tháng 5 - 7) để tận dụng nước trời, giúp cây nhanh bén rễ và phục hồi.\r- Mật độ:\r- Robusta: Khoảng cách 3m x 3m (1.100 cây/ha) hoặc 3m x 2.5m (1.330 cây/ha).\r- Arabica: Thường trồng dày hơn Robusta, khoảng cách 2.5m x 1.5m (2.660 cây/ha) hoặc 3m x 1m (3.300 cây/ha), tùy thuộc vào giống và kỹ thuật tạo tán.',
+api:dev:     metadata: {
+api:dev:       has_bold: false,
+api:dev:       has_list: true,
+api:dev:       char_count: 352,
+api:dev:       word_count: 72
+api:dev:     },
+api:dev:     rank: 1.6935484,
+api:dev:     headline: '- Thời vụ: Trồng vào đầu mùa mưa (tháng 5 - 7) để tận dụng nước trời, giúp cây nhanh bén rễ và phục hồi.\r- Mật độ'
+api:dev:   }
+api:dev: ]
+api:dev: ==========================================================
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM   DEBUG [CropKnowledgeFTSService] FTS returned 5 results
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM   DEBUG [CropKnowledgeFTSService] 🔍 extractDiseaseKeywords: query="mưa nhiều liên tục trong thời gian cà phê ra hoa thì nên làm gì" → ascii="mua nhieu lien tuc trong thoi gian ca phe ra hoa thi nen lam gi"
+api:dev: confidence của FTS:  1
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM   DEBUG [CropKnowledgeFTSService] FTS top match: Cà Phê - 3.1. Tưới nước (rank: 1.7647, confidence: 1.000)
+api:dev: threshold của FTS:  0.7
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [CropKnowledgeFTSService] ---------------------Layer 2 FTS match found (confidence: 1.000) in 24ms-----------------
+api:dev: cropResult.found:  true
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM   DEBUG [ExactMatchV2Service] 🔍 Search completed via crop_fts in 28ms - Found: true, Confidence: 1.000
+api:dev: _orchestrator_ exactResult_layer1_FTS:  {
+api:dev:   found: true,
+api:dev:   content: '**Cà Phê - 3.1. Tưới nước**\n' +
+api:dev:     '*Chủ đề: 3. Cách chăm sóc*\n' +
+api:dev:     '\n' +
+api:dev:     'Đây là kỹ thuật quan trọng nhất ở Tây Nguyên (vùng trồng Robusta).\r- Mùa khô: Cần tưới 3-4 đợt, mỗi đợt cách nhau 20-30 ngày. Lượng nước 400-600 lít/gốc/lần tưới, đảm bảo đất ẩm sâu 50-70cm.\r- Siết nước: Cần một giai đoạn khô hạn (siết nước) 2-3 tháng cuối mùa khô để cây phân hóa mầm hoa.\r- Tưới ra hoa: Đợt tưới đầu tiên sau mùa khô (thường vào tháng 1-2) là quan trọng nhất, mang tính quyết định để hoa nở đồng loạt, tỷ lệ đậu quả cao. Tưới muộn hoặc không đủ nước sẽ làm hoa nở lác đác, hoa chanh (hoa không thụ phấn), năng suất giảm.',
+api:dev:   source: { documentId: 'ca_phe_008', filename: 'Cà Phê.md', chunkIndex: 0 },
+api:dev:   confidence: 1,
+api:dev:   metadata: {
+api:dev:     loai_cay: 'Cà Phê',
+api:dev:     chu_de_lon: '3. Cách chăm sóc',
+api:dev:     tieu_de_chunk: '3.1. Tưới nước',
+api:dev:     rank: 1.7647059,
+api:dev:     match_type: 'fts_match',
+api:dev:     processingTime: 24
+api:dev:   }
+api:dev: }
+api:dev: exactResult.confidence:  1
+api:dev: [Nest] 27584  - 12/15/2025, 1:26:38 PM     LOG [AIOrchestrator] ✓ Layer 1 (Exact Match) succeeded
+api:dev: PROCESSING LAYER1
+api:dev: ai_response:  {
+api:dev:   success: true,
+api:dev:   message: '**Cà Phê - 3.1. Tưới nước**\n' +
+api:dev:     '*Chủ đề: 3. Cách chăm sóc*\n' +
+api:dev:     '\n' +
+api:dev:     'Đây là kỹ thuật quan trọng nhất ở Tây Nguyên (vùng trồng Robusta).\r- Mùa khô: Cần tưới 3-4 đợt, mỗi đợt cách nhau 20-30 ngày. Lượng nước 400-600 lít/gốc/lần tưới, đảm bảo đất ẩm sâu 50-70cm.\r- Siết nước: Cần một giai đoạn khô hạn (siết nước) 2-3 tháng cuối mùa khô để cây phân hóa mầm hoa.\r- Tưới ra hoa: Đợt tưới đầu tiên sau mùa khô (thường vào tháng 1-2) là quan trọng nhất, mang tính quyết định để hoa nở đồng loạt, tỷ lệ đậu quả cao. Tưới muộn hoặc không đủ nước sẽ làm hoa nở lác đác, hoa chanh (hoa không thụ phấn), năng suất giảm.',
+api:dev:   intent: 'knowledge_query',
+api:dev:   processingLayer: 'layer_1_exact',
+api:dev:   confidence: 1,
+api:dev:   responseTime: 188,
+api:dev:   exactMatch: {
+api:dev:     found: true,
+api:dev:     content: '**Cà Phê - 3.1. Tưới nước**\n' +
+api:dev:       '*Chủ đề: 3. Cách chăm sóc*\n' +
+api:dev:       '\n' +
+api:dev:       'Đây là kỹ thuật quan trọng nhất ở Tây Nguyên (vùng trồng Robusta).\r- Mùa khô: Cần tưới 3-4 đợt, mỗi đợt cách nhau 20-30 ngày. Lượng nước 400-600 lít/gốc/lần tưới, đảm bảo đất ẩm sâu 50-70cm.\r- Siết nước: Cần một giai đoạn khô hạn (siết nước) 2-3 tháng cuối mùa khô để cây phân hóa mầm hoa.\r- Tưới ra hoa: Đợt tưới đầu tiên sau mùa khô (thường vào tháng 1-2) là quan trọng nhất, mang tính quyết định để hoa nở đồng loạt, tỷ lệ đậu quả cao. Tưới muộn hoặc không đủ nước sẽ làm hoa nở lác đác, hoa chanh (hoa không thụ phấn), năng suất giảm.',
+api:dev:     source: { documentId: 'ca_phe_008', filename: 'Cà Phê.md', chunkIndex: 0 },
+api:dev:     confidence: 1,
+api:dev:     metadata: {
+api:dev:       loai_cay: 'Cà Phê',
+api:dev:       chu_de_lon: '3. Cách chăm sóc',
+api:dev:       tieu_de_chunk: '3.1. Tưới nước',
+api:dev:       rank: 1.7647059,
+api:dev:       match_type: 'fts_match',
+api:dev:       processingTime: 24
+api:dev:     }
+api:dev:   },
+api:dev:   sources: [ { type: 'document', reference: 'Cà Phê.md', confidence: 1 } ]
+api:dev: }

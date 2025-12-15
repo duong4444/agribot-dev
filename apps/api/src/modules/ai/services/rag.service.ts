@@ -84,19 +84,19 @@ export class RAGService {
         synthesisTime: 0,
       };
     }
-
+    // kma - ngưỡng trung bình các chunk match phải >= 0.5 thì mới gọi synthesize
     // Check average similarity BEFORE calling LLM
     const avgSimilarity = chunks.reduce((sum, c) => sum + (c.similarity || 0), 0) / chunks.length;
     console.log("avgSimilarity: ",avgSimilarity);
     
-    const minRequiredSimilarity = 0.48; // Threshold for meaningful retrieval
+    const minRequiredSimilarity = 0.5; // Threshold for meaningful retrieval
     
     if (avgSimilarity < minRequiredSimilarity) {
       this.logger.log(
         `Low average similarity (${avgSimilarity.toFixed(3)} < ${minRequiredSimilarity}) - ` +
         `skipping LLM synthesis to save cost`
       );
-      console.log("TBC CHUNKS < 0.48 FALLBACK THẲNG LLM");
+      console.log("TBC CHUNKS < 0.5 FALLBACK THẲNG LLM");
       
       return {
         answer: `Tài liệu hiện có không chứa thông tin liên quan đến "${query}". ` +
@@ -171,6 +171,9 @@ export class RAGService {
       })
       .join('\n\n---\n\n');
 
+    console.log("context RAG truyển vào LLM: ",context);
+      
+
     // Build prompt
     const prompt = `
 Bạn là trợ lý AI chuyên về nông nghiệp tại Việt Nam.
@@ -205,8 +208,8 @@ Các tài liệu trên được tìm kiếm bằng semantic search (tìm kiếm 
 7. **XỬ LÝ BẢNG OCR**: Khi gặp nội dung giống bảng bị méo do OCR (nhiều cột, khoảng trắng, số liệu):
    - CHỈ ĐƯỢC DÙNG dạng bullet "-" để liệt kê, mỗi bullet cách nhau một dòng
 8. **FOOTNOTE CITATIONS**: Sử dụng superscript numbers cho trích dẫn academic-style:
-   - VÍ DỤ: "Sâm Ngọc Linh là loài đặc hữu của Việt Nam¹"
-   - VÍ DỤ: "Phân bố tại dãy núi Ngọc Linh²"
+   - VÍ DỤ: "Sâm Ngọc Linh là loài đặc hữu của Việt Nam ¹"
+   - VÍ DỤ: "Phân bố tại dãy núi Ngọc Linh ²"
    - SỬ DỤNG: ¹, ², ³, ⁴, ⁵ (superscript numbers)
 9. KHÔNG tự thêm mục "Nguồn tham khảo" ở cuối - hệ thống sẽ tự bổ sung
 
@@ -328,7 +331,7 @@ Các tài liệu trên được tìm kiếm bằng semantic search (tìm kiếm 
     
     // Short specific queries need higher precision
     if (query.length < 30) {
-      return Math.min(baseThreshold + 0.1, 0.5); // 0.48 max
+      return Math.min(baseThreshold + 0.1, 0.5); // 0.5 max
     }
     
     // Complex analytical queries can use lower threshold  
@@ -338,7 +341,7 @@ Các tài liệu trên được tìm kiếm bằng semantic search (tìm kiếm 
     
     // Technical term queries need higher precision
     if (query.includes('hoạt chất') || query.includes('kỹ thuật') || query.includes('nguyên tắc')) {
-      return Math.min(baseThreshold + 0.05, 0.48);
+      return Math.min(baseThreshold + 0.05, 0.5);
     }
     
     return baseThreshold;
