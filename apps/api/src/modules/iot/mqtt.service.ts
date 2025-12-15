@@ -38,8 +38,30 @@ export class MqttService implements OnModuleInit {
 
   private connectToBroker() {
     const brokerUrl = process.env.MQTT_BROKER_URL || 'mqtt://localhost:1883';
+    const username = process.env.MQTT_USERNAME;
+    const password = process.env.MQTT_PASSWORD;
 
-    this.client = mqtt.connect(brokerUrl);
+    // Configure connection options
+    const options: any = {
+      clientId: `backend_${Math.random().toString(16).slice(3)}`,
+      clean: true,
+      reconnectPeriod: 1000,
+    };
+
+    // Add authentication if credentials provided
+    if (username && password) {
+      options.username = username;
+      options.password = password;
+      this.logger.log('MQTT authentication configured');
+    }
+
+    // For MQTTS (TLS), add TLS options
+    if (brokerUrl.startsWith('mqtts://')) {
+      options.rejectUnauthorized = true; // Verify server certificate
+      this.logger.log('MQTT TLS/SSL enabled');
+    }
+
+    this.client = mqtt.connect(brokerUrl, options);
 
     this.client.on('connect', () => {
       this.logger.log(`Connected to MQTT Broker at ${brokerUrl}`);
@@ -243,7 +265,11 @@ export class MqttService implements OnModuleInit {
     });
 
     console.log('=============================================');
-    console.log('||____PAYLOAD____mqtt.service___:  ', payload);
+    console.log("-----------------------------------------------");
+    
+    console.log('||____PAYLOAD____mqtt.service___:\n  ', payload);
+    console.log("-----------------------------------------------");
+
     console.log('=============================================');
 
     return new Promise((resolve, reject) => {
