@@ -58,6 +58,16 @@ export class CropKnowledgeFTSService {
     const startTime = Date.now();
     this.logger.log(`Searching for: "${query}"`);
 
+    // ✅ Check if query is asking for elaboration/more details
+    if (this.isElaborationQuery(query)) {
+      this.logger.log('⚠️ Elaboration query detected - skipping FTS, let LLM handle');
+      return { 
+        found: false, 
+        confidence: 0, 
+        metadata: { reason: 'elaboration_query' } 
+      };
+    }
+
     // Layer 1: Heading-based Search (High-precision)
     console.log("-------------------SEARCH BẰNG HEADING-----------------------");
     
@@ -383,6 +393,34 @@ export class CropKnowledgeFTSService {
       if (queryWords.some(word => topicNormalized.includes(word))) {
         confidence *= 1.1;
       }
+    }
+
+    // ✅ NEW: Apply heuristic relevance penalty
+    const relevanceScore = this.calculateRelevanceScore(query, result);
+    
+    if (relevanceScore === 0) {
+      // Complete mismatch (e.g., time period conflict) → Return 0 immediately
+      this.logger.debug(
+        `❌ Relevance score is 0 (complete mismatch) - returning confidence 0`
+      );
+      return 0;
+    } else if (relevanceScore < 0.4) {
+      // Low relevance → Heavy penalty
+      confidence *= 0.5;
+      this.logger.debug(
+        `⚠️ Low relevance score (${relevanceScore.toFixed(2)}) - penalizing confidence by 50%`
+      );
+    } else if (relevanceScore < 0.6) {
+      // Medium relevance → Moderate penalty
+      confidence *= 0.8;
+      this.logger.debug(
+        `⚠️ Medium relevance score (${relevanceScore.toFixed(2)}) - penalizing confidence by 20%`
+      );
+    } else {
+      // High relevance → No penalty
+      this.logger.debug(
+        `✅ High relevance score (${relevanceScore.toFixed(2)}) - no penalty`
+      );
     }
 
     // Cap at 1.0
@@ -994,16 +1032,21 @@ export class CropKnowledgeFTSService {
       let rankBoost = 0;
       
       for (const keyword of diseaseKeywords) {
-        if (titleAscii.includes(keyword)) {
+        // Use word boundary regex to avoid false positives (e.g., "lo" matching "loại")
+        const keywordRegex = new RegExp(`\\b${keyword.replace(/\s+/g, '\\s+')}\\b`, 'i');
+        
+        if (keywordRegex.test(titleAscii)) {
           rankBoost = Math.max(rankBoost, 2.0); // Full match in title
           anyTitleMatched = true;
           this.logger.debug(`📈 Boosting "${result.tieuDeChunk}" +2.0 (matched: "${keyword}" in "${titleAscii}")`);
         } else if (topicAscii.includes('benh') || topicAscii.includes('phong tru') || topicAscii.includes('sau hai')) {
           // Boost disease/pest topic even if not exact match
           const keywordWords = keyword.split(' ');
-          const partialMatch = keywordWords.some(w => 
-            w.length > 2 && (titleAscii.includes(w) || topicAscii.includes(w))
-          );
+          const partialMatch = keywordWords.some(w => {
+            if (w.length <= 2) return false;
+            const wordRegex = new RegExp(`\\b${w}\\b`, 'i');
+            return wordRegex.test(titleAscii) || wordRegex.test(topicAscii);
+          });
           if (partialMatch) {
             rankBoost = Math.max(rankBoost, 1.5); // Topic + partial match
             anyTitleMatched = true;
@@ -1012,9 +1055,11 @@ export class CropKnowledgeFTSService {
         } else {
           // Check partial match (any word from keyword)
           const keywordWords = keyword.split(' ');
-          const partialMatch = keywordWords.some(w => 
-            w.length > 2 && titleAscii.includes(w)
-          );
+          const partialMatch = keywordWords.some(w => {
+            if (w.length <= 2) return false;
+            const wordRegex = new RegExp(`\\b${w}\\b`, 'i');
+            return wordRegex.test(titleAscii);
+          });
           if (partialMatch) {
             rankBoost = Math.max(rankBoost, 1.0); // Partial match
           }
@@ -1032,5 +1077,163 @@ export class CropKnowledgeFTSService {
     }
     
     return { results: reranked, hasMatch: anyTitleMatched };
+  }
+
+  /**
+   * Calculate relevance score using heuristic approach (no LLM)
+   * Returns score 0.0-1.0 based on keyword overlap and query type matching
+   */
+  private calculateRelevanceScore(query: string, result: SearchResult): number {
+    let score = 0;
+    
+    // 1. Extract keywords from query and result
+    const queryKeywords = this.extractKeywords(query);
+    const titleKeywords = this.extractKeywords(result.tieuDeChunk);
+    const contentKeywords = this.extractKeywords(result.noiDung);
+    
+    // 2. Calculate title overlap (high weight: 0.5)
+    const titleOverlap = this.calculateOverlap(queryKeywords, titleKeywords);
+    score += titleOverlap * 0.5;
+    
+    // 3. Calculate content overlap (medium weight: 0.3)
+    const contentOverlap = this.calculateOverlap(queryKeywords, contentKeywords);
+    score += contentOverlap * 0.3;
+    
+    // 4. Check query type matching (weight: 0.2)
+    const queryType = this.detectQueryType(query);
+    const contentMatchesType = this.contentMatchesQueryType(result.noiDung, queryType);
+    score += contentMatchesType ? 0.2 : 0;
+    
+    return Math.min(score, 1.0);
+  }
+
+  /**
+   * Extract meaningful keywords from text (remove stopwords)
+   */
+  private extractKeywords(text: string): string[] {
+    const normalized = normalizeText(text);
+    const words = normalized.split(/\s+/);
+    
+    // Vietnamese stopwords
+    const stopwords = new Set([
+      'cua', 'la', 'va', 'thi', 'cho', 'den', 'tu', 'trong', 'nhu', 'voi',
+      'co', 'ma', 'hay', 'khi', 'se', 'da', 'duoc', 'cac', 'mot', 'nhung',
+      'nay', 'do', 'o', 'ra', 'sau', 'truoc', 'giua', 'tren', 'duoi',
+    ]);
+    
+    return words
+      .filter(w => w.length > 2 && !stopwords.has(w))
+      .filter((w, i, arr) => arr.indexOf(w) === i); // unique
+  }
+
+  /**
+   * Calculate overlap ratio between two keyword sets
+   */
+  private calculateOverlap(keywords1: string[], keywords2: string[]): number {
+    if (keywords1.length === 0) return 0;
+    
+    const set2 = new Set(keywords2);
+    const matchCount = keywords1.filter(k => set2.has(k)).length;
+    
+    return matchCount / keywords1.length;
+  }
+
+  /**
+   * Detect query type based on question words
+   */
+  private detectQueryType(query: string): string {
+    const normalized = normalizeText(query);
+    
+    // Time/duration questions
+    if (/thoi gian|bao lau|khi nao|ngay|thang|nam/.test(normalized)) {
+      return 'time';
+    }
+    
+    // Quantity questions
+    if (/bao nhieu|so luong|mat do|lieu luong/.test(normalized)) {
+      return 'quantity';
+    }
+    
+    // Method/how-to questions
+    if (/cach|lam the nao|ky thuat|phuong phap/.test(normalized)) {
+      return 'method';
+    }
+    
+    // Location questions
+    if (/o dau|noi nao|khu vuc/.test(normalized)) {
+      return 'location';
+    }
+    
+    // Reason questions
+    if (/tai sao|vi sao|ly do|nguyen nhan/.test(normalized)) {
+      return 'reason';
+    }
+    
+    return 'general';
+  }
+
+  /**
+   * Check if content can answer the query type
+   */
+  private contentMatchesQueryType(content: string, queryType: string): boolean {
+    const normalized = normalizeText(content);
+    
+    switch (queryType) {
+      case 'time':
+        // Content should mention time-related terms
+        return /ngay|thang|nam|tuan|thoi gian|giai doan/.test(normalized);
+      
+      case 'quantity':
+        // Content should have numbers or quantity terms
+        return /\d+|kg|lit|tan|met|cm|phan tram/.test(normalized);
+      
+      case 'method':
+        // Content should describe steps or methods
+        return /buoc|cach|ky thuat|phuong phap|thuc hien/.test(normalized);
+      
+      case 'location':
+        // Content should mention locations
+        return /vung|khu vuc|noi|dia diem|tinh|huyen/.test(normalized);
+      
+      case 'reason':
+        // Content should explain reasons
+        return /vi|do|nguyen nhan|gay ra|dan den|lam cho/.test(normalized);
+      
+      default:
+        return true; // General queries match anything
+    }
+  }
+
+  /**
+   * Detect if query is asking for elaboration/more details
+   * These queries should skip FTS and go to LLM for better explanations
+   */
+  private isElaborationQuery(query: string): boolean {
+    const normalized = normalizeText(query);
+    this.logger.debug(`🔍 Checking elaboration query: "${query}" → normalized: "${normalized}"`);
+    
+    const elaborationPatterns = [
+      /(nói|noi|biết|biet|tin|liệu|lieu)\s*(cụ|cu)\s*(thể|the)\s*(hơn|hon)/i,    // "nói/biết/tin/liệu cụ thể hơn" or just "cụ thể hơn" if handled carefully, but let's allow verb-noun combos or just context
+      /(cụ|cu)\s*(thể|the)\s*(hơn|hon)/i,                        // Catch-all for "cụ thể hơn" (very strong signal)
+      /(giải|giai)\s*(thích|thich)\s*(rõ|ro)\s*(hơn|hon)/i,     // "giải thích rõ hơn"
+      /(chi|chỉ)\s*(tiết|tiet)\s*(hơn|hon)/i,                   // "chi tiết hơn"
+      /(mở|mo)\s*(rộng|rong)\s*(thêm|them)/i,                   // "mở rộng thêm"
+      /(rõ|ro)\s*(ràng|rang)\s*(hơn|hon)/i,                     // "rõ ràng hơn"
+      /(đầy|day)\s*(đủ|du)\s*(hơn|hon)/i,                       // "đầy đủ hơn"
+      /(hãy|hay|vui\s*lòng|vui\s*long|xin).*(giải|giai)\s*(thích|thich)/i,  // "hãy giải thích"
+      /(hãy|hay|vui\s*lòng|vui\s*long|xin).*(nói|noi).*(thêm|them)/i,       // "hãy nói thêm"
+      /(cho|chỉ|chi)\s*(tôi|toi)\s*(biết|biet)\s*(thêm|them)/i,  // "cho tôi biết thêm"
+      /(thêm|them)\s*(thông|thong)\s*(tin)/i,                   // "thêm thông tin"
+    ];
+    
+    for (const pattern of elaborationPatterns) {
+      if (pattern.test(normalized)) {
+        this.logger.debug(`🎯 Matched elaboration pattern: ${pattern.source}`);
+        return true;
+      }
+    }
+    
+    this.logger.debug(`❌ No elaboration pattern matched`);
+    return false;
   }
 }

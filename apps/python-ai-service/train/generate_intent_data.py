@@ -132,6 +132,11 @@ TEMPLATES = {
         "Phương pháp {technique} là gì?",
         "Bệnh {disease} trên {crop} nhận biết như thế nào?",
         "Lợi ích của {technique}?",
+        "Nguồn gốc của {crop}",
+        "Xuất xứ của {crop}",
+        "Nguồn gốc cây {crop}",
+        "Nguồn gốc của cây {crop}",
+        "Nguồn gốc {crop}"
         
         # Thời vụ và mật độ trồng (thường bị nhầm với analytics)
         "Thời vụ {action} {crop} ở {region}?",

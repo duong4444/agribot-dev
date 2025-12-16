@@ -81,10 +81,10 @@ export function IrrigationControlPanel({ deviceId, onActionComplete }: Irrigatio
 
   const handleDurationIrrigation = async () => {
     const duration = parseInt(durationInput);
-    if (duration < 60 || duration > 7200) {
+    if (isNaN(duration) || duration <= 0) {
       toast({
         title: '⚠️ Thời gian không hợp lệ',
-        description: 'Thời gian tưới phải từ 60 đến 7200 giây (1 phút - 2 giờ)',
+        description: 'Vui lòng nhập thời gian tưới hợp lệ (lớn hơn 0 giây)',
         variant: 'destructive',
       });
       return;
@@ -242,8 +242,7 @@ export function IrrigationControlPanel({ deviceId, onActionComplete }: Irrigatio
               <Input
                 id="duration"
                 type="number"
-                min="60"
-                max="7200"
+                min="1"
                 value={durationInput}
                 onChange={(e) => setDurationInput(e.target.value)}
                 placeholder="600"
@@ -254,7 +253,7 @@ export function IrrigationControlPanel({ deviceId, onActionComplete }: Irrigatio
               </Button>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              60 - 7200 giây (1 phút - 2 giờ)
+              Nhập thời gian tưới (tối thiểu 1 giây)
             </p>
           </div>
         </CardContent>

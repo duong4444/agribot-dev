@@ -32,8 +32,7 @@ export class UpdateAutoConfigDto {
 
 export class IrrigateDurationDto {
   @IsNumber()
-  @Min(60)
-  @Max(7200)
+  @Min(1)
   duration: number;
 }
 

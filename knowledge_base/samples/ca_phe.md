@@ -97,9 +97,9 @@ Bón phân hữu cơ (phân chuồng, phân vi sinh, phân xanh) 20-30kg/gốc (
 - Triệu chứng: Bệnh nguy hiểm nhất trên Arabica. Mặt dưới lá xuất hiện các chấm nhỏ màu vàng cam, sau lớn dần thành các ổ bột màu da cam (bào tử nấm). Làm lá rụng hàng loạt, cây kiệt sức, giảm năng suất nghiêm trọng.
 - Biện pháp: Chọn giống kháng bệnh (ví dụ: Catimor). Trồng mật độ hợp lý, tỉa cành thông thoáng. Phun thuốc gốc Đồng (Bordeaux) hoặc thuốc đặc trị (Hexaconazole, Propiconazole) 2-3 lần/năm (đầu và cuối mùa mưa).
 
-### 5.4. Bệnh nấm hồng (Pink Disease)
-- Triệu chứng: Bệnh xuất hiện ở thân, cành vào mùa mưa. Ban đầu là lớp tơ màu trắng, sau chuyển sang màu hồng nhạt. Nấm làm tắc mạch dẫn, gây chết cành, chết cây.
-- Biện pháp: Tỉa cành thông thoáng, tránh vườn quá rậm rạp. Cắt bỏ cành bệnh (cắt sâu xuống phần khỏe 15-20cm) và tiêu hủy. Quét vôi hoặc thuốc gốc đồng lên vết cắt.
+### 5.9. Bệnh muội đen (Sooty Mold)
+- Triệu chứng: Một lớp nấm màu đen như muội than bao phủ trên mặt lá và quả. Bệnh này thường không trực tiếp tấn công cây mà phát triển trên chất bài tiết (mật) của các loài rệp (rệp sáp, rệp vảy). Lớp muội đen làm cản trở quang hợp, cây sinh trưởng kém.
+- Biện pháp: Trừ rệp là biện pháp chính (vì hết rệp sẽ hết nấm). Phun nước mạnh để rửa trôi lớp muội đen hoặc dùng dầu khoáng nông nghiệp.
 
 ### 5.5. Bệnh thối rễ (Tuyến trùng)
 - Triệu chứng: Cây sinh trưởng còi cọc, lá vàng, héo rũ (nhất là vào giữa trưa nắng). Rễ bị thối đen, có các nốt sần (u bướu) do tuyến trùng chích hút tạo vết thương cho nấm (Fusarium) xâm nhập.
