@@ -8,11 +8,26 @@ import time
 from pathlib import Path
 from typing import Any, Dict, List
 
+# fw deep learning: dùng để chạy PhoBERT, tensor computation, GPU/CPU
 import torch
 from loguru import logger
+# AutoTokenizer
+# Load tokenizer đúng với model
+# Token IDs là các con số đại diện cho từng từ (hoặc một phần của từ) trong câu.
+# Convert text → token IDs
+
+# Token IDs (Đầu vào dạng số) -> MODEL AI -> Logits (Điểm số thô) 
+# -> Softmax -> Probability (Xác suất %).
+
+# AutoModelForSequenceClassification
+# Model cho classification
+# tự động nhìn vào tên model (ví dụ "vinai/phobert-base") và chọn đúng class phù hợp
+# Đầu ra: logits → intent
+# logits là kết quả thô mà model AI nhả ra trc khi đc chuẩn hoá thành xsuat %
+# transformers = tokenizer + model
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
-
+# kiểu service - intent-classifier.service
 class IntentClassifier:
     """
     PhoBERT-based Intent Classifier for Vietnamese Agricultural Chatbot
@@ -27,6 +42,7 @@ class IntentClassifier:
         "unknown",              # 4 - Không xác định
     ]
     
+    # <=> contructor nestjs
     def __init__(self, model_name: str = "vinai/phobert-base"):
         """
         Initialize Intent Classifier
@@ -39,7 +55,7 @@ class IntentClassifier:
         self.model = None
         self.intent_labels: List[str] = self.INTENT_LABELS.copy()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        
+        # 3
         logger.info(f"Intent Classifier initialized with device: {self.device}")
     
     async def load_model(self):
@@ -47,7 +63,7 @@ class IntentClassifier:
         try:
             project_root = Path(__file__).resolve().parents[2]
             fine_tuned_path = project_root / "models" / "intent_classifier"
-
+            # 4
             logger.info(f"Loading tokenizer from {self.model_name}...")
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
 
@@ -59,6 +75,7 @@ class IntentClassifier:
                     label_to_id = mapping_data.get("label_to_id")
                     if isinstance(label_to_id, dict) and label_to_id:
                         self.intent_labels = sorted(label_to_id.keys(), key=lambda label: label_to_id[label])
+                        # 5
                         logger.info(f"Loaded label mapping with {len(self.intent_labels)} intents")
                 except Exception as mapping_error:
                     logger.warning(f"Unable to read label mapping: {mapping_error}. Falling back to default labels")
@@ -67,6 +84,7 @@ class IntentClassifier:
 
             # Check if fine-tuned model exists
             if fine_tuned_path.exists():
+                # 6
                 logger.info(f"Loading fine-tuned model from {fine_tuned_path}...")
                 self.model = AutoModelForSequenceClassification.from_pretrained(
                     fine_tuned_path,
@@ -83,7 +101,7 @@ class IntentClassifier:
             
             self.model.to(self.device)
             self.model.eval()
-            
+            # 7
             logger.info("✅ Intent Classifier model loaded successfully")
             
         except Exception as e:

@@ -30,10 +30,10 @@ export default function FarmOverviewPage() {
       try {
         const [farmRes, areasRes, activitiesRes, financeRes] =
           await Promise.all([
-            fetch("/api/farms"),
+            fetch("/api/farms"), // farms/me
             fetch("/api/farms/areas"),
             fetch("/api/farms/activities?limit=5"),
-            fetch("/api/farms/stats"),
+            fetch("/api/farms/stats"), // static-finance
           ]);
 
         const farmData = farmRes.ok ? await farmRes.json() : null;

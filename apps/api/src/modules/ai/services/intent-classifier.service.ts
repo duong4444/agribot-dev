@@ -18,17 +18,20 @@ export class IntentClassifierService {
    * Classify user intent and extract entities
    * Uses Python AI Service (PhoBERT) if available, falls back to rule-based
    */
+  // checkpoint1
   async classifyIntent(query: string): Promise<IntentClassificationResult> {
     const startTime = Date.now();
     const normalizedQuery = normalizeText(query);
+    // lowerCase + NFC + space giữa + space đầu cuối
     console.log('normalize_prompt_text: ', normalizedQuery);
 
     // Try Python AI Service first
     // console.log("gọi đến port 8000/analyze");
     // TRẢ VỀ KẾT QUẢ CHO STEP1_ORCHESTRATOR
+    // checkpoint2
     const pythonResult = await this.pythonAIClient.analyzeText(query, 3);
     // pythonResult === response.data từ 8000/analyze
-    console.log('pythonResult: ', pythonResult?.intent);
+    console.log('pythonResult_intent: ', pythonResult?.intent);
     console.log(
       'pythonResult_entities_!!!!!!!!!!!!!: ',
       pythonResult?.entities,

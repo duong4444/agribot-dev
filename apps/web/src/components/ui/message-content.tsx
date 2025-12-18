@@ -1,30 +1,25 @@
-import React from 'react';
-import { MessageMetadata } from './message-metadata';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import React from "react";
+import { MessageMetadata } from "./message-metadata";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 interface MessageContentProps {
   content: string;
-  type: 'user' | 'assistant';
+  type: "user" | "assistant";
   intent?: string;
   confidence?: number;
   responseTime?: number;
 }
 
-export const MessageContent: React.FC<MessageContentProps> = ({ 
-  content, 
-  type, 
-  intent, 
-  confidence, 
-  responseTime 
+export const MessageContent: React.FC<MessageContentProps> = ({
+  content,
+  type,
+  intent,
+  confidence,
+  responseTime,
 }) => {
-  
-  if (type === 'user') {
-    return (
-      <div className="text-sm leading-relaxed">
-        {content}
-      </div>
-    );
+  if (type === "user") {
+    return <div className="text-sm leading-relaxed">{content}</div>;
   }
 
   return (
@@ -34,13 +29,27 @@ export const MessageContent: React.FC<MessageContentProps> = ({
           remarkPlugins={[remarkGfm]}
           components={{
             // Override default components to match your styling
-            h3: ({node, ...props}) => <h3 className="font-semibold text-base mb-2 mt-3 first:mt-0" {...props} />,
-            p: ({node, ...props}) => <p className="text-sm leading-relaxed mb-3 last:mb-0" {...props} />,
-            ul: ({node, ...props}) => <ul className="space-y-1" {...props} />,
-            li: ({node, ...props}) => (
+            h3: ({ node, ...props }) => (
+              <h3
+                className="font-semibold text-base mb-2 mt-3 first:mt-0"
+                {...props}
+              />
+            ),
+            p: ({ node, ...props }) => (
+              <p
+                className="text-sm leading-relaxed mb-3 last:mb-0"
+                {...props}
+              />
+            ),
+            ul: ({ node, ...props }) => <ul className="space-y-1" {...props} />,
+            li: ({ node, ...props }) => (
               <div className="flex items-start">
-                <span className="text-agri-green-600 dark:text-agri-green-400 mr-2 leading-relaxed">•</span>
-                <span className="flex-1 text-sm leading-relaxed">{props.children}</span>
+                <span className="text-agri-green-600 dark:text-agri-green-400 mr-2 leading-relaxed">
+                  •
+                </span>
+                <span className="flex-1 text-sm leading-relaxed">
+                  {props.children}
+                </span>
               </div>
             ),
           }}
@@ -48,8 +57,8 @@ export const MessageContent: React.FC<MessageContentProps> = ({
           {content}
         </ReactMarkdown>
       </div>
-      {type === 'assistant' && (
-        <MessageMetadata 
+      {type === "assistant" && (
+        <MessageMetadata
           intent={intent}
           confidence={confidence}
           responseTime={responseTime}

@@ -5,7 +5,7 @@ import { UserRole } from '../../users/entities/user.entity';
 @Injectable()
 export class AdminGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
-
+  // check thằng req đến có role == ADMIN không
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
     const user = request.user;

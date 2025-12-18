@@ -53,10 +53,6 @@ export class WeatherService {
     }
   }
 
-
-
-
-
   async getForecastByAddress(address: string) {
     try {
       // Step 1: Use Geocoding API to get coordinates from address

@@ -19,7 +19,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     
     super(options);
   }
-
+  // gọi callBackURL đổi code lấy profile -> validate -> gán user vào req
   async validate(
     accessToken: string,
     refreshToken: string,

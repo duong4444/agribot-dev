@@ -17,7 +17,7 @@ import type { Response } from 'express';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @UseGuards(LocalAuthGuard)
+  @UseGuards(LocalAuthGuard) // AuthGuard('local')
   @Post('login')
   @ApiOperation({ summary: 'User login' })
   @ApiBody({ type: LoginDto })
@@ -152,7 +152,7 @@ export class AuthController {
   }
 
   @Get('google/callback')
-  @UseGuards(GoogleAuthGuard)
+  @UseGuards(GoogleAuthGuard) // kma
   @ApiOperation({ summary: 'Google OAuth callback' })
   @ApiResponse({ status: 302, description: 'Redirect to frontend with tokens' })
   async googleAuthRedirect(@Req() req, @Res() res: Response) {

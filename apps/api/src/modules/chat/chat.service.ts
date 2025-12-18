@@ -30,8 +30,8 @@ export class ChatService {
       ...createConversationDto,
       user,
     });
-    console.log("chạy vào hàm createConversation");
-    
+    console.log('chạy vào hàm createConversation');
+
     return await this.conversationRepository.save(conversation);
   }
 
@@ -43,24 +43,25 @@ export class ChatService {
   ): Promise<{ conversations: Conversation[]; total: number }> {
     const skip = (page - 1) * limit;
 
-    const [conversations, total] = await this.conversationRepository.findAndCount({
-      where: { 
-        user: { id: user.id },
-        status: 'ACTIVE' as any, // Only get active conversations
-      },
-      order: { lastMessageAt: 'DESC', createdAt: 'DESC' },
-      relations: ['messages'],
-      skip,
-      take: limit,
-    });
+    const [conversations, total] =
+      await this.conversationRepository.findAndCount({
+        where: {
+          user: { id: user.id },
+          status: 'ACTIVE' as any, // Only get active conversations
+        },
+        order: { lastMessageAt: 'DESC', createdAt: 'DESC' },
+        relations: ['messages'],
+        skip,
+        take: limit,
+      });
 
     return { conversations, total };
   }
 
   // Lấy cuộc trò chuyện theo ID (với relations - dùng cho display)
   async getConversation(id: string, user: User): Promise<Conversation> {
-    console.log("chạy vào hàm getConversation");
-    
+    console.log('chạy vào hàm getConversation');
+
     const conversation = await this.conversationRepository.findOne({
       where: { id, user: { id: user.id } },
       relations: ['messages', 'user'],
@@ -75,7 +76,10 @@ export class ChatService {
   }
 
   // Verify conversation tồn tại (không load relations - dùng cho save message)
-  private async verifyConversation(id: string, user: User): Promise<Conversation> {
+  private async verifyConversation(
+    id: string,
+    user: User,
+  ): Promise<Conversation> {
     const conversation = await this.conversationRepository.findOne({
       where: { id, user: { id: user.id } },
     });
@@ -96,13 +100,14 @@ export class ChatService {
     conversation: Conversation;
     response: Message;
   }> {
-    const startTime = Date.now();
-    console.log("para_sendMessage_user: ", user);
-    console.log("para_sendMessage_sendMessageDto: ", sendMessageDto);
+    const startTime = Date.now(); // để tính thời gian process
+    console.log('para_sendMessage_user: ', user);
+    console.log('para_sendMessage_sendMessageDto: ', sendMessageDto);
 
     // Tìm hoặc tạo cuộc trò chuyện
     let conversation: Conversation;
 
+    // ban đầu conversationId = null -> tạo conversation mới (bản ghi mới trong bảng conversation)
     if (sendMessageDto.conversationId) {
       console.log('có conversationId: ', sendMessageDto.conversationId);
 
@@ -112,9 +117,9 @@ export class ChatService {
       );
     } else {
       console.log('tạo conversation mới - new row trong conversation');
-      console.log("conversationId_check_NULL: ", sendMessageDto.conversationId);
+      console.log('conversationId_check_NULL: ', sendMessageDto.conversationId);
 
-      console.log("Tạo cuộc trò chuyện mới với tiêu đề từ tin nhắn đầu tiên");
+      console.log('Tạo cuộc trò chuyện mới với tiêu đề từ tin nhắn đầu tiên');
       conversation = await this.createConversation(user, {
         title: this.generateTitleFromMessage(sendMessageDto.content),
         description: 'Cuộc trò chuyện mới',
@@ -134,14 +139,13 @@ export class ChatService {
       createdAt: DateUtils.getVietnamTime(), // Manually set Vietnam time
     });
 
-    console.log("userMessage: ", userMessage);
-    
+    console.log('userMessage: ', userMessage);
 
     const savedUserMessage = await this.messageRepository.save(userMessage);
 
-    console.log("savedUserMessage: ",savedUserMessage);
-    
+    console.log('savedUserMessage: ', savedUserMessage);
 
+    // key kma
     const aiResponse = await this.generateAIResponse(
       sendMessageDto.content,
       user,
@@ -214,8 +218,8 @@ export class ChatService {
   // Tạo tiêu đề từ tin nhắn đầu tiên
   private generateTitleFromMessage(content: string): string {
     // Lấy 50 ký tự đầu tiên làm tiêu đề
-    console.log("chạy vào generateTitleFromMessage");
-    
+    console.log('chạy vào generateTitleFromMessage');
+
     const title = content.substring(0, 50);
     return title.length < content.length ? `${title}...` : title;
   }
@@ -227,25 +231,24 @@ export class ChatService {
     conversationId: string,
   ): Promise<{ content: string; intent: string; confidence: number }> {
     try {
-      console.log("user_prompt: ", userMessage);
-      console.log("direct đến Orchest để xử lý");
-      
-      // 
+      console.log('user_prompt: ', userMessage);
+      console.log('direct đến Orchest để xử lý');
+
       const aiResponse = await this.aiOrchestrator.process({
         query: userMessage,
         user: user,
         conversationId: conversationId,
       });
 
-      console.log("ai_response: ", aiResponse);
-  
+      console.log('ai_response: ', aiResponse);
+
       return {
         content: aiResponse.message,
         intent: aiResponse.intent,
         confidence: aiResponse.confidence,
       };
     } catch (error) {
-      console.log("error_generateAIResponse_chat.service: ", error);
+      console.log('error_generateAIResponse_chat.service: ', error);
       console.error('Error generating AI response:', error);
 
       // Fallback response nếu AI service lỗi

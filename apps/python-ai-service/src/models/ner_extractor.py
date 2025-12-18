@@ -59,12 +59,13 @@ class NERExtractor:
         self.entity_labels: List[str] = self.ENTITY_LABELS.copy()
         self.entity_type_map: Dict[str, str] = self.ENTITY_TYPE_MAP.copy()
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        
+        # 10
         logger.info(f"NER Extractor initialized with device: {self.device}")
     
     async def load_model(self):
         """Load PhoBERT model and tokenizer"""
         try:
+            # 11
             logger.info(f"Loading tokenizer from {self.model_name}...")
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
 
@@ -78,6 +79,7 @@ class NERExtractor:
                     label_to_id = mapping_data.get("label_to_id")
                     if isinstance(label_to_id, dict) and label_to_id:
                         self.entity_labels = sorted(label_to_id.keys(), key=lambda label: label_to_id[label])
+                        # 12
                         logger.info(f"Loaded NER label mapping with {len(self.entity_labels)} labels")
                         
                         # Update entity type map from loaded labels
@@ -91,6 +93,7 @@ class NERExtractor:
             num_labels = len(self.entity_labels)
 
             if model_dir.exists():
+                # 13
                 logger.info(f"Loading fine-tuned model from {model_dir}...")
                 try:
                     self.model = AutoModelForTokenClassification.from_pretrained(
@@ -112,7 +115,7 @@ class NERExtractor:
             
             self.model.to(self.device)
             self.model.eval()
-            
+            # 14
             logger.info("✅ NER Extractor model loaded successfully")
             
         except Exception as e:

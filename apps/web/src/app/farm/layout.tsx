@@ -1,45 +1,51 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { usePathname } from 'next/navigation';
-import Link from 'next/link';
-import { AuthGuard } from '@/components/auth/auth-guard';
-import { DashboardHeader } from '@/components/dashboard';
-import { FarmRegistrationModal } from '@/components/farm/FarmRegistrationModal';
-import { LayoutDashboard, MapPin, Calendar, DollarSign, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React, { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
+import { AuthGuard } from "@/components/auth/auth-guard";
+import { DashboardHeader } from "@/components/dashboard";
+import { FarmRegistrationModal } from "@/components/farm/FarmRegistrationModal";
+import {
+  LayoutDashboard,
+  MapPin,
+  Calendar,
+  DollarSign,
+  Loader2,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const navigationTabs = [
-  { 
-    label: 'Tổng quan', 
-    href: '/farm/overview', 
-    icon: LayoutDashboard 
-  },
-  { 
-    label: 'Khu vực', 
-    href: '/farm/areas', 
-    icon: MapPin 
-  },
-  { 
-    label: 'Nhật ký', 
-    href: '/farm/activities', 
-    icon: Calendar 
-  },
-  { 
-    label: 'Tài chính', 
-    href: '/farm/finance', 
-    icon: DollarSign 
-  },
-  { 
-    label: 'Yêu cầu lắp đặt', 
-    href: '/farm/installation-requests', 
-    icon: LayoutDashboard 
+  {
+    label: "Tổng quan",
+    href: "/farm/overview",
+    icon: LayoutDashboard,
   },
   {
-    label: 'Gói cước',
-    href: '/farm/pricing',
-    icon: DollarSign
+    label: "Khu vực",
+    href: "/farm/areas",
+    icon: MapPin,
+  },
+  {
+    label: "Nhật ký",
+    href: "/farm/activities",
+    icon: Calendar,
+  },
+  {
+    label: "Tài chính",
+    href: "/farm/finance",
+    icon: DollarSign,
+  },
+  {
+    label: "Yêu cầu lắp đặt",
+    href: "/farm/installation-requests",
+    icon: LayoutDashboard,
+  },
+  {
+    label: "Gói cước",
+    href: "/farm/pricing",
+    icon: DollarSign,
   },
 ];
 
@@ -57,7 +63,7 @@ export default function FarmLayout({
   useEffect(() => {
     const checkFarm = async () => {
       try {
-        const response = await fetch('/api/farms');
+        const response = await fetch("/api/farms");
         if (response.ok) {
           setHasFarm(true);
         } else if (response.status === 404) {
@@ -65,7 +71,7 @@ export default function FarmLayout({
           setShowFarmModal(true);
         }
       } catch (error) {
-        console.error('Farm check error:', error);
+        console.error("Farm check error:", error);
       } finally {
         setIsCheckingFarm(false);
       }
@@ -95,10 +101,10 @@ export default function FarmLayout({
   }
 
   return (
-    <AuthGuard allowedRoles={['FARMER', 'ADMIN']}>
+    <AuthGuard allowedRoles={["FARMER", "ADMIN"]}>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-50 to-agri-green-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
         <DashboardHeader userName={session?.user?.name} />
-        
+
         <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
           {hasFarm ? (
             <>
@@ -107,9 +113,10 @@ export default function FarmLayout({
                 <nav className="-mb-px flex space-x-8" aria-label="Tabs">
                   {navigationTabs.map((tab) => {
                     const Icon = tab.icon;
-                    const isActive = pathname === tab.href || 
-                                   (pathname === '/farm' && tab.href === '/farm/overview');
-                    
+                    const isActive =
+                      pathname === tab.href ||
+                      (pathname === "/farm" && tab.href === "/farm/overview");
+
                     return (
                       <Link
                         key={tab.href}
@@ -137,19 +144,24 @@ export default function FarmLayout({
               </div>
 
               {/* Page Content */}
-              <div className="mt-6">
-                {children}
-              </div>
+              <div className="mt-6">{children}</div>
             </>
           ) : (
             <div className="text-center py-10">
-              <h2 className="text-xl font-semibold mb-4">Bạn chưa có nông trại</h2>
-              <p className="text-gray-500 mb-4">Vui lòng đăng ký nông trại để bắt đầu quản lý.</p>
+              <h2 className="text-xl font-semibold mb-4">
+                Bạn chưa có nông trại
+              </h2>
+              <p className="text-gray-500 mb-4">
+                Vui lòng đăng ký nông trại để bắt đầu quản lý.
+              </p>
             </div>
           )}
         </div>
-        
-        <FarmRegistrationModal isOpen={showFarmModal} onSuccess={handleFarmCreated} />
+
+        <FarmRegistrationModal
+          isOpen={showFarmModal}
+          onSuccess={handleFarmCreated}
+        />
       </div>
     </AuthGuard>
   );

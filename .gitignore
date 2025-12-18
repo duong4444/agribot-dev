@@ -249,3 +249,4 @@ vnpay-response.json
 # system_analysis_design.txt
 # SPECS.txt
 apps/python-ai-service/train/data/intent_data_augmented_161225.csv
+# apps/python-ai-service/src/__pycache__/main.cpython-311.pyc

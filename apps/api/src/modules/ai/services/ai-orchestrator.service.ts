@@ -39,7 +39,6 @@ export class AIOrchestrator {
   ) {}
 
   /**
-   * Main orchestration method - Process user query through intelligent routing
    * Step 1: Intent Classification & Entity Extraction
    * Step 2: Route based on intent:
    *   - UNKNOWN → Direct LLM (skip layers for efficiency)
@@ -58,7 +57,7 @@ export class AIOrchestrator {
         'STEP1 trong orchest==========INTENT CLASSIFIER & NER ==================',
       );
       console.log('user_query || prompt: ', query);
-
+      // checkpoint1
       const intentResult = await this.intentClassifier.classifyIntent(query);
       // return {
       //   intent,

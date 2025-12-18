@@ -1,12 +1,17 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { AuthGuard } from '@/components/auth/auth-guard';
-import { DashboardHeader, ChatInterface, DashboardSidebar, useChat } from '@/components/dashboard';
+import React, { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { AuthGuard } from "@/components/auth/auth-guard";
+import {
+  DashboardHeader,
+  ChatInterface,
+  DashboardSidebar,
+  useChat,
+} from "@/components/dashboard";
 // import { TrialBanner } from '@/components/subscription/TrialBanner';
-import { Loader2 } from 'lucide-react';
+import { Loader2 } from "lucide-react";
 
 const Dashboard = () => {
   const { data: session, status } = useSession();
@@ -32,7 +37,7 @@ const Dashboard = () => {
   // Trigger sidebar refresh when conversationId changes
   useEffect(() => {
     if (conversationId) {
-      setSidebarKey(prev => prev + 1);
+      setSidebarKey((prev) => prev + 1);
     }
   }, [conversationId]);
 
@@ -42,20 +47,20 @@ const Dashboard = () => {
 
   // Check farm immediately when session is ready
   useEffect(() => {
-    if (status === 'authenticated' && session?.user) {
+    if (status === "authenticated" && session?.user) {
       const checkFarm = async () => {
         try {
-          const res = await fetch('/api/farms');
+          const res = await fetch("/api/farms");
           if (res.ok) {
             setHasFarm(true);
           } else if (res.status === 404) {
             // No farm - redirect immediately
-            router.replace('/farm');
+            router.replace("/farm");
             return; // Don't set isCheckingFarm to false
           }
         } catch (e) {
-          console.error('Farm check error:', e);
-          router.replace('/farm');
+          console.error("Farm check error:", e);
+          router.replace("/farm");
           return;
         } finally {
           setIsCheckingFarm(false);
@@ -66,7 +71,7 @@ const Dashboard = () => {
   }, [session, status, router]);
 
   // Show loading state while checking farm
-  if (status === 'loading' || isCheckingFarm) {
+  if (status === "loading" || isCheckingFarm) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-gray-50 to-agri-green-50/30">
         <div className="text-center">
@@ -83,7 +88,7 @@ const Dashboard = () => {
   }
 
   return (
-    <AuthGuard allowedRoles={['FARMER', 'ADMIN']}>
+    <AuthGuard allowedRoles={["FARMER", "ADMIN"]}>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-gray-50 to-agri-green-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
         <DashboardHeader userName={session?.user?.name} />
 
@@ -97,12 +102,15 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Chat Interface - Takes more space on larger screens */}
             <div className="lg:col-span-8 xl:col-span-9">
-              <ChatInterface 
+              <ChatInterface
+                // messages arr []
                 messages={messages}
                 inputMessage={inputMessage}
+                // input field
                 setInputMessage={setInputMessage}
                 isLoading={isLoading}
                 messagesEndRef={messagesEndRef}
+                // POST /api/chat/messages
                 onSendMessage={sendMessage}
                 onKeyPress={handleKeyPress}
               />
@@ -111,10 +119,14 @@ const Dashboard = () => {
             {/* Sidebar - Sticky on larger screens */}
             <div className="lg:col-span-4 xl:col-span-3">
               <div className="lg:sticky lg:top-6">
-                <DashboardSidebar 
+                <DashboardSidebar
+                  // để trigger re-render , mỗi khi conversationId đổi <=> key đổi
                   key={sidebarKey}
+                   // state_messages = []
                   onNewConversation={resetConversation}
-                  onSelectConversation={handleSelectConversation}
+                  // fetch(`/api/chat/conversations/${conversationId}/messages`);
+                  onSelectConversation={handleSelectConversation} 
+                  // conversationId thôi
                   currentConversationId={conversationId || undefined}
                 />
               </div>

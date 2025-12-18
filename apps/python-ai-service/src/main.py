@@ -5,13 +5,27 @@ FastAPI server for Vietnamese Agricultural Chatbot
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+#giống class-validator , BaseModel là class nền tảng của pydantic
+from pydantic import BaseModel 
+# List[T]	danh sách các phần tử kiểu T
+# Optional[T]	T hoặc None
+# Dict[K, V]	object / map  ____ obj
+# List[Dict[str, Any]] <=> Array<Record<string, any>> ___arr
+# Any	kiểu bất kỳ
 from typing import List, Optional, Dict, Any
+#   Node              	Python
+# Express + node	FastAPI + uvicorn
 import uvicorn
 from loguru import logger
+# Module chuẩn của Python
+# Dùng để:
+# thao tác với runtime
+# đọc args
+# exit process
 import sys
-import time
+import time #module xử lý thời gian
 
+# kiểu load service.ts
 from models.intent_classifier import IntentClassifier
 from models.ner_extractor import NERExtractor
 
@@ -20,6 +34,7 @@ logger.remove()
 logger.add(sys.stdout, level="INFO")
 
 # Initialize FastAPI app
+# tạo app + metadata cho swagger
 app = FastAPI(
     title="AgriBot Python AI Service",
     description="PhoBERT-based Intent Classification and NER for Vietnamese Agricultural Chatbot",
@@ -36,18 +51,22 @@ app.add_middleware(
 )
 
 # Global model instances
+# Global variable dùng chung cho toàn app, load 1 lần,reuse
+# Khai báo ở ngoài cùng file, ai cũng dùng được
+# Python dùng global variable
+# Nestjs dùng DI container_ phải khai báo provider trong Module rồi Inject vào Contructor
 intent_classifier: Optional[IntentClassifier] = None
 ner_extractor: Optional[NERExtractor] = None
-
 
 # ============================================
 # Request/Response Models
 # ============================================
-
+#DTO===================DTO===========================DTO
 class IntentRequest(BaseModel):
     text: str
     top_k: int = 3
 
+# NER entity
 class Entity(BaseModel):
     type: str
     value: str
@@ -61,6 +80,14 @@ class IntentResponse(BaseModel):
     confidence: float
     all_intents: List[Dict[str, Any]]
     processing_time_ms: float
+
+# export interface IntentClassificationResult {
+#   intent: IntentType;
+#   confidence: number;
+#   entities: Entity[];
+#   originalQuery: string;
+#   normalizedQuery: string;
+# }
 
 class NERRequest(BaseModel):
     text: str
@@ -79,30 +106,36 @@ class CombinedResponse(BaseModel):
     all_intents: List[Dict[str, Any]]
     entities: List[Entity]
     processing_time_ms: float
-
+#END____DTO=====================DTO=========================DTO
 
 # ============================================
 # Startup/Shutdown Events
 # ============================================
 
+# Tương đương onModuleInit(), chạy 1 lần khi server start
+# hàm này chạy đầu tiên khi server bật lên
 @app.on_event("startup")
 async def startup_event():
+    # Load model nặng vào RAM
     """Load models on startup"""
     global intent_classifier, ner_extractor
-    
+    # 1
     logger.info("🚀 Starting Python AI Service...")
     
     try:
+        # 2
         logger.info("📦 Loading Intent Classifier (PhoBERT)...")
         intent_classifier = IntentClassifier()
         await intent_classifier.load_model()
+        # 8
         logger.info("✅ Intent Classifier loaded successfully")
-        
+        # 9
         logger.info("📦 Loading NER Extractor (PhoBERT)...")
         ner_extractor = NERExtractor()
         await ner_extractor.load_model()
+        # 15
         logger.info("✅ NER Extractor loaded successfully")
-        
+        # 16
         logger.info("🎉 Python AI Service ready!")
         
     except Exception as e:
@@ -204,8 +237,17 @@ async def extract_entities(request: NERRequest):
 # Combined Endpoint (Intent + NER)
 # ============================================
 
+# checkpoint3
 @app.post("/analyze", response_model=CombinedResponse)
+    # intent: str
+    # intent_confidence: float
+    # all_intents: List[Dict[str, Any]]
+    # entities: List[Entity]
+    # processing_time_ms: float
+    # 17
 async def analyze_text(request: CombinedRequest):
+    # text: str
+    # top_k: int = 3
     """
     Perform both intent classification and NER in one call
     
@@ -245,7 +287,8 @@ async def analyze_text(request: CombinedRequest):
 # ============================================
 # Run Server
 # ============================================
-
+# Server runner
+# app.listen(8000)
 if __name__ == "__main__":
     uvicorn.run(
         "main:app",

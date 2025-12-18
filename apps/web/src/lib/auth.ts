@@ -1,38 +1,42 @@
-import { NextAuthOptions } from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import { JWT } from 'next-auth/jwt';
+import { NextAuthOptions } from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { JWT } from "next-auth/jwt";
 
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
-      name: 'credentials',
+      name: "credentials",
+      // khai báo những trường dữ liệu nào mà signIn('credentials', ...) chấp nhận.
       credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
-        token: { label: 'Token', type: 'text' },
-        refreshToken: { label: 'Refresh Token', type: 'text' },
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+        token: { label: "Token", type: "text" },
+        refreshToken: { label: "Refresh Token", type: "text" },
       },
       async authorize(credentials) {
         // Xử lý login với email/password
         if (credentials?.email && credentials?.password) {
           try {
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                email: credentials.email,
-                password: credentials.password,
-              }),
-            });
+            const response = await fetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  email: credentials.email,
+                  password: credentials.password,
+                }),
+              }
+            );
 
             if (!response.ok) {
               return null;
             }
 
             const data = await response.json();
-            
+
             if (data.success && data.data) {
               return {
                 id: data.data.user.id,
@@ -50,28 +54,32 @@ export const authOptions: NextAuthOptions = {
 
             return null;
           } catch (error) {
-            console.error('Auth error:', error);
+            console.error("Auth error:", error);
             return null;
           }
         }
 
+        // gọi từ callback page
         // Xử lý token từ Google OAuth
         if (credentials?.token) {
           try {
             // Verify token với backend
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/profile`, {
-              method: 'GET',
-              headers: {
-                'Authorization': `Bearer ${credentials.token}`,
-              },
-            });
+            const response = await fetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/auth/profile`,
+              {
+                method: "GET",
+                headers: {
+                  Authorization: `Bearer ${credentials.token}`,
+                },
+              }
+            );
 
             if (!response.ok) {
               return null;
             }
 
             const data = await response.json();
-            
+
             if (data.success && data.data) {
               return {
                 id: data.data.id,
@@ -89,7 +97,7 @@ export const authOptions: NextAuthOptions = {
 
             return null;
           } catch (error) {
-            console.error('Token verification error:', error);
+            console.error("Token verification error:", error);
             return null;
           }
         }
@@ -99,7 +107,21 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger, session }: { token: JWT; user?: any; trigger?: string; session?: any }) {
+    // Chạy mỗi khi:
+    // User login thành công
+    // Session được update (trigger: "update")
+    //Mục đích: Lưu thông tin user vào JWT token (cookie)
+    async jwt({
+      token,
+      user,
+      trigger,
+      session,
+    }: {
+      token: JWT;
+      user?: any;
+      trigger?: string;
+      session?: any;
+    }) {
       if (user) {
         // bổ sung thêm các trường vào token object (về sau encode thành string lưu vào cookie)
         token.accessToken = user.accessToken;
@@ -120,6 +142,9 @@ export const authOptions: NextAuthOptions = {
 
       return token;
     },
+    //     Chạy mỗi khi:
+    // Client request session (useSession, getServerSession)
+    //Mục đích: Chuyển đổi JWT token thành session object để client sử dụng
     async session({ session, token }: { session: any; token: JWT }) {
       if (token) {
         session.user.id = token.sub;
@@ -135,10 +160,10 @@ export const authOptions: NextAuthOptions = {
     },
   },
   pages: {
-    signIn: '/login',
+    signIn: "/login",
   },
   session: {
-    strategy: 'jwt',
+    strategy: "jwt",
     maxAge: 7 * 24 * 60 * 60, // 7 days
   },
   secret: process.env.NEXTAUTH_SECRET,

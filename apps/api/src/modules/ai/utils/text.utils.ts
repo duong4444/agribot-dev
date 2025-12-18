@@ -8,6 +8,11 @@
  * - Remove extra whitespaces
  * - Normalize unicode (NFC)
  */
+// Tác dụng: Chuẩn hóa mã Unicode về dạng NFC (Normalization Form C).
+// Ví dụ: Trong tiếng Việt, chữ "á" có thể được viết bằng 1 ký tự (\u00E1) 
+// hoặc 2 ký tự ghép (a + dấu sắc). Hàm này ép tất cả về dạng chuẩn 1 ký tự.
+// Mục đích: Đảm bảo các từ tiếng Việt hiển thị giống nhau thì mã bên dưới cũng giống hệt nhau,
+//  tránh lỗi so sánh chuỗi.
 export function normalizeText(text: string): string {
   return text
     .toLowerCase()

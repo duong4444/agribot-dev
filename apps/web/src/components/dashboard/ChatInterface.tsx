@@ -1,11 +1,11 @@
 "use client";
 
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { MessageSquare } from 'lucide-react';
-import { MessageList } from './MessageList';
-import { ChatInput } from './ChatInput';
-import { Message } from './useChat';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MessageSquare } from "lucide-react";
+import { MessageList } from "./MessageList";
+import { ChatInput } from "./ChatInput";
+import { Message } from "./useChat";
 
 interface ChatInterfaceProps {
   messages: Message[];
@@ -35,19 +35,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </div>
           <div className="flex items-center gap-2">
             <span className="text-base font-semibold">Chat với AgriBot</span>
-            <span className="text-xs text-gray-500 dark:text-gray-400 font-normal">• Trợ lý AI nông nghiệp</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400 font-normal">
+              • Trợ lý AI nông nghiệp
+            </span>
           </div>
         </CardTitle>
       </CardHeader>
-      
+
       <CardContent className="flex-1 flex flex-col p-0 min-h-0">
-        <MessageList 
+        <MessageList
           messages={messages}
           isLoading={isLoading}
           messagesEndRef={messagesEndRef}
         />
-        
-        <ChatInput 
+
+        <ChatInput
           value={inputMessage}
           onChange={setInputMessage}
           onSend={onSendMessage}
@@ -58,4 +60,3 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     </Card>
   );
 };
-

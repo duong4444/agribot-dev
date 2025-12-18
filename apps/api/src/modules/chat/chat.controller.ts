@@ -96,6 +96,7 @@ export class ChatController {
     return { message: 'Cuộc trò chuyện đã được xóa thành công' };
   }
 
+  // entry kma
   @Post('messages')
   @ApiOperation({ summary: 'Gửi tin nhắn' })
   @ApiResponse({

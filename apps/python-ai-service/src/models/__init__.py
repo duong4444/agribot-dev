@@ -10,3 +10,5 @@ __all__ = [
     "NERExtractor",
 ]
 
+#giống file index.ts trong folder component React/NestJS,
+#giúp gom nhóm các exports lại để import cho đẹp và gọn code.
