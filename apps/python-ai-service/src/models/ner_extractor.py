@@ -11,8 +11,34 @@ from typing import Any, Dict, List, Tuple
 
 import torch
 from loguru import logger
+# AutoModelForTokenClassification dùng trong bài toán gán nhãn cho từ - tiêu biểu nhất là NER
+# mỗi token trong câu sẽ đc gán 1 nhãn, 
+#Token classification: 1 nhãn cho mỗi token, intent classification 1 nhãn cho cả câu, 
+# Intent: 1 Classification Head cho cả câu.
+# NER:    N Classification Heads cho N tokens
 from transformers import AutoModelForTokenClassification, AutoTokenizer
 
+# Input text
+#    ↓
+# Tokenizer (PhoBERT)
+#    ↓
+# Embedding
+#    ↓
+# Transformer Encoder (PhoBERT) - hiểu ngữ cảnh
+#    ↓
+# Token-wise Classification Head - Dự đoán nhãn cho từng token
+#    ↓
+# Softmax (per token) chuyển thành xác suất
+#    ↓
+# NER labels
+
+# | Tag | Ý nghĩa |
+# | --- | ------- |
+# | B   | Begin   |
+# | I   | Inside  |
+# | O   | Outside |
+# | E   | End     |
+# | S   | Single  |
 
 class NERExtractor:
     """
@@ -20,6 +46,8 @@ class NERExtractor:
     """
     
     # Entity labels (6 types for IoT chatbot)
+    # model AI output là số 0,1,2,3,...
+    # mảng này là từ điền để dịch 3 -> "B-CROP"
     ENTITY_LABELS = [
         "O",              # 0 - Outside
         "B-DATE",         # 1 - Begin Date
@@ -36,7 +64,7 @@ class NERExtractor:
         "I-DURATION",     # 12 - Inside Duration
     ]
     
-    # Entity type mapping
+    # Entity type mapping trả về cho NESTJS
     ENTITY_TYPE_MAP = {
         "DATE": "date",
         "CROP": "crop_name",
@@ -56,8 +84,8 @@ class NERExtractor:
         self.model_name = model_name
         self.tokenizer = None
         self.model = None
-        self.entity_labels: List[str] = self.ENTITY_LABELS.copy()
-        self.entity_type_map: Dict[str, str] = self.ENTITY_TYPE_MAP.copy()
+        self.entity_labels: List[str] = self.ENTITY_LABELS.copy() #lưu bản sao
+        self.entity_type_map: Dict[str, str] = self.ENTITY_TYPE_MAP.copy() #lưu bản sao
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         # 10
         logger.info(f"NER Extractor initialized with device: {self.device}")
@@ -67,6 +95,7 @@ class NERExtractor:
         try:
             # 11
             logger.info(f"Loading tokenizer from {self.model_name}...")
+            #load model tokenizer
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
 
             model_dir = Path(__file__).resolve().parents[2] / "models" / "ner_extractor"
@@ -76,14 +105,25 @@ class NERExtractor:
             if label_map_path.exists():
                 try:
                     mapping_data = json.loads(label_map_path.read_text(encoding="utf-8"))
-                    label_to_id = mapping_data.get("label_to_id")
+                    label_to_id = mapping_data.get("label_to_id") #obj 
                     if isinstance(label_to_id, dict) and label_to_id:
+                        # sx label theo ID
+                        # tại sao cần sort
+                        # predictions = [0, 2, 8, 1, 7]
+                        # entity_labels[0] → "O"
+                        # Ta cần tra cứu:
+                        # entity_labels[2] → "B-CROP"
+                        # entity_labels[8] → "I-CROP"
+                        # entity_labels[1] → "B-AREA"
+                        # entity_labels[7] → "I-AREA"
                         self.entity_labels = sorted(label_to_id.keys(), key=lambda label: label_to_id[label])
+                        logger.info(self.entity_labels)
                         # 12
                         logger.info(f"Loaded NER label mapping with {len(self.entity_labels)} labels")
                         
                         # Update entity type map from loaded labels
-                        entity_types = mapping_data.get("entity_types", [])
+                        entity_types = mapping_data.get("entity_types", []) #là arr chứa "DEVICE", "AREA",...
+                        logger.info(entity_types)
                         if entity_types:
                             for entity_type in entity_types:
                                 self.entity_type_map[entity_type] = entity_type.lower()
@@ -116,7 +156,7 @@ class NERExtractor:
             self.model.to(self.device)
             self.model.eval()
             # 14
-            logger.info("✅ NER Extractor model loaded successfully")
+            logger.info("NER Extractor model loaded successfully")
             
         except Exception as e:
             logger.error(f"Failed to load NER Extractor: {str(e)}")
@@ -146,13 +186,19 @@ class NERExtractor:
                     truncation=True,
                     max_length=256,
                     padding=True,
-                    return_offsets_mapping=True
+                    return_offsets_mapping=True  # Lấy vị trí ký tự của mỗi token
                 )
+                print(f"1.ner input tokenizer: {input}") # token id , id của từ vựng trong từ điển PhoBert
+                
                 offset_mapping = inputs.pop("offset_mapping")[0]
+                print(f"2.ner offset_mapping : {offset_mapping}")
+                
             except NotImplementedError:
+                # PhoBERT tokenizer không hỗ trợ offset mapping
                 logger.info(
                     "Tokenizer does not support offset mapping. Using manual token alignment for PhoBERT predictions."
                 )
+
                 inputs = self.tokenizer(
                     text,
                     return_tensors="pt",
@@ -160,19 +206,30 @@ class NERExtractor:
                     max_length=256,
                     padding=True
                 )
+                print(f"ner Using manual token alignment_input-tokenizier: {inputs}")
                 offset_mapping = None
             
             # Move to device
             inputs = {k: v.to(self.device) for k, v in inputs.items()}
+            print(f"ner move to device_input-tokenizier: {input}")
             
             # Get predictions
             with torch.no_grad():
                 outputs = self.model(**inputs)
+                print(f"ner outputs: {outputs}")
+
                 logits = outputs.logits
-                predictions = torch.argmax(logits, dim=-1)[0]
-            
+                print(f"ner logits: {logits}")
+
+                predictions = torch.argmax(logits, dim=-1)[0] #chọn nhãn có điểm cao nhất
+                print(f"ner predictions: {predictions}")
+                print(f"ner predictions para1-both: {predictions.cpu().numpy()}") #label id
+                print(f"ner predictions para2-both: {inputs['input_ids'][0].cpu().numpy()}") #token id
+
             entities: List[Dict[str, Any]] = []
             if offset_mapping is not None:
+                print(f"có offset_mapping: {predictions}")
+
                 entities = self._convert_predictions_to_entities(
                     text,
                     predictions.cpu().numpy(),
@@ -180,16 +237,23 @@ class NERExtractor:
                     inputs["input_ids"][0].cpu().numpy()
                 )
             else:
-                # PhoBERT doesn't support offset mapping, so we manually create it
+                # PhoBERT doesn't support offset mapping
+                print(f"KHÔNG CÓ offset_mapping: {predictions}")
+#               numpy chỉ hoạt động trên cpu
                 entities = self._convert_predictions_without_offsets(
                     text,
+                    # tensor([1, 3, 0])  →  array([1, 3, 0])
                     predictions.cpu().numpy(),
                     inputs["input_ids"][0].cpu().numpy()
                 )
-            
             # Apply rule-based post-processing for better accuracy
+            # merge với regex, filter rác, normalize values
             entities = self._post_process_entities(text, entities)
-            
+            print("\n" + "="*60)
+            print("Final entities gửi cho NestJS:")
+            print(json.dumps(entities, indent=2, ensure_ascii=False))
+            print("="*60)
+
             processing_time = (time.time() - start_time) * 1000
             
             return {
@@ -204,8 +268,8 @@ class NERExtractor:
     def _convert_predictions_to_entities(
         self,
         text: str,
-        predictions: List[int],
-        offset_mapping: List[Tuple[int, int]],
+        predictions: List[int],  # [0, 3, 4, 0, 5, 6]
+        offset_mapping: List[Tuple[int, int]], # [(0,5), (6,8), ...]
         input_ids: List[int]
     ) -> List[Dict[str, Any]]:
         """Convert model predictions to entity list"""
@@ -214,10 +278,11 @@ class NERExtractor:
         
         for idx, (pred, (start, end)) in enumerate(zip(predictions, offset_mapping)):
             # Skip special tokens
-            if start == end:
+            if start == end: # Special tokens như <s>, </s>
                 continue
             
             label = self.entity_labels[pred]
+            print(f"label: {label}")
             
             if label.startswith("B-"):
                 # Save previous entity
@@ -225,7 +290,7 @@ class NERExtractor:
                     entities.append(current_entity)
                 
                 # Start new entity
-                entity_type = label[2:]
+                entity_type = label[2:] #cắt chuỗi bỏ "B-"
                 current_entity = {
                     "type": self.ENTITY_TYPE_MAP.get(entity_type, entity_type.lower()),
                     "raw": text[start:end],
@@ -233,6 +298,7 @@ class NERExtractor:
                     "end": end,
                     "confidence": 0.85  # Base confidence
                 }
+                print(f"current_entity: {current_entity}")
             
             elif label.startswith("I-") and current_entity:
                 # Continue current entity
@@ -244,8 +310,9 @@ class NERExtractor:
                 entities.append(current_entity)
                 current_entity = None
         
-        # Add last entity
+        # Add last entity , nếu entity ở cuối câu
         if current_entity:
+            print(f"trong if add last entity")
             entities.append(current_entity)
         
         return entities
@@ -253,8 +320,8 @@ class NERExtractor:
     def _convert_predictions_without_offsets(
         self,
         text: str,
-        predictions: List[int],
-        input_ids: List[int]
+        predictions: List[int],   # [0, 3, 4, 0, 5, 6]
+        input_ids: List[int]    #[1, 5432, 8976, 2]
     ) -> List[Dict[str, Any]]:
         """
         Convert predictions to entities without offset mapping.
@@ -262,51 +329,78 @@ class NERExtractor:
         """
         entities = []
         current_entity = None
-        
+        # cách trồng cà chua
+        print(f"---predictions----: {predictions}") #[0 0 0 2 8 0]
+        print(f"---input_ids----: {input_ids}") #[    0   139   719 10709  5344     2]
+        # BẢN CHẤT LÀ DETOKEN TOKEN ID -> TEXT
+        # SAU ĐÓ TÌM CÁI TEXT VỪA ĐC DETOKEN TRONG USER_PROMPT_TEXT
         # Debug: Log ALL tokens and predictions
         all_tokens_debug = []
         for i, (token_id, pred) in enumerate(zip(input_ids, predictions)):
             token = self.tokenizer.decode([token_id], skip_special_tokens=True)
+            print(f"token trong loop debug: {token}")
             label = self.entity_labels[pred]
-            all_tokens_debug.append(f"'{token}'→{label}")
+            all_tokens_debug.append(f"~~'{token}'→{label}")
         logger.info(f"All tokens: {all_tokens_debug}")
         
         pred_labels = [self.entity_labels[p] for p in predictions]
+        #pred_labels___: ['O', 'O', 'O', 'B-CROP', 'I-CROP', 'O']
+        print(f"pred_labels___: {pred_labels}")
+        #non_o_labels: ['B-CROP', 'I-CROP']
         non_o_labels = [l for l in pred_labels if l != 'O']
+        print(f"non_o_labels: {non_o_labels}")
         logger.info(f"NER Predictions - Total tokens: {len(predictions)}, Non-O predictions: {len(non_o_labels)}")
         if non_o_labels:
             logger.info(f"Entity predictions found: {non_o_labels}")
         else:
-            logger.warning(f"⚠️ All predictions are 'O' (no entities) - Model may not be trained yet!")
+            logger.warning(f"All predictions are 'O' (no entities) - Model may not be trained yet!")
         
         # Normalize text for matching
         text_lower = text.lower()
-        current_pos = 0
-        
+        current_pos = 0 #vị trí hiện tại trong text
+        print(f"1.currPOS: {current_pos}")
         for idx, (pred, token_id) in enumerate(zip(predictions, input_ids)):
+            # lấy được nhãn "B-xxxx","I-xxxx","O"
+            #[0 0 0 2 8 0] 
+            #[0 139 719 10709 5344 2]
             label = self.entity_labels[pred]
-            
+            print(f"label trong for_loop ko offset: {label}")
+            print(f"tokenID trong for_loop ko offset: {token_id}")
+
             # Skip special tokens (<s>, </s>, <pad>)
             if token_id in [self.tokenizer.bos_token_id, self.tokenizer.eos_token_id, self.tokenizer.pad_token_id]:
                 continue
             
-            # Decode token - PhoBERT adds underscores for word boundaries
+            # Decode token - note PhoBERT adds underscores for word boundaries
+            # strip() = trim()
             token_text = self.tokenizer.decode([token_id], skip_special_tokens=True).strip()
+            print(f"token_text: {token_text}")
             if not token_text:
                 continue
             
             # Remove underscore prefix that PhoBERT uses (e.g., "_cà" -> "cà")
+            # key
             token_clean = token_text.replace("_", " ").strip()
+            print(f"token_clean: {token_clean}")
             
             # Find token in text (case-insensitive search from current position)
             token_lower = token_clean.lower()
+            print(f"final_token_clean_lower: {token_lower}")
+            # tìm token trong prompt_text_gốc , 
+            # tìm vị trí đầu tiên token xuất hiện tìm từ vị trí current_pos trở đi
             token_start = text_lower.find(token_lower, current_pos)
-            
+            print(f"token_start: {token_start}")
+            # nếu ko tìm đc token (case khó)
+            # vd text gốc khác vs tokenizer "điện thoại" - "điệnthoại"
             if token_start == -1:
                 # Try exact match without spaces
+                # token_clean= "điện thoại" -> "điệnthoại"
                 token_no_space = token_clean.replace(" ", "")
                 token_start = text_lower.find(token_no_space.lower(), current_pos)
                 if token_start != -1:
+                    print(f"tìm thấy token")
+                    print(f"token_start trong if viếtliền: {token_start}")
+
                     token_clean = token_no_space
             
             if token_start == -1:
@@ -315,7 +409,9 @@ class NERExtractor:
             
             token_end = token_start + len(token_clean)
             current_pos = token_end
-            
+            print(f"2.currPOS: {current_pos}")
+
+            # đã có token start,end -> Logic giống hàm có offset
             if label.startswith("B-"):
                 # Save previous entity
                 if current_entity:
@@ -324,7 +420,7 @@ class NERExtractor:
                 # Start new entity
                 entity_type = label[2:]
                 current_entity = {
-                    "type": self.ENTITY_TYPE_MAP.get(entity_type, entity_type.lower()),
+                    "type": self.ENTITY_TYPE_MAP.get(entity_type, entity_type.lower()),#key,default
                     "raw": text[token_start:token_end],
                     "start": token_start,
                     "end": token_end,
@@ -350,12 +446,16 @@ class NERExtractor:
             
             elif label == "O" and current_entity:
                 # End current entity
+                print(f"!!!! add vào entities")
                 entities.append(current_entity)
                 current_entity = None
         
         # Add last entity
         if current_entity:
+            print(f"!!!! add cuối")
             entities.append(current_entity)
+
+        print(f"entities_extractNoOffset: {entities}")
         
         return entities
     
@@ -368,19 +468,38 @@ class NERExtractor:
         
         # Add rule-based entities for common patterns (high priority)
         rule_entities = self._extract_rule_based_entities(text)
-        
+        print("\n" + "="*60)
+        print(" BƯỚC 1 - Rule-based entities (Regex):")
+        print(json.dumps(rule_entities, indent=2, ensure_ascii=False))
+        print("="*60)
         # Merge PhoBERT and rule-based entities
         all_entities = entities + rule_entities
+        print("\n" + "="*60)
+        print(" BƯỚC 2 - Merged entities (AI + Regex):")
+        print(json.dumps(all_entities, indent=2, ensure_ascii=False))
+        print("="*60)
         
         # Remove duplicates and overlaps (prefer rule-based for multi-word)
         all_entities = self._remove_overlapping_entities(all_entities)
+        print("\n" + "="*60)
+        print(" BƯỚC 3 - Sau khi loại bỏ overlap:")
+        print(json.dumps(all_entities, indent=2, ensure_ascii=False))
+        print("="*60)
         
         # Filter out invalid single-word entities
         all_entities = self._filter_invalid_entities(text, all_entities)
+        print("\n" + "="*60)
+        print(" BƯỚC 4 - Sau khi lọc invalid entities:")
+        print(json.dumps(all_entities, indent=2, ensure_ascii=False))
+        print("="*60)
         
         # Normalize values
         for entity in all_entities:
             entity["value"] = self._normalize_entity_value(entity)
+        print("\n" + "="*60)
+        print(" BƯỚC 5 - Sau khi normalize values:")
+        print(json.dumps(all_entities, indent=2, ensure_ascii=False))
+        print("="*60)
         
         return all_entities
     
@@ -475,9 +594,12 @@ class NERExtractor:
             duration_patterns +
             date_patterns
         )
-        
+        # pattern = regex, entity_type = type
         for pattern, entity_type in all_patterns:
+            # finditer tìm tất cả các đoạn văn khớp với mẫu trong text
+            # re là thư viện built in của Python để làm việc với regex
             for match in re.finditer(pattern, text, re.IGNORECASE):
+                print(f"append trong match")
                 entities.append({
                     "type": entity_type,
                     "raw": match.group(0),
@@ -485,6 +607,10 @@ class NERExtractor:
                     "end": match.end(),
                     "confidence": 0.95  # Very high confidence for rule-based multi-word
                 })
+                print("\n" + "="*60)
+                print("🔍 Entities tìm được bằng Regex:")
+                print(json.dumps(entities, indent=2, ensure_ascii=False))
+                print("="*60)
         
         return entities
     
@@ -529,6 +655,9 @@ class NERExtractor:
             return []
         
         # Sort by start position, then by confidence (higher first), then by length (longer first)
+        # sort theo vị trị bắt đầu (tăng dần),
+        # (dấu - để đảo ngc thứ tự) nếu cùng vị trí ưu tiên confidence cao hơn
+        # nếu cùng vị trí và confidence ưu tiên entity dài hơn
         sorted_entities = sorted(
             entities, 
             key=lambda x: (x["start"], -x["confidence"], -(x["end"] - x["start"]))
@@ -536,7 +665,7 @@ class NERExtractor:
         
         result = []
         last_end = -1
-        
+        # last_end vị trí kết thúc của entity cuối cùng được chọn
         for entity in sorted_entities:
             if entity["start"] >= last_end:
                 result.append(entity)
@@ -582,6 +711,8 @@ class NERExtractor:
             return "năm trước"  # Keep Vietnamese
         
         # Try to parse dd/mm/yyyy
+        # Input: "15/3/24"
+        # Output: "2024-03-15"
         date_match = re.match(r'(\d{1,2})/(\d{1,2})/(\d{2,4})', normalized)
         if date_match:
             day, month, year = date_match.groups()
@@ -599,7 +730,7 @@ class NERExtractor:
         if not number_match:
             return "0"
         
-        value = float(number_match.group(1).replace(',', ''))
+        value = float(number_match.group(1).replace(',', '.'))
         
         # Handle units
         if 'tỷ' in normalized:

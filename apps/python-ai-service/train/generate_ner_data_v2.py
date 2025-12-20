@@ -15,6 +15,7 @@ Use Cases:
 - sensor_query: "{METRIC} ở {AREA} là bao nhiêu?"
 - financial_query: "Chi phí {DATE} là bao nhiêu?"
 - knowledge_query: "Cách trồng {CROP}"
+python generate_ner_data_v2.py --target  2000 --output ner_iot_data.csv
 """
 
 import csv
@@ -34,6 +35,37 @@ import time
 # CONFIGURATION
 # ============================================================================
 
+"""
+ 6 LOẠI ENTITY (Thực thể): DATE, CROP, AREA, DURATION, DEVICE, METRIC
+ TEMPLATES (Mẫu câu)
+ def fill_template(self, template: str) -> Optional[NerSample]:
+    # Tìm placeholder {DEVICE}, {AREA}...
+    # Thay thế bằng giá trị ngẫu nhiên
+    # Tính toán vị trí start, end của entity
+ def augment_sample(self, sample: NerSample) -> Optional[NerSample]:
+    # Chọn 1 entity để thay thế
+    # Thay bằng giá trị khác cùng loại
+    # Tính lại vị trí các entity
+1. Chọn template ngẫu nhiên
+   ↓
+2. Tìm các placeholder {DEVICE}, {AREA}...
+   ↓
+3. Chọn giá trị ngẫu nhiên từ ENTITY_DATA
+   ↓
+4. Thay thế placeholder bằng giá trị
+   ↓
+5. Tính toán vị trí (start, end) của entity
+   ↓
+6. Tạo NerSample
+   ↓
+7. Kiểm tra hợp lệ (độ dài, trùng lặp, vị trí đúng)
+   ↓
+8. (30% xác suất) Augment: Thay 1 entity bằng giá trị khác
+   ↓
+9. Lặp lại cho đến đủ số lượng mục tiêu
+   ↓
+10. Lưu vào file CSV
+"""
 @dataclass
 class Config:
     """Configuration for NER data generation"""

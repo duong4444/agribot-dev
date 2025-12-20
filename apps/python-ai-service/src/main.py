@@ -2,7 +2,6 @@
 Python AI Service - PhoBERT Intent Classification & NER
 FastAPI server for Vietnamese Agricultural Chatbot
 """
-
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 #giống class-validator , BaseModel là class nền tảng của pydantic
@@ -10,9 +9,11 @@ from pydantic import BaseModel
 # List[T]	danh sách các phần tử kiểu T
 # Optional[T]	T hoặc None
 # Dict[K, V]	object / map  ____ obj
+# -> Dict[str, Any] nghĩa là trả về Object { key: value }
 # List[Dict[str, Any]] <=> Array<Record<string, any>> ___arr
 # Any	kiểu bất kỳ
 from typing import List, Optional, Dict, Any
+import json
 #   Node              	Python
 # Express + node	FastAPI + uvicorn
 import uvicorn
@@ -58,9 +59,7 @@ app.add_middleware(
 intent_classifier: Optional[IntentClassifier] = None
 ner_extractor: Optional[NERExtractor] = None
 
-# ============================================
 # Request/Response Models
-# ============================================
 #DTO===================DTO===========================DTO
 class IntentRequest(BaseModel):
     text: str
@@ -108,10 +107,7 @@ class CombinedResponse(BaseModel):
     processing_time_ms: float
 #END____DTO=====================DTO=========================DTO
 
-# ============================================
 # Startup/Shutdown Events
-# ============================================
-
 # Tương đương onModuleInit(), chạy 1 lần khi server start
 # hàm này chạy đầu tiên khi server bật lên
 @app.on_event("startup")
@@ -124,34 +120,31 @@ async def startup_event():
     
     try:
         # 2
-        logger.info("📦 Loading Intent Classifier (PhoBERT)...")
+        logger.info("Loading Intent Classifier (PhoBERT)...")
         intent_classifier = IntentClassifier()
+        # load tokenier, load label_mapping.json, load head classification vào
         await intent_classifier.load_model()
         # 8
-        logger.info("✅ Intent Classifier loaded successfully")
+        logger.info("Intent Classifier loaded successfully")
         # 9
-        logger.info("📦 Loading NER Extractor (PhoBERT)...")
+        logger.info("Loading NER Extractor (PhoBERT)...")
         ner_extractor = NERExtractor()
         await ner_extractor.load_model()
         # 15
-        logger.info("✅ NER Extractor loaded successfully")
+        logger.info("NER Extractor loaded successfully")
         # 16
-        logger.info("🎉 Python AI Service ready!")
+        logger.info(" Python AI Service ready!")
         
     except Exception as e:
-        logger.error(f"❌ Failed to load models: {str(e)}")
+        logger.error(f"Failed to load models: {str(e)}")
         raise
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on shutdown"""
-    logger.info("👋 Shutting down Python AI Service...")
+    logger.info(" Shutting down Python AI Service...")
 
-
-# ============================================
 # Health Check
-# ============================================
-
 @app.get("/")
 async def root():
     """Root endpoint"""
@@ -174,19 +167,13 @@ async def health_check():
         "ner_extractor": ner_extractor is not None
     }
 
-
-# ============================================
 # Intent Classification Endpoints
-# ============================================
-
 @app.post("/intent/classify", response_model=IntentResponse)
 async def classify_intent(request: IntentRequest):
     """
     Classify user intent using PhoBERT
-    
     Args:
         request: IntentRequest with text and optional top_k
-        
     Returns:
         IntentResponse with predicted intent and confidence
     """
@@ -203,19 +190,13 @@ async def classify_intent(request: IntentRequest):
         logger.error(f"Intent classification error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
-# ============================================
 # NER Endpoints
-# ============================================
-
 @app.post("/ner/extract", response_model=NERResponse)
 async def extract_entities(request: NERRequest):
     """
     Extract named entities using PhoBERT
-    
     Args:
         request: NERRequest with text
-        
     Returns:
         NERResponse with extracted entities
     """
@@ -231,12 +212,8 @@ async def extract_entities(request: NERRequest):
     except Exception as e:
         logger.error(f"NER extraction error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
-
-# ============================================
+    
 # Combined Endpoint (Intent + NER)
-# ============================================
-
 # checkpoint3
 @app.post("/analyze", response_model=CombinedResponse)
     # intent: str
@@ -250,10 +227,8 @@ async def analyze_text(request: CombinedRequest):
     # top_k: int = 3
     """
     Perform both intent classification and NER in one call
-    
     Args:
         request: CombinedRequest with text
-        
     Returns:
         CombinedResponse with intent and entities
     """
@@ -262,15 +237,21 @@ async def analyze_text(request: CombinedRequest):
     
     try:
         start_time = time.time()
-        
         logger.info(f"Analyzing text: {request.text[:50]}...")
-        
         # Run both models
         intent_result = await intent_classifier.classify(request.text, top_k=request.top_k)
         ner_result = await ner_extractor.extract(request.text)
+        logger.info("\n" + "="*60)
+        logger.info("FINAL INTENT RESULT TO NESTJS:")
+        logger.info(json.dumps(intent_result, indent=2, ensure_ascii=False))
+        logger.info("="*60)
         
+        logger.info("\n" + "="*60)
+        logger.info("FINAL NER RESULT TO NESTJS:")
+        logger.info(json.dumps(ner_result, indent=2, ensure_ascii=False))
+        logger.info("="*60)
+
         processing_time = (time.time() - start_time) * 1000
-        
         return {
             "intent": intent_result["intent"],
             "intent_confidence": intent_result["confidence"],

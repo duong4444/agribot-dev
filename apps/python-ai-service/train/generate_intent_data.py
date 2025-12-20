@@ -16,6 +16,8 @@ Improvements:
 - Xử lý de-duplication toàn cục và chính xác.
 - Tối ưu hóa vòng lặp generation.
 - TQDM lồng nhau được quản lý tốt hơn.
+python generate_intent_data.py --input data/intent_data_5intents_cleaned.csv 
+--output data/intent_data_augmented_name_abcxyz.csv --target 1600
 """
 
 import csv
@@ -34,6 +36,15 @@ import time
 # ============================================================================
 # CONFIGURATION
 # ============================================================================
+
+"""
+SYNONYMS (Từ đồng nghĩa)
+NOISE_WORDS (Từ nhiễu)
+TEMPLATES (Mẫu câu)
+ENTITIES (Thực thể)
+CÁC KỸ THUẬT AUGMENTATION apply_synonym_replacement,generate_from_template,add_question_variations
+add_noise,add_case_variation
+"""
 
 @dataclass
 class Config:
@@ -114,7 +125,7 @@ NOISE_WORDS = {
     ]
 }
 
-# TEMPLATES VÀ ENTITIES giữ nguyên như trong file của bạn
+# TEMPLATES VÀ ENTITIES giữ nguyên như trong file
 # (Giữ nguyên TEMPLATES và ENTITIES ở đây)
 # ============================================================================
 # TEMPLATES CHO MỖI INTENT
