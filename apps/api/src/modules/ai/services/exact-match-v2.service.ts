@@ -10,20 +10,9 @@ import { CropKnowledgeFTSService } from './crop-knowledge-fts.service';
  * This is the main service to use for Layer 1 searches
  */
 
-interface SearchMetrics {
-  query: string;
-  userId?: string;
-  found: boolean;
-  confidence: number;
-  processingTime: number;
-  method: 'fts' | 'fuzzy' | 'expansion' | 'crop_fts';
-}
-
 @Injectable()
 export class ExactMatchV2Service {
   private readonly logger = new Logger(ExactMatchV2Service.name);
-  private searchMetrics: SearchMetrics[] = [];
-  private readonly maxMetricsSize = 100;
 
   constructor(
     private readonly queryPreprocessor: QueryPreprocessorService,
@@ -106,16 +95,7 @@ export class ExactMatchV2Service {
         method = 'crop_fts';
       }
 
-      // Record metrics
       const processingTime = Date.now() - startTime;
-      this.recordMetric({
-        query,
-        userId,
-        found: result.found,
-        confidence: result.confidence || 0,
-        processingTime,
-        method,
-      });
 
       this.logger.debug(
         ` Search completed via ${method} in ${processingTime}ms - ` +
@@ -164,90 +144,5 @@ export class ExactMatchV2Service {
     return results;
   }
 
-  /**
-   * Record search metric
-   */
-  private recordMetric(metric: SearchMetrics): void {
-    this.searchMetrics.push(metric);
 
-    // Keep only last N metrics
-    if (this.searchMetrics.length > this.maxMetricsSize) {
-      this.searchMetrics.shift();
-    }
-  }
-
-  /**
-   * Get search analytics
-   */
-  getAnalytics(): {
-    totalSearches: number;
-    avgProcessingTime: number;
-    avgConfidence: number;
-    foundRate: number;
-    methodBreakdown: Record<string, number>;
-  } {
-    if (this.searchMetrics.length === 0) {
-      return {
-        totalSearches: 0,
-        avgProcessingTime: 0,
-        avgConfidence: 0,
-        foundRate: 0,
-        methodBreakdown: {},
-      };
-    }
-
-    const total = this.searchMetrics.length;
-    const found = this.searchMetrics.filter((m) => m.found).length;
-
-    const avgProcessingTime =
-      this.searchMetrics.reduce((sum, m) => sum + m.processingTime, 0) / total;
-
-    const avgConfidence =
-      this.searchMetrics.reduce((sum, m) => sum + m.confidence, 0) / total;
-
-    const methodBreakdown: Record<string, number> = {};
-    this.searchMetrics.forEach((m) => {
-      methodBreakdown[m.method] = (methodBreakdown[m.method] || 0) + 1;
-    });
-
-    return {
-      totalSearches: total,
-      avgProcessingTime: parseFloat(avgProcessingTime.toFixed(2)),
-      avgConfidence: parseFloat(avgConfidence.toFixed(3)),
-      foundRate: parseFloat(((found / total) * 100).toFixed(2)),
-      methodBreakdown,
-    };
-  }
-
-  /**
-   * Health check
-   */
-  async healthCheck(): Promise<{
-    status: 'healthy' | 'degraded' | 'unhealthy';
-    analytics: any;
-  }> {
-    try {
-      const analytics = this.getAnalytics();
-      const status = analytics.totalSearches > 0 ? 'healthy' : 'degraded';
-
-      return {
-        status,
-        analytics,
-      };
-    } catch (error) {
-      this.logger.error('Health check failed:', error);
-      return {
-        status: 'unhealthy',
-        analytics: null,
-      };
-    }
-  }
-
-  /**
-   * Reset all metrics
-   */
-  resetMetrics(): void {
-    this.searchMetrics = [];
-    this.logger.log('📊 All metrics reset');
-  }
 }
