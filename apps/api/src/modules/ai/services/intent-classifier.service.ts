@@ -30,6 +30,7 @@ export class IntentClassifierService {
     // TRẢ VỀ KẾT QUẢ CHO STEP1_ORCHESTRATOR
     // checkpoint2
     const pythonResult = await this.pythonAIClient.analyzeText(query, 3);
+    // key kma
     // pythonResult === response.data từ 8000/analyze
     console.log('pythonResult_intent: ', pythonResult?.intent);
     console.log(

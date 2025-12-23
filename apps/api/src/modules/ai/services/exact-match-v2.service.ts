@@ -84,8 +84,8 @@ export class ExactMatchV2Service {
         searchQuery,
         undefined, // Search all public knowledge, not filtered by user
         {
-          limit: 5,
-          threshold: 0.7,
+          limit: 5,  // số kết quả
+          threshold: 0.7, // của FTS
           cropFilter, // Pass crop filter from NER
         },
       );
@@ -118,7 +118,7 @@ export class ExactMatchV2Service {
       });
 
       this.logger.debug(
-        `🔍 Search completed via ${method} in ${processingTime}ms - ` +
+        ` Search completed via ${method} in ${processingTime}ms - ` +
           `Found: ${result.found}, Confidence: ${(result.confidence || 0).toFixed(3)}`,
       );
 

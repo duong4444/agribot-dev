@@ -60,7 +60,7 @@ export class CropKnowledgeFTSService {
 
     // ✅ Check if query is asking for elaboration/more details
     if (this.isElaborationQuery(query)) {
-      this.logger.log('⚠️ Elaboration query detected - skipping FTS, let LLM handle');
+      this.logger.log('Elaboration query detected - skipping FTS, let LLM handle');
       return { 
         found: false, 
         confidence: 0, 
@@ -119,6 +119,7 @@ export class CropKnowledgeFTSService {
         return { found: false, confidence: 0 };
       }
 
+      // kma
       // Re-rank results based on disease/pest keyword matches in title
       const diseaseKeywords = this.extractDiseaseKeywords(query);
       const { results: rerankedResults, hasMatch } = this.rerankByTitleMatch(results, diseaseKeywords);
@@ -147,8 +148,7 @@ export class CropKnowledgeFTSService {
       );
 
       const threshold = options?.threshold || this.CONFIDENCE_THRESHOLD;
-      console.log("threshold của FTS: ",threshold);
-      
+      console.log("threshold-confidence của FTS: ",threshold);
       
       if (confidence >= threshold) {
         this.logger.log(
@@ -212,6 +212,8 @@ export class CropKnowledgeFTSService {
       this.logger.debug(
         `______________Executing FTS: query="${query}", userId=${userId}, limit=${limit}, minRank=${minRank}, cropFilter=${cropFilter || 'none'}`,
       );
+      // hàm FTS  search_crop_knowledge_fts: chuẩn hoá query , tách từ , 
+      // tạo OR(to_tsquery) hoặc AND(plainto_tsquery) , @@ toán từ FTS của postgreSQL
 
       const results = await this.chunkRepo.query(
         `
@@ -232,7 +234,7 @@ export class CropKnowledgeFTSService {
       console.log("==========results trong FTS!heading: ",results);
       console.log("==========================================================");
       
-      this.logger.debug(`FTS returned ${results.length} results`);
+      this.logger.debug(`FTS returned trong excuteFTS ${results.length} results`);
       return results;
     } catch (error) {
       this.logger.error(
@@ -334,6 +336,7 @@ export class CropKnowledgeFTSService {
     result: SearchResult,
     query: string,
   ): number {
+    // rs.rank ~ 1.9
     // Base confidence from rank (normalize to 0-1)
     let confidence = Math.min(result.rank * 0.5, 1.0);
 
@@ -395,31 +398,31 @@ export class CropKnowledgeFTSService {
       }
     }
 
-    // ✅ NEW: Apply heuristic relevance penalty
+    //Apply heuristic relevance penalty
     const relevanceScore = this.calculateRelevanceScore(query, result);
     
     if (relevanceScore === 0) {
       // Complete mismatch (e.g., time period conflict) → Return 0 immediately
       this.logger.debug(
-        `❌ Relevance score is 0 (complete mismatch) - returning confidence 0`
+        ` Relevance score is 0 (complete mismatch) - returning confidence 0`
       );
       return 0;
     } else if (relevanceScore < 0.4) {
       // Low relevance → Heavy penalty
       confidence *= 0.5;
       this.logger.debug(
-        `⚠️ Low relevance score (${relevanceScore.toFixed(2)}) - penalizing confidence by 50%`
+        ` Low relevance score (${relevanceScore.toFixed(2)}) - penalizing confidence by 50%`
       );
     } else if (relevanceScore < 0.6) {
       // Medium relevance → Moderate penalty
       confidence *= 0.8;
       this.logger.debug(
-        `⚠️ Medium relevance score (${relevanceScore.toFixed(2)}) - penalizing confidence by 20%`
+        ` Medium relevance score (${relevanceScore.toFixed(2)}) - penalizing confidence by 20%`
       );
     } else {
       // High relevance → No penalty
       this.logger.debug(
-        `✅ High relevance score (${relevanceScore.toFixed(2)}) - no penalty`
+        ` High relevance score (${relevanceScore.toFixed(2)}) - no penalty`
       );
     }
 
@@ -935,7 +938,7 @@ export class CropKnowledgeFTSService {
     const asciiQuery = this.removeAccents(normalizedQuery);
     const keywords: string[] = [];
     
-    this.logger.debug(`🔍 extractDiseaseKeywords: query="${query}" → ascii="${asciiQuery}"`);
+    this.logger.debug(`extractDiseaseKeywords_method: query="${query}" → ascii="${asciiQuery}"`);
     
     // 1. Check for known diseases first (priority matching)
     for (const disease of this.KNOWN_DISEASES) {
