@@ -33,13 +33,13 @@ export class FinancialQueryHandler {
     entities: Entity[],
     message: string,
   ): Promise<FinancialQueryResult> {
-    // this.logger.log(`Handling financial query for user ${userId}`);
 
     // Extract date entities
     const dateEntities = entities.filter(e => e.type === 'date');
     let dateString = '';
 
     // Check if we have separate "month" and "year" entities
+    // NER extract ra 2 entities: tháng 11 và năm 2024
     const monthEntity = dateEntities.find(e => e.value.toLowerCase().includes('tháng'));
     const yearEntity = dateEntities.find(e => e.value.toLowerCase().includes('năm'));
 
@@ -48,6 +48,8 @@ export class FinancialQueryHandler {
       dateString = `${monthEntity.value} ${yearEntity.value}`;
       console.log("Merged date entities:", dateString);
     } else if (dateEntities.length > 0) {
+      console.log("case này");
+      
       // Use the first (or most relevant) entity
       dateString = dateEntities[0].value;
     } else {

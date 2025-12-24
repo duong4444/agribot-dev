@@ -59,6 +59,18 @@ export function parseDateRange(dateEntity: string): DateRange | null {
     }
   }
 
+  // Tháng X năm nay: "tháng 10 năm nay", "tháng 12 năm nay"
+  const monthThisYearMatch = normalized.match(/tháng\s*(\d{1,2})\s*năm\s*nay/);
+  if (monthThisYearMatch) {
+    const month = parseInt(monthThisYearMatch[1]);
+    if (month >= 1 && month <= 12) {
+      return {
+        start: new Date(now.getFullYear(), month - 1, 1),
+        end: new Date(now.getFullYear(), month, 0, 23, 59, 59, 999),
+      };
+    }
+  }
+
   // Năm cụ thể: "năm 2024", "năm 2023"
   const yearMatch = normalized.match(/năm\s*(\d{4})/);
   if (yearMatch) {

@@ -339,6 +339,7 @@ export class AIOrchestrator {
   /**
    * Process action intent (business queries, IoT control)
    */
+  // cpa_root
   private async processActionIntent(
     intentResult: IntentClassificationResult,
     user: User,
@@ -356,7 +357,7 @@ export class AIOrchestrator {
       entities,
       query,
     };
-
+    // cpa1
     const actionResult = await this.actionRouter.routeAction(actionContext);
 
     return {
