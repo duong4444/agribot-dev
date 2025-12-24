@@ -19,9 +19,9 @@ export class EmbeddingService implements OnModuleInit {
   private async healthCheck() {
     try {
       const response = await this.client.get('/health');
-      this.logger.log(`✅ Embedding service healthy: ${JSON.stringify(response.data)}`);
+      this.logger.log(`*!!!!* Embedding service healthy: ${JSON.stringify(response.data)}`);
     } catch (error) {
-      this.logger.error('❌ Embedding service not available:', error.message);
+      this.logger.error('*X* Embedding service not available:', error.message);
       this.logger.warn('Make sure Python embedding service is running at ' + this.embeddingApiUrl);
     }
   }
@@ -29,9 +29,10 @@ export class EmbeddingService implements OnModuleInit {
   /**
    * Generate embedding cho 1 text
    */
+  // cprag1
   async generateEmbedding(text: string): Promise<number[]> {
     try {
-      // Truncate to max length (256 tokens ≈ 1000 chars for Vietnamese)
+      // Truncate to max length (256 tokens ≈ 1000 chars for Vietnamese,8096 tokens≈ 28.000 – 30.000)
       const truncated = text.substring(0, 1000);
       
       this.logger.debug(`Generating embedding for text: "${truncated.substring(0, 50)}..."`);
@@ -43,10 +44,11 @@ export class EmbeddingService implements OnModuleInit {
       
       const embedding = response.data.embeddings[0];
       // console.log("embedding: ",embedding);
-      
+      // 768 dimensions
       this.logger.debug(`Generated embedding with ${embedding.length} dimensions`);
-      this.logger.debug(`First 5 values: [${embedding.slice(0, 5).join(', ')}]`);
-      
+      this.logger.debug(`kqua tra ve tu 8001/embed: First 5 values: [${embedding.slice(0, 5).join(', ')}]`);
+      // First 5 values: [-0.003219002392143011, -0.017149541527032852, -0.06571746617555618, 
+      // 0.0785706490278244, -0.0009045423357747495]
       return embedding;
     } catch (error) {
       this.logger.error('Error generating embedding:', error);

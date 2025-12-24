@@ -21,14 +21,17 @@ export class VectorStoreService {
   /**
    * Similarity search using pgvector cosine distance
    */
+  // cprag2
   async similaritySearch(
-    queryEmbedding: number[],
-    options: SimilaritySearchOptions,
+    queryEmbedding: number[], // vector embedding 768 dimensions
+    options: SimilaritySearchOptions, // topK, threshold =0.4, userId
   ): Promise<RagChunk[]> {
     try {
       // Convert embedding array to pgvector format string
       // pgvector yêu cầu format string đặc biệt
       const embeddingStr = `[${queryEmbedding.join(',')}]`;
+      // Input:  [0.1, 0.2, 0.3, ...]
+      // Output: "[0.1,0.2,0.3,...]"
       // console.log("embeddingStr: ",embeddingStr);
       
       // Build raw SQL query for better control
@@ -52,6 +55,7 @@ export class VectorStoreService {
         ORDER BY similarity DESC
         LIMIT $${params.length + 1}
       `;
+      // LIMIT $3
       params.push(options.topK);
 
       this.logger.debug(`Executing similarity search with threshold ${options.threshold}`);

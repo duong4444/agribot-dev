@@ -229,6 +229,7 @@ export class AIOrchestrator {
     console.log('exactResult.confidence: ', exactResult.confidence);
 
     // Check if exact match is confident enough
+    // ngưỡng confidence layer 1 là 0.9
     if (
       exactResult.found &&
       (exactResult.confidence || 0) >= DEFAULT_AI_CONFIG.exactMatchThreshold // 0.9
@@ -260,9 +261,10 @@ export class AIOrchestrator {
     );
 
     this.logger.debug('Layer 1 failed, attempting Layer 2: RAG');
+    // cprag_root
     const ragResult = await this.rag.retrieve(query, {
       userId: user.id,
-      topK: DEFAULT_AI_CONFIG.ragTopK,
+      topK: DEFAULT_AI_CONFIG.ragTopK, // 10
       threshold: DEFAULT_AI_CONFIG.ragSimilarityThreshold, // 0.4
     });
     console.log('ragResult_layer2_RAG: ', ragResult);
@@ -272,7 +274,7 @@ export class AIOrchestrator {
       'RAG_CONFIDENCE_THRESHOLD: ',
       DEFAULT_AI_CONFIG.ragConfidenceThreshold,
     );
-    
+    // ngưỡng confidence layer 2 là 0.5
     if (ragResult.confidence >= DEFAULT_AI_CONFIG.ragConfidenceThreshold) {
       // 0.5
       this.logger.log('✓ Layer 2 (RAG) succeeded');

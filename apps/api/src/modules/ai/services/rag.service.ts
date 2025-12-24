@@ -50,6 +50,7 @@ export class RAGService {
 
     // STEP 1: Embed query
     this.logger.log(`Embedding query: "${query}"`);
+    // cprag1
     const queryEmbedding = await this.embeddingService.generateEmbedding(query);
     
     // STEP 2: Vector search
@@ -61,13 +62,17 @@ export class RAGService {
     const dynamicThreshold = this.calculateDynamicThreshold(query);
     console.log("1.options.threshold: ", options.threshold);
     console.log("2.dynamicThreshold: ", dynamicThreshold);
-    
+    // gọi đến 8001 để convert text -> dạng vector 768 dimensions
     const finalThreshold = options.threshold || dynamicThreshold;
+    // luôn là thresh hold đc pass vào: 0.4
     console.log("3.finalThreshold: ", finalThreshold);
-    
+    // {queryEmbedding.slice(0, 5).join(', ')
+    //  First 5 values: [-0.003219002392143011, -0.017149541527032852, 
+    // -0.06571746617555618, 0.0785706490278244, -0.0009045423357747495]
+    // cprag2
     const chunks = await this.vectorStore.similaritySearch(queryEmbedding, {
       topK: options.topK || 5,
-      threshold: finalThreshold,
+      threshold: finalThreshold, // 0.4
       userId: options.userId,
     });
 
@@ -90,13 +95,13 @@ export class RAGService {
     console.log("avgSimilarity: ",avgSimilarity);
     
     const minRequiredSimilarity = 0.52; // Threshold for meaningful retrieval
-    
+    // comeback here
     if (avgSimilarity < minRequiredSimilarity) {
       this.logger.log(
         `Low average similarity (${avgSimilarity.toFixed(3)} < ${minRequiredSimilarity}) - ` +
         `skipping LLM synthesis to save cost`
       );
-      console.log("TBC CHUNKS < 0.52 FALLBACK THẲNG LLM");
+      console.log("TBC CHUNKS similarity < 0.52 FALLBACK THẲNG LLM");
       
       return {
         answer: `Tài liệu hiện có không chứa thông tin liên quan đến "${query}". ` +
@@ -122,6 +127,7 @@ export class RAGService {
     console.log("ĐÃ PASS NGƯỠNG TRUNG BÌNH CỘNG NÊN GỌI LLM");
     
     const synthesisStart = Date.now();
+    // cprag3
     const answer = await this.synthesizeAnswer(query, chunks);
     const synthesisTime = Date.now() - synthesisStart;
 
@@ -144,7 +150,7 @@ export class RAGService {
       synthesisTime,
     };
   }
-
+  // cprag3
   private async synthesizeAnswer(
     query: string,
     chunks: RagChunk[],
@@ -331,7 +337,7 @@ Các tài liệu trên được tìm kiếm bằng semantic search (tìm kiếm 
     
     // Short specific queries need higher precision
     if (query.length < 30) {
-      return Math.min(baseThreshold + 0.1, 0.52); // 0.5 max
+      return Math.min(baseThreshold + 0.1, 0.52); // 0.52 max
     }
     
     // Complex analytical queries can use lower threshold  

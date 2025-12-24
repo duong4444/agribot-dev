@@ -24,8 +24,8 @@ export class LLMFallbackService {
     const startTime = Date.now();
     const {
       reason = 'No relevant documents found',
-      temperature = DEFAULT_AI_CONFIG.llmTemperature,
-      maxTokens = DEFAULT_AI_CONFIG.llmMaxTokens,
+      temperature = DEFAULT_AI_CONFIG.llmTemperature, // 0.7
+      maxTokens = DEFAULT_AI_CONFIG.llmMaxTokens, // 4096
     } = options;
 
     this.logger.log(`Using LLM fallback - Reason: ${reason}`);

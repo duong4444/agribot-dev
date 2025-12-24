@@ -217,7 +217,7 @@ export interface AIConfig {
   
   // RAG settings (Layer 2 RAG enabled)
   ragTopK: number;                  // 10
-  ragSimilarityThreshold: number;   // 0.7
+  ragSimilarityThreshold: number;   // 0.4
   chunkSize: number;                // 500 characters
   chunkOverlap: number;             // 1 sentence
   
