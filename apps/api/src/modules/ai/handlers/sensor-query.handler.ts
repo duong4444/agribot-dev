@@ -1,7 +1,11 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, ILike } from 'typeorm';
-import { Device, DeviceStatus, DeviceType } from '../../iot/entities/device.entity';
+import {
+  Device,
+  DeviceStatus,
+  DeviceType,
+} from '../../iot/entities/device.entity';
 import { Area } from '../../farms/entities/area.entity';
 import { SensorData } from '../../iot/entities/sensor-data.entity';
 import { Entity } from '../types';
@@ -18,8 +22,8 @@ export class SensorQueryHandler {
 
   private readonly METRIC_MAP: Record<string, keyof SensorData> = {
     'nhiệt độ': 'temperature',
-    'độ ẩm đất': 'soilMoisture',  // More specific, must come before 'độ ẩm'
-    'độ ẩm của đất': 'soilMoisture',  // More specific, must come before 'độ ẩm'
+    'độ ẩm đất': 'soilMoisture', // More specific, must come before 'độ ẩm'
+    'độ ẩm của đất': 'soilMoisture', // More specific, must come before 'độ ẩm'
     'độ ẩm không khí': 'humidity',
     'độ ẩm': 'humidity',
     'ánh sáng': 'lightLevel',
@@ -28,17 +32,17 @@ export class SensorQueryHandler {
   };
 
   private readonly UNIT_MAP: Record<string, string> = {
-    'temperature': '°C',
-    'humidity': '%',
-    'soilMoisture': '%',
-    'lightLevel': ' lux',
+    temperature: '°C',
+    humidity: '%',
+    soilMoisture: '%',
+    lightLevel: ' lux',
   };
 
   private readonly LABEL_MAP: Record<string, string> = {
-    'temperature': 'Nhiệt độ',
-    'humidity': 'Độ ẩm không khí',
-    'soilMoisture': 'Độ ẩm đất',
-    'lightLevel': 'Ánh sáng',
+    temperature: 'Nhiệt độ',
+    humidity: 'Độ ẩm không khí',
+    soilMoisture: 'Độ ẩm đất',
+    lightLevel: 'Ánh sáng',
   };
 
   constructor(
@@ -56,26 +60,30 @@ export class SensorQueryHandler {
     message: string,
   ): Promise<SensorQueryResult> {
     // this.logger.log(`Handling sensor query for user ${userId}`);
-    
+
     // Extract entities
-    const areaEntity = entities.find(e => e.type === 'farm_area');
-    const metricEntity = entities.find(e => e.type === 'metric');
+    const areaEntity = entities.find((e) => e.type === 'farm_area');
+    const metricEntity = entities.find((e) => e.type === 'metric');
 
     // Determine requested metric with improved matching
     let requestedMetric: keyof SensorData | null = null;
     if (metricEntity) {
       const normalizedMetric = metricEntity.value.toLowerCase().trim();
-      
+
       // Try exact match first
       if (this.METRIC_MAP[normalizedMetric]) {
         requestedMetric = this.METRIC_MAP[normalizedMetric];
       } else {
         // If no exact match, find the longest key that is contained in the normalized metric
         // This prevents "độ ẩm" from matching when user says "độ ẩm đất"
-        const matchingKeys = Object.keys(this.METRIC_MAP).filter(k => normalizedMetric.includes(k));
+        const matchingKeys = Object.keys(this.METRIC_MAP).filter((k) =>
+          normalizedMetric.includes(k),
+        );
         if (matchingKeys.length > 0) {
           // Sort by length descending to get the longest match first
-          const longestKey = matchingKeys.sort((a, b) => b.length - a.length)[0];
+          const longestKey = matchingKeys.sort(
+            (a, b) => b.length - a.length,
+          )[0];
           requestedMetric = this.METRIC_MAP[longestKey];
         }
       }
@@ -83,15 +91,23 @@ export class SensorQueryHandler {
 
     try {
       if (areaEntity) {
-        return await this.handleAreaQuery(userId, areaEntity.value, requestedMetric);
+        return await this.handleAreaQuery(
+          userId,
+          areaEntity.value,
+          requestedMetric,
+        );
       } else {
         return await this.handleGeneralQuery(userId, requestedMetric);
       }
     } catch (error) {
-      this.logger.error(`Error handling sensor query: ${error.message}`, error.stack);
+      this.logger.error(
+        `Error handling sensor query: ${error.message}`,
+        error.stack,
+      );
       return {
         success: false,
-        message: 'Xin lỗi, tôi gặp sự cố khi lấy dữ liệu cảm biến. Vui lòng thử lại sau.',
+        message:
+          'Xin lỗi, tôi gặp sự cố khi lấy dữ liệu cảm biến. Vui lòng thử lại sau.',
       };
     }
   }
@@ -104,9 +120,9 @@ export class SensorQueryHandler {
     // Find area with robust search strategy
     // 1. Try exact match
     let area = await this.areaRepository.findOne({
-      where: { 
+      where: {
         name: areaName,
-        farm: { userId }
+        farm: { userId },
       },
       relations: ['farm'],
     });
@@ -114,9 +130,9 @@ export class SensorQueryHandler {
     // 2. If not found, try case-insensitive match
     if (!area) {
       area = await this.areaRepository.findOne({
-        where: { 
+        where: {
           name: ILike(areaName),
-          farm: { userId }
+          farm: { userId },
         },
         relations: ['farm'],
       });
@@ -124,20 +140,20 @@ export class SensorQueryHandler {
 
     // 3. If still not found, try matching partial name
     if (!area) {
-       area = await this.areaRepository.findOne({
-          where: { 
-            name: ILike(`%${areaName}%`),
-            farm: { userId }
-          },
-          relations: ['farm'],
+      area = await this.areaRepository.findOne({
+        where: {
+          name: ILike(`%${areaName}%`),
+          farm: { userId },
+        },
+        relations: ['farm'],
       });
     }
 
     if (!area) {
-       return {
-         success: false,
-         message: `Tôi không tìm thấy khu vực "${areaName}". Vui lòng kiểm tra lại tên khu vực.`,
-       };
+      return {
+        success: false,
+        message: `Tôi không tìm thấy khu vực "${areaName}". Vui lòng kiểm tra lại tên khu vực.`,
+      };
     }
 
     // Find active sensor nodes in area
@@ -157,7 +173,9 @@ export class SensorQueryHandler {
     }
 
     // Get latest data for these devices
-    const latestData = await this.getLatestDataForDevices(devices.map(d => d.serialNumber));
+    const latestData = await this.getLatestDataForDevices(
+      devices.map((d) => d.serialNumber),
+    );
 
     if (!latestData) {
       return {
@@ -165,6 +183,21 @@ export class SensorQueryHandler {
         message: `Hiện tại chưa có dữ liệu cảm biến từ khu vực "${area.name}".`,
       };
     }
+
+    // 🆕 Check data freshness
+    const now = new Date().getTime();
+    const dataTime = new Date(latestData.timestamp).getTime();
+    const minutesAgo = Math.floor((now - dataTime) / 60000);
+    const isStale = minutesAgo > 10; // Data older than 10 minutes
+    const isVeryStale = minutesAgo > 60; // Data older than 1 hour
+
+    // Format time ago
+    const timeAgo =
+      minutesAgo < 60
+        ? `${minutesAgo} phút trước`
+        : minutesAgo < 1440
+          ? `${Math.floor(minutesAgo / 60)} giờ trước`
+          : `${Math.floor(minutesAgo / 1440)} ngày trước`;
 
     // Format response
     if (metric) {
@@ -175,31 +208,66 @@ export class SensorQueryHandler {
           message: `Không có dữ liệu về ${this.LABEL_MAP[metric] || metric} tại khu vực "${area.name}".`,
         };
       }
-      return {
-        success: true,
-        message: `${this.LABEL_MAP[metric]} tại ${area.name} hiện tại là ${value}${this.UNIT_MAP[metric]}.`,
-        data: { area: area.name, metric, value },
-      };
+
+      // 🆕 Contextual response based on data freshness
+      if (isVeryStale) {
+        return {
+          success: true,
+          message: `⚠️ Thiết bị tại ${area.name} có thể đã offline. Dữ liệu cuối cùng (${timeAgo}) cho thấy ${this.LABEL_MAP[metric]} là ${value}${this.UNIT_MAP[metric]}. Vui lòng kiểm tra kết nối thiết bị.`,
+          data: { area: area.name, metric, value, minutesAgo, isStale: true },
+        };
+      } else if (isStale) {
+        return {
+          success: true,
+          message: `${this.LABEL_MAP[metric]} tại ${area.name} là ${value}${this.UNIT_MAP[metric]} (cập nhật ${timeAgo}). Lưu ý: Dữ liệu có thể không còn chính xác.`,
+          data: { area: area.name, metric, value, minutesAgo, isStale: true },
+        };
+      } else {
+        return {
+          success: true,
+          message: `${this.LABEL_MAP[metric]} tại ${area.name} hiện tại là ${value}${this.UNIT_MAP[metric]}.`,
+          data: { area: area.name, metric, value, minutesAgo, isStale: false },
+        };
+      }
     } else {
       // Return summary of all metrics
       const parts: string[] = [];
-      if (latestData.temperature != null) parts.push(`Nhiệt độ: ${latestData.temperature}°C`);
-      if (latestData.humidity != null) parts.push(`Độ ẩm: ${latestData.humidity}%`);
-      if (latestData.soilMoisture != null) parts.push(`Độ ẩm đất: ${latestData.soilMoisture}%`);
-      if (latestData.lightLevel != null) parts.push(`Ánh sáng: ${latestData.lightLevel} lux`);
+      if (latestData.temperature != null)
+        parts.push(`Nhiệt độ: ${latestData.temperature}°C`);
+      if (latestData.humidity != null)
+        parts.push(`Độ ẩm: ${latestData.humidity}%`);
+      if (latestData.soilMoisture != null)
+        parts.push(`Độ ẩm đất: ${latestData.soilMoisture}%`);
+      if (latestData.lightLevel != null)
+        parts.push(`Ánh sáng: ${latestData.lightLevel} lux`);
 
       if (parts.length === 0) {
-         return {
+        return {
           success: false,
           message: `Dữ liệu cảm biến tại khu vực "${area.name}" không đầy đủ.`,
         };
       }
 
-      return {
-        success: true,
-        message: `Thông số môi trường tại ${area.name}:\n- ${parts.join('\n- ')}`,
-        data: latestData,
-      };
+      // 🆕 Contextual response based on data freshness
+      if (isVeryStale) {
+        return {
+          success: true,
+          message: `⚠️ Thiết bị tại ${area.name} có thể đã offline. Dữ liệu cuối cùng (${timeAgo}):\n- ${parts.join('\n- ')}\n\nVui lòng kiểm tra kết nối thiết bị.`,
+          data: { ...latestData, minutesAgo, isStale: true },
+        };
+      } else if (isStale) {
+        return {
+          success: true,
+          message: `Thông số môi trường tại ${area.name} (cập nhật ${timeAgo}):\n- ${parts.join('\n- ')}\n\nLưu ý: Dữ liệu có thể không còn chính xác.`,
+          data: { ...latestData, minutesAgo, isStale: true },
+        };
+      } else {
+        return {
+          success: true,
+          message: `Thông số môi trường tại ${area.name}:\n- ${parts.join('\n- ')}`,
+          data: { ...latestData, minutesAgo, isStale: false },
+        };
+      }
     }
   }
 
@@ -213,14 +281,18 @@ export class SensorQueryHandler {
       relations: ['devices'],
     });
 
-    const activeAreas = areas.filter(a => 
-      a.devices.some(d => d.type === DeviceType.SENSOR_NODE && d.status === DeviceStatus.ACTIVE)
+    const activeAreas = areas.filter((a) =>
+      a.devices.some(
+        (d) =>
+          d.type === DeviceType.SENSOR_NODE && d.status === DeviceStatus.ACTIVE,
+      ),
     );
 
     if (activeAreas.length === 0) {
       return {
         success: false,
-        message: 'Trang trại của bạn chưa có thiết bị cảm biến nào đang hoạt động.',
+        message:
+          'Trang trại của bạn chưa có thiết bị cảm biến nào đang hoạt động.',
       };
     }
 
@@ -234,18 +306,25 @@ export class SensorQueryHandler {
     // Collect data for each area
     const reports: string[] = [];
     for (const area of activeAreas) {
-      const sensorDevices = area.devices.filter(d => d.type === DeviceType.SENSOR_NODE && d.status === DeviceStatus.ACTIVE);
-      const data = await this.getLatestDataForDevices(sensorDevices.map(d => d.serialNumber));
-      
+      const sensorDevices = area.devices.filter(
+        (d) =>
+          d.type === DeviceType.SENSOR_NODE && d.status === DeviceStatus.ACTIVE,
+      );
+      const data = await this.getLatestDataForDevices(
+        sensorDevices.map((d) => d.serialNumber),
+      );
+
       if (data) {
         if (metric) {
-           const val = data[metric];
-           if (val != null) {
-             reports.push(`- ${area.name}: ${val}${this.UNIT_MAP[metric]}`);
-           }
+          const val = data[metric];
+          if (val != null) {
+            reports.push(`- ${area.name}: ${val}${this.UNIT_MAP[metric]}`);
+          }
         } else {
-           // Summary for area
-           reports.push(`- ${area.name}: ${data.temperature}°C, ${data.humidity}%`);
+          // Summary for area
+          reports.push(
+            `- ${area.name}: ${data.temperature}°C, ${data.humidity}%`,
+          );
         }
       }
     }
@@ -264,7 +343,9 @@ export class SensorQueryHandler {
     };
   }
 
-  private async getLatestDataForDevices(deviceIds: string[]): Promise<SensorData | null> {
+  private async getLatestDataForDevices(
+    deviceIds: string[],
+  ): Promise<SensorData | null> {
     if (deviceIds.length === 0) return null;
 
     const latest = await this.sensorDataRepository.findOne({

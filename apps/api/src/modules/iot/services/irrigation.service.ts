@@ -80,9 +80,8 @@ export class IrrigationService {
     const event = this.eventRepo.create({
       deviceId,
       type: IrrigationEventType.MANUAL_OFF,
-      status: IrrigationEventStatus.COMPLETED,
+      status: IrrigationEventStatus.PENDING, // Wait for ESP32 confirmation
       startTime: new Date(),
-      endTime: new Date(),
       soilMoistureAfter: soilMoisture ?? undefined,
       userId,
       metadata: { action: 'manual_off' },
@@ -207,9 +206,8 @@ export class IrrigationService {
       this.eventRepo.create({
         deviceId,
         type: IrrigationEventType.AUTO_CONFIG_UPDATE,
-        status: IrrigationEventStatus.COMPLETED,
+        status: IrrigationEventStatus.PENDING, // Wait for ESP32 confirmation
         startTime: new Date(),
-        endTime: new Date(),
         userId,
         metadata: { config: dto },
       }),
@@ -319,30 +317,36 @@ export class IrrigationService {
     }
 
     // Update event based on status
-    switch (event) {
-      case 'pump_on':
-      case 'irrigation_started':
-        recentEvent.status = IrrigationEventStatus.RUNNING;
-        break;
+  switch (event) {
+    case 'pump_on':
+    case 'irrigation_started':
+      recentEvent.status = IrrigationEventStatus.RUNNING;
+      break;
 
-      case 'pump_off':
-      case 'irrigation_completed':
-        recentEvent.status = IrrigationEventStatus.COMPLETED;
-        recentEvent.endTime = new Date();
-        recentEvent.soilMoistureAfter = soilMoisture;
-        if (status.duration) {
-          recentEvent.actualDuration = status.duration;
-        }
-        break;
+    case 'pump_off':
+    case 'irrigation_completed':
+      recentEvent.status = IrrigationEventStatus.COMPLETED;
+      recentEvent.endTime = new Date();
+      recentEvent.soilMoistureAfter = soilMoisture;
+      if (status.duration) {
+        recentEvent.actualDuration = status.duration;
+      }
+      break;
 
-      case 'irrigation_failed':
-        recentEvent.status = IrrigationEventStatus.FAILED;
-        recentEvent.endTime = new Date();
-        break;
-    }
+    case 'auto_mode_updated':
+      // Mark AUTO_CONFIG_UPDATE events as completed
+      recentEvent.status = IrrigationEventStatus.COMPLETED;
+      recentEvent.endTime = new Date();
+      break;
 
-    await this.eventRepo.save(recentEvent);
+    case 'irrigation_failed':
+      recentEvent.status = IrrigationEventStatus.FAILED;
+      recentEvent.endTime = new Date();
+      break;
   }
+
+  await this.eventRepo.save(recentEvent);
+}
 
   // ============================================================================
   // Helper Methods

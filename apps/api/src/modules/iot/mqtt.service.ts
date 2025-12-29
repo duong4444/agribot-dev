@@ -13,6 +13,7 @@ import { SensorData } from './entities/sensor-data.entity';
 import { Device, DeviceStatus } from './entities/device.entity';
 import { IrrigationService } from './services/irrigation.service';
 import { LightingService } from './services/lighting.service';
+import { AckTrackerService } from './services/ack-tracker.service';
 
 dotenv.config();
 
@@ -30,6 +31,7 @@ export class MqttService implements OnModuleInit {
     private irrigationService: IrrigationService,
     @Inject(forwardRef(() => LightingService))
     private lightingService: LightingService,
+    private ackTrackerService: AckTrackerService,
   ) {}
 
   onModuleInit() {
@@ -204,6 +206,12 @@ export class MqttService implements OnModuleInit {
       this.logger.debug(
         `____________________Saved sensor data with ID_________________: ${saved.id}`,
       );
+      
+      // 🆕 Update device heartbeat
+      device.lastSeenAt = new Date();
+      await this.deviceRepository.save(device);
+      this.logger.debug(`💓 Heartbeat updated for device ${device.serialNumber}`);
+      
       console.log('  ');
 
       console.log(
@@ -214,6 +222,12 @@ export class MqttService implements OnModuleInit {
     }
   }
 
+  /**
+   * Handle status messages from devices
+   * - ACK for control commands (via 'event' field per iot.txt)
+   * - Status updates for irrigation/lighting events
+   * Topic format: sensors/{deviceId}/status
+   */
   private async handleStatusMessage(topic: string, message: string) {
     try {
       console.log("=======handleStatusMessage===========");
@@ -223,31 +237,69 @@ export class MqttService implements OnModuleInit {
       console.log('payload_từ topic status: ', payload);
       console.log('==========================================================');
 
-      const serialNumber = payload.deviceId;
+      // Extract device ID from topic OR payload
+      const parts = topic.split('/');
+      const deviceIdFromTopic = parts.length >= 2 ? parts[1] : null;
+      const serialNumber = payload.deviceId || deviceIdFromTopic;
 
       if (!serialNumber) {
         this.logger.warn('Received status message without deviceId');
         return;
       }
 
-      this.logger.log(
-        `Received status update from ${serialNumber}: ${payload.event}`,
-      );
-
-      // Delegate to IrrigationService
-      await this.irrigationService.handleStatusUpdate(serialNumber, payload);
-
-      // Handle Lighting Status
-      if (payload.event === 'light_auto_mode_disabled_by_manual_off') {
-        this.logger.log(
-          `Auto light disabled by manual OFF for ${serialNumber}`,
-        );
-        await this.lightingService.updateAutoConfig(serialNumber, 'SYSTEM', {
-          enabled: false,
-        });
+      // 🆕 Handle ACK for control commands (using 'event' field per iot.txt)
+      // Map event names to ACK actions (1:1 mapping)
+      if (payload.event) {
+        const eventToActionMap: Record<string, string> = {
+          'pump_on': 'pump_on',
+          'pump_off': 'pump_off',
+          'irrigation_started': 'irrigation_started',
+          'irrigation_completed': 'irrigation_completed',
+          'auto_mode_updated': 'auto_mode_updated',
+          'light_on': 'light_on',
+          'light_off': 'light_off',
+          'light_auto_updated': 'light_auto_updated',
+        };
+        
+        const ackAction = eventToActionMap[payload.event];
+        
+        if (ackAction) {
+          this.ackTrackerService.receiveAck({
+            deviceId: serialNumber,
+            action: ackAction,
+            status: 'success', // ESP events are always success (failure would not publish)
+            timestamp: new Date(),
+            message: payload.event,
+          });
+          
+          this.logger.log(`✅ ACK received from ${serialNumber}: ${payload.event} → ${ackAction}`);
+        }
       }
-      console.log("============endlog____handleStatusMessage================");
+
+      // Existing logic: Handle irrigation/lighting events
+      if (payload.event) {
+        this.logger.log(
+          `Received status update from ${serialNumber}: ${payload.event}`,
+        );
+
+        // Delegate to IrrigationService
+        await this.irrigationService.handleStatusUpdate(serialNumber, payload);
+
+        // Delegate to LightingService
+        await this.lightingService.handleStatusUpdate(serialNumber, payload);
+
+        // Handle Lighting Status
+        if (payload.event === 'light_auto_mode_disabled_by_manual_off') {
+          this.logger.log(
+            `Auto light disabled by manual OFF for ${serialNumber}`,
+          );
+          await this.lightingService.updateAutoConfig(serialNumber, 'SYSTEM', {
+            enabled: false,
+          });
+        }
+      }
       
+      console.log("============endlog____handleStatusMessage================");
     } catch (error) {
       this.logger.error(`Error processing status message from ${topic}`, error);
     }
@@ -301,6 +353,20 @@ export class MqttService implements OnModuleInit {
       query.andWhere('device.areaId = :areaId', { areaId });
     }
 
-    return query.getMany();
+    const results = await query.getMany();
+    
+    // 🆕 Add freshness info to each data point
+    return results.map(data => {
+      const now = new Date().getTime();
+      const dataTime = new Date(data.timestamp).getTime();
+      const minutesAgo = Math.floor((now - dataTime) / 60000);
+      const isFresh = minutesAgo < 5;
+      
+      return {
+        ...data,
+        isFresh,
+        minutesAgo,
+      };
+    });
   }
 }

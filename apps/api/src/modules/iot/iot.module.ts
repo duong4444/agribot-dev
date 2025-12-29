@@ -6,6 +6,7 @@ import { DeviceService } from './device.service';
 import { InstallationRequestService } from './services/installation-request.service';
 import { IrrigationService } from './services/irrigation.service';
 import { LightingService } from './services/lighting.service';
+import { AckTrackerService } from './services/ack-tracker.service';
 import { SensorData } from './entities/sensor-data.entity';
 import { Device } from './entities/device.entity';
 import { InstallationRequest } from './entities/installation-request.entity';
@@ -59,6 +60,7 @@ import { AuthModule } from '../auth/auth.module';
     InstallationRequestService,
     IrrigationService,
     LightingService,
+    AckTrackerService,
   ],
   exports: [
     MqttService,
@@ -66,6 +68,7 @@ import { AuthModule } from '../auth/auth.module';
     InstallationRequestService,
     IrrigationService,
     LightingService,
+    AckTrackerService,
   ],
 })
 export class IoTModule {}

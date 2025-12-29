@@ -59,6 +59,9 @@ export class Device {
   @Column({ type: 'timestamp', nullable: true, name: 'activated_at' })
   activatedAt: Date;
 
+  @Column({ type: 'timestamptz', nullable: true, name: 'last_seen_at' })
+  lastSeenAt: Date;
+
   @Column({ nullable: true, name: 'area_id' })
   areaId: string;
 

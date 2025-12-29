@@ -1,0 +1,230 @@
+3 topic :
+- BE sub sensors/{deviceId}/data để nhận sensor data , ESP pub sensor data lên sensors/{deviceId}/data
+- BE pub control/{deviceId}/command để gửi lệnh, ESP sub control/{deviceId}/command để nhận lệnh
+- BE sub sensors/{deviceId}/status để nhận status phản hồi của ESP, ESP pub trạng thái lên sensors/{deviceId}/status
+=============================================================
+BE subcribe sensors/{deviceId}/data  || 
++) gửi dữ liệu sensor cho BE 
+esp pub lên 
+{
+  deviceId: 'esp01122025',
+  secret: 'k2m0a2c2t270c27',
+  temperature: 28.9,
+  humidity: 57.7,
+  soilMoisture: 41.7,
+  lightLevel: 352,
+  timestamp: 1764648570657
+}
+=============================================================
+BE publish control/{deviceId}/command , ESP gửi lại sensors/{deviceId}/status
++) message phía BE:    
+ bật thủ công: 
+{
+  action: 'turn_on',
+  component: 'pump',
+  timestamp: 1764571182431,
+  secret: 'k2m0a2c2t270c27'
+}
+ ESP gửi lại: 
+{
+  deviceId: 'DEMO',
+  event: 'pump_on',
+  pumpOn: true,
+  autoMode: false,
+  soilMoisture: 34,
+  timestamp: 1764571182434
+}
+=============================================================
+BE publish control/{deviceId}/command , ESP gửi lại sensors/{deviceId}/status
++) message phía BE:
+ bật theo duration:
+{
+  action: 'irrigate',
+  duration: 60,
+  timestamp: 1764572087653,
+  secret: 'k2m0a2c2t270c27'
+}
+esp gửi:
+ {
+  deviceId: 'esp01122025',
+  event: 'irrigation_started',
+  pumpOn: true,
+  autoMode: false,
+  soilMoisture: 34.4,
+  timestamp: 1764572087742,
+  duration: 60
+}
+phải tự countdown 60s để ngừng tưới sau đó gửi lại message: 
+ {
+  deviceId: 'esp01122025',
+  event: 'irrigation_completed',
+  pumpOn: false,
+  autoMode: false,
+  soilMoisture: 57.19999999999992,
+  timestamp: 1764575854859,
+  duration: 0
+}
+=============================================================
+BE publish control/{deviceId}/command , ESP gửi lại sensors/{deviceId}/status
++) message: 
+tắt tưới :
+{
+  action: 'turn_off',
+  component: 'pump',
+  timestamp: 1764572426581,
+  secret: 'k2m0a2c2t270c27'
+}
+esp mess:
+{
+  deviceId: 'DEMO',
+  event: 'pump_off',
+  pumpOn: false,
+  autoMode: false,
+  soilMoisture: 39.7,
+  timestamp: 1764572426587
+}
+=============================================================
+BE publish control/{deviceId}/command , ESP gửi lại sensors/{deviceId}/status
++) bật tưới tự động
+enable tưới tự động (switch on trong UI)
+BE :
+{
+  action: 'set_auto_mode',
+  enabled: true,
+  threshold: 30,
+  duration: 600,
+  cooldown: 3600,
+  timestamp: 1764576319450,
+  secret: 'k2m0a2c2t270c27'
+}
+phía esp:
+phải Update auto configuration: {
+  action: 'set_auto_mode',
+  enabled: true,
+  threshold: 30,
+  duration: 600,
+  cooldown: 3600,
+  timestamp: 1764576319450,
+  secret: 'k2m0a2c2t270c27'
+}
+sau đó publish
+ {
+  deviceId: 'esp01122025',
+  event: 'auto_mode_updated',
+  pumpOn: false,
+  autoMode: true,
+  soilMoisture: 55.1,
+  timestamp: 1764576319452,
+  autoConfig: {
+    enabled: true,
+    threshold: 30,
+    duration: 600,
+    cooldown: 3600,
+    lastIrrigationTime: 0
+  }
+}
+==========================
+BE publish control/{deviceId}/command , ESP gửi lại sensors/{deviceId}/status
++) thay đổi thông số tưới tự động 
+BE gửi :
+{
+  action: 'set_auto_mode',
+  enabled: true,
+  threshold: 30,
+  duration: 60, // cái này thay đổi
+  cooldown: 300,
+  timestamp: 1764576394648,
+  secret: 'k2m0a2c2t270c27'
+}
+thì ESP phải Update auto configuration:{
+  action: 'set_auto_mode',
+  enabled: true,
+  threshold: 30,
+  duration: 60,
+  cooldown: 300,
+  timestamp: 1764576394648,
+  secret: 'k2m0a2c2t270c27'
+} 
+sau đó esp pub : 
+{
+  deviceId: 'esp01122025',
+  event: 'auto_mode_updated',
+  pumpOn: false,
+  autoMode: true,
+  soilMoisture: 53.6,
+  timestamp: 1764576395393,
+  autoConfig: {
+    enabled: true,
+    threshold: 30,
+    duration: 60,
+    cooldown: 300,
+    lastIrrigationTime: 0
+  }
+}
+========================
+BE publish control/{deviceId}/command , ESP gửi lại sensors/{deviceId}/status
++)bật đèn thủ công
+BE pub :
+ { action: 'turn_on_light', secret: 'k2m0a2c2t270c27' }
+esp set đèn sáng , sau đó gửi lại: 
+{
+  deviceId: 'esp01122025',
+  event: 'light_on',
+  pumpOn: false,
+  autoMode: false,
+  soilMoisture: 37.3,
+  timestamp: 1764578837509
+}
+==========================
+BE publish control/{deviceId}/command , ESP gửi lại sensors/{deviceId}/status
++) tắt đèn 
+BE gửi  { action: 'turn_off_light', secret: 'k2m0a2c2t270c27' }
+thì esp phải set đèn tắt và gửi lại :
+{
+  deviceId: 'esp01122025',
+  event: 'light_off',
+  pumpOn: false,
+  autoMode: false,
+  soilMoisture: 31.7,
+  timestamp: 1764579114253
+}
+==========================
+BE publish control/{deviceId}/command , ESP gửi lại sensors/{deviceId}/status
++) bật chế độ đèn tự động
+BE gửi 
+{
+  action: 'set_light_auto',
+  enabled: true,
+  threshold: 100,
+  secret: 'k2m0a2c2t270c27'
+}
+esp pub lại :
+{
+  deviceId: 'esp01122025',
+  event: 'light_auto_updated',
+  pumpOn: false,
+  autoMode: false,
+  soilMoisture: 30.5,
+  timestamp: 1764579176236,
+  config: { enabled: true, threshold: 100 }
+}
+================
+BE publish control/{deviceId}/command , ESP gửi lại sensors/{deviceId}/status
++) thay đổi ngưỡng sáng chế độ đèn tự động
+BE gửi :
+{
+  action: 'set_light_auto',
+  enabled: true, 
+  threshold: 310, // thay đổi
+  secret: 'k2m0a2c2t270c27'
+}
+esp pub lại 
+{
+  deviceId: 'esp01122025',
+  event: 'light_auto_updated',
+  pumpOn: false,
+  autoMode: false,
+  soilMoisture: 22.7,
+  timestamp: 1764579567897,
+  config: { enabled: true, threshold: 310 }
+}

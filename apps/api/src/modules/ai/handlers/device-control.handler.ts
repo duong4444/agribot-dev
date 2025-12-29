@@ -5,6 +5,7 @@ import { Device, DeviceStatus, DeviceType } from '../../iot/entities/device.enti
 import { Area } from '../../farms/entities/area.entity';
 import { IrrigationService } from '../../iot/services/irrigation.service';
 import { LightingService } from '../../iot/services/lighting.service';
+import { AckTrackerService } from '../../iot/services/ack-tracker.service';
 import { Entity } from '../types';
 
 export interface DeviceControlAction {
@@ -73,6 +74,7 @@ export class DeviceControlHandler {
     private readonly areaRepository: Repository<Area>,
     private readonly irrigationService: IrrigationService,
     private readonly lightingService: LightingService,
+    private readonly ackTrackerService: AckTrackerService,
   ) {}
 
   /**
@@ -196,37 +198,68 @@ export class DeviceControlHandler {
       };
     }
 
-    // Execute command
+    // Execute command (both auto-mode and manual control)
     if (isAutoModeRequest && deviceType === 'pump') {
        // Handle Auto Mode Toggle
        await this.irrigationService.updateAutoConfig(device.serialNumber, { enabled: action === 'on' }, userId);
-       const response = action === 'on' 
-         ? `Đã bật chế độ tưới tự động cho ${area.name}`
-         : `Đã tắt chế độ tưới tự động cho ${area.name}`;
-       
-       return {
-        success: true,
-        message: response,
-        deviceType,
-        area: area.name,
-        action,
-      };
     } else {
        // Manual Control
        await this.executeCommand(device, action, deviceType, duration);
     }
-
-    // Format response (for manual control)
-    const response = this.formatResponse(deviceType, action, area.name, duration);
-
-    return {
-      success: true,
-      message: response,
-      deviceType,
-      area: area.name,
-      action,
-      duration,
-    };
+    
+    // Wait for ACK with 6-second timeout (for ALL commands)
+    try {
+      const expectedAction = this.getExpectedAction(deviceType, action, duration, isAutoModeRequest);
+      
+      this.logger.debug(`Waiting for ACK: ${device.serialNumber} - ${expectedAction}`);
+      
+      const ack = await this.ackTrackerService.waitForAck(
+        device.serialNumber,
+        expectedAction,
+        6000, // 6 seconds
+      );
+      
+      if (ack.status === 'success') {
+        // Success - device confirmed execution
+        let response: string;
+        if (isAutoModeRequest && deviceType === 'pump') {
+          response = action === 'on' 
+            ? `Đã bật chế độ tưới tự động cho ${area.name}`
+            : `Đã tắt chế độ tưới tự động cho ${area.name}`;
+        } else {
+          response = this.formatResponse(deviceType, action, area.name, duration);
+        }
+        
+        return {
+          success: true,
+          message: `✅ ${response}`,
+          deviceType,
+          area: area.name,
+          action,
+          duration,
+        };
+      } else {
+        // Device reported failure
+        return {
+          success: false,
+          message: `⚠️ Thiết bị báo lỗi: ${ack.message || 'Không thể thực thi lệnh'}`,
+          deviceType,
+          area: area.name,
+          action,
+        };
+      }
+    } catch (error) {
+      // Timeout - no ACK received
+      this.logger.warn(`ACK timeout for ${device.serialNumber}: ${error.message}`);
+      
+      return {
+        success: false,
+        message: `⚠️ Không nhận được phản hồi từ thiết bị. Vui lòng kiểm tra kết nối hoặc thử lại sau.`,
+        deviceType,
+        area: area.name,
+        action,
+      };
+    }
   }
   /**
    * Normalize device name to standard type
@@ -476,6 +509,32 @@ export class DeviceControlHandler {
     }
 
     return `${minutes} phút ${seconds % 60} giây`;
+  }
+
+  /**
+   * Get expected ACK action name based on command
+   * Returns event names as defined in iot.txt
+   */
+  private getExpectedAction(
+    deviceType: 'pump' | 'light',
+    action: 'on' | 'off',
+    duration?: number,
+    isAutoMode?: boolean,
+  ): string {
+    // Auto-mode: ESP publishes 'auto_mode_updated' (same for on/off)
+    if (isAutoMode && deviceType === 'pump') {
+      return 'auto_mode_updated';
+    }
+    
+    if (deviceType === 'pump') {
+      // Duration: ESP publishes 'irrigation_started'
+      if (duration) return 'irrigation_started';
+      // Manual on/off: ESP publishes 'pump_on' or 'pump_off'
+      return action === 'on' ? 'pump_on' : 'pump_off';
+    } else {
+      // Light: ESP publishes 'light_on' or 'light_off'
+      return action === 'on' ? 'light_on' : 'light_off';
+    }
   }
 
   private isAutoModeRequest(message: string): boolean {

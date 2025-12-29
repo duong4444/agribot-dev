@@ -127,7 +127,7 @@ export class FarmsService implements OnModuleInit {
     return query.getMany();
   }
 
-  async getArea(user: User, areaId: string): Promise<Area> {
+  async getArea(user: User, areaId: string): Promise<any> {
     const farm = await this.getFarmByUser(user);
     const area = await this.areasRepository.findOne({
       where: { id: areaId, farmId: farm.id },
@@ -136,7 +136,32 @@ export class FarmsService implements OnModuleInit {
     if (!area) {
       throw new NotFoundException('Area not found');
     }
-    return area;
+    
+    // 🆕 Add computed online status for each device
+    const devicesWithStatus = area.devices.map(device => {
+      const now = new Date().getTime(); // Current time in milliseconds
+      const lastSeenTime = device.lastSeenAt ? new Date(device.lastSeenAt).getTime() : 0;
+      const minutesAgo = Math.floor((now - lastSeenTime) / 60000);
+      
+      // Device is online if seen within last 5 minutes
+      const isOnline = device.lastSeenAt && minutesAgo < 5;
+      
+      return {
+        id: device.id,
+        serialNumber: device.serialNumber,
+        name: device.name,
+        type: device.type,
+        isActive: device.isActive,        // Activated by technician
+        isOnline: isOnline,                // Currently sending data
+        lastSeenAt: device.lastSeenAt,
+        lastSeenMinutes: device.lastSeenAt ? minutesAgo : null,
+      };
+    });
+    
+    return {
+      ...area,
+      devices: devicesWithStatus,
+    };
   }
 
   async createActivity(user: User, createActivityDto: CreateActivityDto): Promise<FarmActivity> {

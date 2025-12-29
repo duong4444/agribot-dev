@@ -21,7 +21,7 @@ export class SensorData {
   @Column('float', { nullable: true, name: 'light_level' })
   lightLevel: number;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamptz' })
   timestamp: Date;
 
   @ManyToOne(() => Device, (device) => device.sensorData, { onDelete: 'CASCADE' })

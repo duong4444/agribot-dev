@@ -29,7 +29,7 @@ export class LightingService {
       this.eventRepo.create({
         deviceId,
         type: LightingEventType.MANUAL_ON,
-        status: LightingEventStatus.COMPLETED,
+        status: LightingEventStatus.PENDING, // Wait for ESP32 confirmation
         timestamp: new Date(),
         userId,
         metadata: { action: 'manual_on' },
@@ -53,7 +53,7 @@ export class LightingService {
       this.eventRepo.create({
         deviceId,
         type: LightingEventType.MANUAL_OFF,
-        status: LightingEventStatus.COMPLETED,
+        status: LightingEventStatus.PENDING, // Wait for ESP32 confirmation
         timestamp: new Date(),
         userId,
         metadata: { action: 'manual_off' },
@@ -93,7 +93,64 @@ export class LightingService {
       threshold: autoConfig.lightThreshold,
     });
 
+    // Log event
+    await this.eventRepo.save(
+      this.eventRepo.create({
+        deviceId,
+        type: LightingEventType.AUTO_CONFIG_UPDATE,
+        status: LightingEventStatus.PENDING, // Wait for ESP32 confirmation
+        timestamp: new Date(),
+        userId,
+        metadata: { config },
+      }),
+    );
+
+    this.logger.log(`Auto light config updated for device ${deviceId} by user ${userId}`);
     return autoConfig;
+  }
+
+  /**
+   * Handle status updates from ESP32
+   * Updates event status based on device events
+   */
+  async handleStatusUpdate(deviceId: string, status: any): Promise<void> {
+    const { event } = status;
+
+    this.logger.debug(`Lighting status update from ${deviceId}: ${event}`);
+
+    // Find the most recent pending event
+    const recentEvent = await this.eventRepo.findOne({
+      where: { deviceId, status: LightingEventStatus.PENDING },
+      order: { timestamp: 'DESC' },
+    });
+
+    if (!recentEvent) {
+      this.logger.debug(`No pending lighting event for ${deviceId}`);
+      return;
+    }
+
+    // Update event based on status
+    switch (event) {
+      case 'light_on':
+        recentEvent.status = LightingEventStatus.COMPLETED;
+        break;
+
+      case 'light_off':
+        recentEvent.status = LightingEventStatus.COMPLETED;
+        break;
+
+      case 'light_auto_updated':
+        // Mark auto config update as completed
+        recentEvent.status = LightingEventStatus.COMPLETED;
+        break;
+
+      case 'light_failed':
+        recentEvent.status = LightingEventStatus.FAILED;
+        break;
+    }
+
+    await this.eventRepo.save(recentEvent);
+    this.logger.log(`✅ Lighting event updated: ${deviceId} - ${event} → ${recentEvent.status}`);
   }
 
   async getAutoConfig(deviceId: string) {
