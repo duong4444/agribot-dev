@@ -44,9 +44,16 @@ export class AdminCropKnowledgeController {
    * Upload markdown file for crop knowledge
    */
   @Post('upload')
-  @UseInterceptors(FileInterceptor('file'))
+// Dùng để bắt file upload từ request
+// 'file' là tên field trong form-data
+// Sau interceptor này, file sẽ được gắn vào req.file
+  @UseInterceptors(FileInterceptor('file')) // extract file từ field 'file'
   async uploadFile(
-    @UploadedFile() file: Express.Multer.File,
+// Parameter decorator
+// Lấy file đã được FileInterceptor xử lý , file có kiểu Express.Multer.File
+// Nếu k có thì @UseInterceptors(FileInterceptor('file')) 
+// thì @UploadedFile() sẽ luôn là undefined
+    @UploadedFile() file: Express.Multer.File, // file từ FormData
     @CurrentUser('id') userId: string,
     @Body('category') category?: string,
     @Body('tags') tags?: string,
@@ -58,7 +65,8 @@ export class AdminCropKnowledgeController {
     if (!file.originalname.endsWith('.md')) {
       throw new BadRequestException('Only .md files are allowed');
     }
-
+    // file.buffer: nội dung file dưới dạng binary
+    // Buffer --> String
     const content = file.buffer.toString('utf-8');
 
     const result = await this.cropKnowledgeService.uploadCropKnowledge({

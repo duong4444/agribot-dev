@@ -64,6 +64,7 @@ export class RagDocumentService {
       // Text file
       content = file.buffer.toString('utf-8');
     }
+    // lấy content từ file sau đó save vào rag_documents
 
     // 3. Create document record
     const document = this.ragDocumentRepo.create({

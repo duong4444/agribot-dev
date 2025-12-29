@@ -32,7 +32,7 @@ export function SensorDashboard({ areaId }: SensorDashboardProps) {
     const fetchData = async () => {
       if (!areaId) return;
       
-      try {
+      try { // iot controller
         const url = `/api/iot/sensors/latest?areaId=${areaId}`;
         const res = await fetch(url);
         const json = await res.json();

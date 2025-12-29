@@ -46,9 +46,9 @@ export class PythonAIClientService {
       this.isAvailable = response.data.status === 'healthy';
 
       if (this.isAvailable) {
-        this.logger.log('✅ Python AI Service is available');
+        this.logger.log('Python AI Service is available');
       } else {
-        this.logger.warn('⚠️ Python AI Service is not healthy');
+        this.logger.warn('Python AI Service is not healthy');
       }
 
       return this.isAvailable;

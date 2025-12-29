@@ -160,7 +160,7 @@ export default function AdminSubscriptionsPage() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">
-            Quản lý Gói Đăng Ký
+            Quản lý danh sách đăng ký
           </h2>
           <p className="text-muted-foreground">
             Quản lý và theo dõi trạng thái gói cước thành viên

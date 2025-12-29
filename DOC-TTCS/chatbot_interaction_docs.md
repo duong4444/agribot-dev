@@ -39,6 +39,7 @@
 | **Brief Description** | User asks for financial summaries via chat. |
 | **Pre-conditions** | User has a farm with financial records. |
 | **Basic Flows** | 1. User asks: "What is my revenue this month?"<br>2. Chatbot identifies intent `yield_farming_query` (or similar financial intent).<br>3. System queries database for aggregated financial stats.<br>4. Chatbot replies: "Your revenue for December is 5,000,000 VND." |
+| **Alternative Flows** | **A1. No Data Found:**<br>1. System queries but finds no records.<br>2. Chatbot replies: "No financial data found for this period." |
 | **Post-conditions** | User receives financial insight. |
 
 ## 3. Sequence Diagrams
@@ -134,11 +135,19 @@ sequenceDiagram
     DC->>DC: Validate Ownership & Device Status
     DC->>MQ: Publish Command (Start Pump)
     MQ->>DV: Forward Command
-    DV-->>MQ: Ack (State Changed)
     
-    DC-->>AR: Return Success & Command Info
-    AR-->>BE: Return Response
-    BE-->>U: "Pump 1 is ON now."
+    alt Device Online & Responds
+        DV-->>MQ: Ack (State Changed)
+        MQ-->>DC: Forward Ack
+        DC-->>AR: Return Success & Command Info
+        AR-->>BE: Return Response
+        BE-->>U: "Pump 1 is ON now."
+    else Device Offline or Timeout
+        Note over DC,DV: Wait for ACK (Timeout: 5-10s)
+        DC-->>AR: Return Error (Device Unreachable)
+        AR-->>BE: Return Error Response
+        BE-->>U: "Failed: Pump 1 is offline or not responding."
+    end
 ```
 
 ### 3.4 Sequence Diagram: Query Financial Data

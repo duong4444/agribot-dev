@@ -45,7 +45,7 @@ export class CropKnowledgeService {
     const startTime = Date.now();
     const { filename, content, userId, category, tags } = params;
 
-    this.logger.log(`📤 Uploading crop knowledge: ${filename}`);
+    this.logger.log(`Uploading crop knowledge: ${filename}`);
 
     try {
       // 1. Parse markdown to chunks
@@ -111,7 +111,7 @@ export class CropKnowledgeService {
       const processingTime = Date.now() - startTime;
 
       this.logger.log(
-        `✅ Successfully uploaded ${filename}: ${chunks.length} chunks in ${processingTime}ms`,
+        `Successfully uploaded ${filename}: ${chunks.length} chunks in ${processingTime}ms`,
       );
 
       return {

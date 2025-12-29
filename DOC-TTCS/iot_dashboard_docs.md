@@ -20,6 +20,7 @@
 | **Basic Flows** | 1. User selects an Area on the Dashboard.<br>2. System requests latest sensor data for that area.<br>3. System retrieves data from Redis/Database (cached from MQTT).<br>4. System displays current metrics (e.g., Temp: 28°C, Humidity: 65%). |
 | **Alternative Flows** | **A1. No Data:**<br>1. System returns empty or outdated status.<br>2. Dashboard shows "Offline" or "No Data". |
 | **Fail Conditions** | API failure or MQTT Broker down. |
+| **Post-conditions** | User sees the latest sensor data for the selected area. |
 
 ### UC-IOT-02: Manual Device Control (On/Off)
 | Feature | Description |
@@ -30,6 +31,7 @@
 | **Pre-conditions** | device is Online and in "Manual" mode (Auto mode might override if not handled). |
 | **Basic Flows** | 1. User clicks "Turn On" on a device card.<br>2. System validates ownership.<br>3. System publishes `turn_on` command to MQTT topic.<br>4. Device receives command and activates.<br>5. Device sends ACK status update.<br>6. System logs `MANUAL_ON` event.<br>7. Dashboard updates status to "ON". |
 | **Alternative Flows** | **A1. Device Error:**<br>1. Device does not ACK within timeout.<br>2. System shows "Command Timed Out". |
+| **Post-conditions** | Device status is updated (ON/OFF) and physical device state changes accordingly. |
 
 ### UC-IOT-03: Control Device with Duration
 | Feature | Description |
@@ -39,6 +41,7 @@
 | **Brief Description** | User turns on a device for a specific time (e.g., Water for 10 mins). |
 | **Pre-conditions** | Device is Online. |
 | **Basic Flows** | 1. User clicks "Irrigate with Duration".<br>2. User selects duration (e.g., 10 minutes).<br>3. User confirms.<br>4. System creates `DURATION` event (Status: Pending).<br>5. System publishes `irrigate` command with `duration: 600` to MQTT.<br>6. Device starts and counts down.<br>7. Device turns off automatically after duration.<br>8. System logs completion. |
+| **Alternative Flows** | **A1. Device Offline:**<br>1. System cannot contact device.<br>2. Error message displayed: "Device unreachable". |
 | **Post-conditions** | Device turns off after X minutes. |
 
 ### UC-IOT-04: Configure Auto Control (Threshold/Schedule)
@@ -49,6 +52,7 @@
 | **Brief Description** | User sets up automatic rules (e.g., Water if Soil Moisture < 30%). |
 | **Pre-conditions** | User has Premium subscription (implied by `PremiumSubscriptionGuard`). |
 | **Basic Flows** | 1. User navigates to Device Settings -> Auto Configuration.<br>2. User enables "Auto Mode".<br>3. User sets **Moisture Threshold** (e.g., 30%) and **Duration** (e.g., 5 mins).<br>4. User saves configuration.<br>5. System updates `DeviceAutoConfig` in DB.<br>6. System publishes `set_auto_mode` config to Device via MQTT.<br>7. Device now operates autonomously based on local sensor readings. |
+| **Alternative Flows** | **A1. Invalid Threshold:**<br>1. User inputs invalid range.<br>2. System validates and shows error "Invalid range". |
 | **Post-conditions** | Device operates automatically without server intervention. |
 
 ## 3. Sequence Diagrams
@@ -150,18 +154,39 @@ sequenceDiagram
 
     U->>FE: Enable Auto, Set Threshold=30%, Duration=5m
     FE->>CTL: PUT /iot/devices/:id/irrigation/auto-config
-    CTL->>SVC: updateAutoConfig(dto)
+    CTL->>SVC: updateAutoConfig(deviceId, dto, userId)
+    activate SVC
     
-    SVC->>DB: Update DeviceAutoConfig
-    SVC->>DB: Log Event (AUTO_CONFIG_UPDATE)
+    SVC->>DB: Validate Device Access & Ownership
+    activate DB
+    DB-->>SVC: Device info
+    deactivate DB
     
-    SVC->>MQ: Publish { action: "set_auto_mode", threshold: 30, ... }
+    SVC->>DB: Get Existing AutoConfig
+    activate DB
+    DB-->>SVC: Current config
+    deactivate DB
+    
+    SVC->>SVC: Merge new fields with existing config
+    
+    SVC->>DB: Save Updated DeviceAutoConfig
+    activate DB
+    DB-->>SVC: Config saved
+    deactivate DB
+    
+    Note over SVC,MQ: Publish full config to device
+    SVC->>MQ: Publish { action: "set_auto_mode", enabled, threshold, duration, cooldown, timestamp }
     MQ->>DV: Receive Config
     DV->>DV: Update Local Logic
     
-    SVC-->>CTL: Return Updated Config
-    CTL-->>FE: Show "Config Saved"
+    SVC->>DB: Log Event (AUTO_CONFIG_UPDATE, COMPLETED)
     
+    SVC-->>CTL: Return Updated Config
+    deactivate SVC
+    CTL-->>FE: Show "Config Saved"
+    FE-->>U: Display success message
+    
+    Note over DV: Device autonomously monitors sensors
     DV->>DV: Read Sensor -> Check Threshold -> Auto Irrigate
     DV-->>MQ: Report "auto_irrigation_triggered"
 ```

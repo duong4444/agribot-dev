@@ -35,7 +35,7 @@ export class MarkdownChunkingService {
     content: string,
   ): Promise<CropKnowledgeChunk[]> {
     const startTime = Date.now();
-    this.logger.log(`📝 Parsing markdown file: ${filename}`);
+    this.logger.log(`Parsing markdown file: ${filename}`);
 
     const chunks: CropKnowledgeChunk[] = [];
     
@@ -114,7 +114,7 @@ export class MarkdownChunkingService {
 
     const processingTime = Date.now() - startTime;
     this.logger.log(
-      `✅ Parsed ${chunks.length} chunks from ${filename} in ${processingTime}ms`,
+      `Parsed ${chunks.length} chunks from ${filename} in ${processingTime}ms`,
     );
 
     return chunks;
@@ -245,7 +245,7 @@ export class MarkdownChunkingService {
    * Generate preview of chunks for admin review
    */
   generatePreview(chunks: CropKnowledgeChunk[]): string {
-    let preview = `📚 **Tổng số chunks:** ${chunks.length}\n\n`;
+    let preview = `Tổng số chunks: ${chunks.length}\n\n`;
     
     // Group by chu_de_lon
     const grouped = chunks.reduce((acc, chunk) => {
