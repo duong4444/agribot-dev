@@ -19,7 +19,10 @@ interface Device {
   serialNumber: string;
   name: string;
   type: string;
-  isActive: boolean;
+  isActive: boolean;        // Activated by technician
+  isOnline: boolean;        // Currently sending data (< 5 min)
+  lastSeenAt: string;       // Last heartbeat timestamp
+  lastSeenMinutes: number | null;  // Minutes since last seen
 }
 
 interface AreaDetail {
@@ -189,9 +192,34 @@ export default function AreaDetailPage() {
                           </p>
                         </div>
                       </div>
-                      <Badge variant={device.isActive ? "default" : "secondary"}>
-                        {device.isActive ? "Online" : "Offline"}
-                      </Badge>
+                      <div className="flex flex-col items-end gap-1">
+                        <Badge 
+                          variant={device.isOnline ? "default" : "secondary"}
+                          className="flex items-center gap-1"
+                        >
+                          <span className={`h-2 w-2 rounded-full ${
+                            device.isOnline ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+                          }`} />
+                          {device.isOnline ? 'Online' : 'Offline'}
+                        </Badge>
+                        
+                        {/* Show last seen time if offline */}
+                        {!device.isOnline && device.lastSeenMinutes !== null && (
+                          <span className="text-xs text-muted-foreground">
+                            {device.lastSeenMinutes < 60 
+                              ? `${device.lastSeenMinutes} phút trước`
+                              : device.lastSeenMinutes < 1440
+                              ? `${Math.floor(device.lastSeenMinutes / 60)} giờ trước`
+                              : `${Math.floor(device.lastSeenMinutes / 1440)} ngày trước`
+                            }
+                          </span>
+                        )}
+                        {!device.isOnline && device.lastSeenMinutes === null && (
+                          <span className="text-xs text-muted-foreground">
+                            Chưa có dữ liệu
+                          </span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

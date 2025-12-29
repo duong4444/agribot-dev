@@ -76,7 +76,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) =>
               className="hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               <Settings className="h-4 w-4 sm:mr-2" />
-              <span className="hidden sm:inline">Settings</span>
+              <span className="hidden sm:inline">Cài đặt</span>
             </Button>
             <ThemeToggle />
             <Button 

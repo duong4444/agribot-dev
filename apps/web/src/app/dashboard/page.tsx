@@ -24,6 +24,7 @@ const Dashboard = () => {
     inputMessage,
     setInputMessage,
     isLoading,
+    loadingMessage,
     messagesEndRef,
     sendMessage,
     handleKeyPress,
@@ -109,6 +110,7 @@ const Dashboard = () => {
                 // input field
                 setInputMessage={setInputMessage}
                 isLoading={isLoading}
+                loadingMessage={loadingMessage}
                 messagesEndRef={messagesEndRef}
                 // POST /api/chat/messages
                 onSendMessage={sendMessage}

@@ -12,6 +12,7 @@ interface ChatInterfaceProps {
   inputMessage: string;
   setInputMessage: (value: string) => void;
   isLoading: boolean;
+  loadingMessage?: string;
   messagesEndRef: React.RefObject<HTMLDivElement>;
   onSendMessage: () => void;
   onKeyPress: (e: React.KeyboardEvent) => void;
@@ -22,6 +23,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   inputMessage,
   setInputMessage,
   isLoading,
+  loadingMessage,
   messagesEndRef,
   onSendMessage,
   onKeyPress,
@@ -46,6 +48,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         <MessageList
           messages={messages}
           isLoading={isLoading}
+          loadingMessage={loadingMessage}
           messagesEndRef={messagesEndRef}
         />
 

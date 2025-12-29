@@ -9,12 +9,14 @@ import { Message } from "./useChat";
 interface MessageListProps {
   messages: Message[];
   isLoading: boolean;
+  loadingMessage?: string;
   messagesEndRef: React.RefObject<HTMLDivElement>;
 }
 
 export const MessageList: React.FC<MessageListProps> = ({
   messages,
   isLoading,
+  loadingMessage = "AI đang suy nghĩ...",
   messagesEndRef,
 }) => {
   return (
@@ -83,7 +85,7 @@ export const MessageList: React.FC<MessageListProps> = ({
         ))
       )}
 
-      {isLoading && <TypingIndicator />}
+      {isLoading && <TypingIndicator message={loadingMessage} />}
 
       <div ref={messagesEndRef} />
     </div>

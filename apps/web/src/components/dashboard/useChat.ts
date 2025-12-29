@@ -14,6 +14,7 @@ export const useChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("AI đang suy nghĩ...");
   const [conversationId, setConversationId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -39,6 +40,14 @@ export const useChat = () => {
     setMessages((prev) => [...prev, userMessage]);
     const currentMessage = inputMessage;
     setInputMessage("");
+    
+    // 🆕 Detect device control commands (improved)
+    // Check for action words + device words
+    const hasActionWord = /(bật|tắt|mở|đóng|ngừng|dừng|kích hoạt)/i.test(currentMessage);
+    const hasDeviceWord = /(tưới|đèn|bơm|máy bơm|pump|light|tự động)/i.test(currentMessage);
+    const isDeviceControl = hasActionWord && hasDeviceWord;
+    
+    setLoadingMessage(isDeviceControl ? "Đang gửi lệnh..." : "AI đang suy nghĩ...");
     setIsLoading(true);
 
     try {
@@ -154,6 +163,7 @@ export const useChat = () => {
     inputMessage,
     setInputMessage,
     isLoading,
+    loadingMessage,
     messagesEndRef,
     sendMessage,
     handleKeyPress,

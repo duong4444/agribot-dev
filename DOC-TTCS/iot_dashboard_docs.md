@@ -77,36 +77,45 @@ sequenceDiagram
     FE-->>U: Display Sensor Cards
 ```
 
-### 3.2 Sequence Diagram: Manual Device Control (Turn On/Off)
+### 3.2 Sequence Diagram: Manual Device Control (Turn On/Off) - Dashboard
+
+> **Note**: This flow is for Dashboard UI. Chatbot uses a different flow with ACK waiting (see device-control.handler.ts).
 
 ```mermaid
 sequenceDiagram
     participant U as User
     participant FE as Web App
-    participant CTL as IrrigationController
-    participant SVC as IrrigationService
+    participant CTL as Device Controller
+    participant SVC as Device Service
     participant DB as Database
     participant MQ as MQTT Broker
-    participant DV as IoT Device (ESP32)
+    participant ESP as ESP32 Device
 
-    U->>FE: Click "Turn On Pump"
-    FE->>CTL: POST /iot/devices/:id/irrigation/on
-    CTL->>SVC: turnOnPump(deviceId, userId)
+    U->>FE: Click "Turn On Device"
+    FE->>CTL: POST /devices/:id/{irrigation|lighting}/on
+    CTL->>SVC: turnOn(deviceId, userId)
     
     SVC->>DB: Validate Access & Device Status
     SVC->>DB: Create Event (MANUAL_ON, PENDING)
-    SVC->>MQ: Publish { action: "turn_on" }
+    DB-->>SVC: Event Created
     
-    MQ->>DV: Forward Command
-    DV->>DV: Activate Relay
-    DV-->>MQ: Ack { event: "pump_on" }
+    SVC->>MQ: Publish Command
+    Note over MQ: {action: "turn_on" | "turn_on_light"}
     
-    MQ->>SVC: Handle Status Update (Async)
-    SVC->>DB: Update Event (RUNNING)
+    SVC-->>CTL: Return Success (Optimistic)
+    CTL-->>FE: {success: true, message: "Command sent"}
+    FE-->>U: Update UI "Device ON"
     
-    SVC-->>CTL: Return Event Info
-    CTL-->>FE: Success Response
-    FE-->>U: Update Button State "ON"
+    Note over SVC,ESP: Asynchronous confirmation
+    MQ->>ESP: Forward Command
+    ESP->>ESP: Execute Command (Activate Relay)
+    ESP->>MQ: Publish Status
+    Note over ESP,MQ: {event: "pump_on" | "light_on"}
+    
+    MQ->>SVC: handleStatusUpdate() (Background)
+    SVC->>DB: Update Event (PENDING → COMPLETED)
+    
+    Note over FE: User can refresh to see updated status
 ```
 
 ### 3.3 Sequence Diagram: Control with Duration
