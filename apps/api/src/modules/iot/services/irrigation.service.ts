@@ -35,7 +35,7 @@ export class IrrigationService {
 
   async turnOnPump(deviceId: string, userId: string): Promise<IrrigationEvent> {
     await this.validateDeviceAccess(deviceId, userId);
-    console.log("turnONPump đc gọi nè ______ON");
+    console.log("turnONPump đc gọi______ON");
 
     console.log("_______________________DEVICE_ID________________________: ",deviceId);
     
@@ -73,7 +73,7 @@ export class IrrigationService {
 
   async turnOffPump(deviceId: string, userId: string): Promise<IrrigationEvent> {
     await this.validateDeviceAccess(deviceId, userId);
-    console.log("turnOffPump đc gọi nè _________OFF");
+    console.log("turnOffPump đc gọi_________OFF");
     
     const soilMoisture = await this.getCurrentSoilMoisture(deviceId);
 
@@ -150,9 +150,9 @@ export class IrrigationService {
         config = this.autoConfigRepo.create({
           deviceId,
           enabled: false,
-          moistureThreshold: 30.0,
-          irrigationDuration: 600,
-          cooldownPeriod: 3600,
+          moistureThreshold: 25.0,
+          irrigationDuration: 5,
+          cooldownPeriod: 15,
         });
         await this.autoConfigRepo.save(config);
       } catch (error: any) {

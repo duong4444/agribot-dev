@@ -201,9 +201,12 @@ export class DeviceControlHandler {
     // Execute command (both auto-mode and manual control)
     if (isAutoModeRequest && deviceType === 'pump') {
        // Handle Auto Mode Toggle
+       // set status là pending
        await this.irrigationService.updateAutoConfig(device.serialNumber, { enabled: action === 'on' }, userId);
     } else {
        // Manual Control
+       console.log("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+       
        await this.executeCommand(device, action, deviceType, duration);
     }
     
@@ -290,6 +293,12 @@ export class DeviceControlHandler {
    */
   private parseDuration(durationStr: string): number {
     const normalized = durationStr.toLowerCase().trim();
+
+    // 🔧 Match seconds first (e.g., "5 giây", "10 giây")
+    const secondMatch = normalized.match(/(\d+)\s*giây/);
+    if (secondMatch) {
+      return parseInt(secondMatch[1]);
+    }
 
     // Match patterns like "5 phút", "10 phút", "1 giờ"
     const minuteMatch = normalized.match(/(\d+)\s*phút/);
@@ -441,8 +450,12 @@ export class DeviceControlHandler {
     if (targetDeviceType === 'pump') {
       if (action === 'on') {
         if (duration) {
+          console.log("DURATIONNNNNNNNNNNNNNNNNNNN");
+          
           await this.irrigationService.irrigateDuration(deviceId, { duration }, userId);
         } else {
+          console.log("MANUALLLLLLLLLLLLLLLLLL");
+          
           await this.irrigationService.turnOnPump(deviceId, userId);
         }
       } else {

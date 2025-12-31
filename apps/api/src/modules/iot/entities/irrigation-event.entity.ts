@@ -69,7 +69,7 @@ export class IrrigationEvent {
   @CreateDateColumn()
   createdAt: Date;
 
-  @ManyToOne(() => Device)
+  @ManyToOne(() => Device, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'deviceId', referencedColumnName: 'serialNumber' })
   device: Device;
 }

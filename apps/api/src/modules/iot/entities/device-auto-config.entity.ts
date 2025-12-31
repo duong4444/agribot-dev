@@ -42,7 +42,7 @@ export class DeviceAutoConfig {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => Device)
+  @ManyToOne(() => Device, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'deviceId', referencedColumnName: 'serialNumber' })
   device: Device;
 }

@@ -25,7 +25,7 @@ interface IrrigationControlPanelProps {
 export function IrrigationControlPanel({ deviceId, onActionComplete }: IrrigationControlPanelProps) {
   const [loading, setLoading] = useState(false);
   const [autoConfig, setAutoConfig] = useState<AutoConfig | null>(null);
-  const [durationInput, setDurationInput] = useState('600');
+  const [durationInput, setDurationInput] = useState('5');
   const [configLoading, setConfigLoading] = useState(true);
   const { toast } = useToast();
 

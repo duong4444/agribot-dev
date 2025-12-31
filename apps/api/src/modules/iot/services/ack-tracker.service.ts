@@ -56,6 +56,7 @@ export class AckTrackerService extends EventEmitter {
    * Called when ACK is received from device
    * @param ack Device acknowledgment
    */
+  // mqtt.service gọi
   receiveAck(ack: DeviceAck): void {
     const key = `${ack.deviceId}:${ack.action}`;
     const pending = this.pendingAcks.get(key);
