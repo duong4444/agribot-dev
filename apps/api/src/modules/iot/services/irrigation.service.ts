@@ -282,7 +282,7 @@ export class IrrigationService {
   // ============================================================================
 
   async handleStatusUpdate(deviceId: string, status: any): Promise<void> {
-    const { event, pumpOn, soilMoisture } = status;
+    const { event, pumpOn, soilMoisture, autoMode, duration } = status;
 
     this.logger.debug(`Status update from ${deviceId}: ${event}`);
 
@@ -297,9 +297,50 @@ export class IrrigationService {
 
     console.log("recentEvent: ",recentEvent);
     
+    // ✅ NEW: Handle auto-irrigation start when no pending event exists
+    if (!recentEvent && event === 'irrigation_started' && autoMode) {
+      this.logger.log(`Creating AUTO irrigation event for ${deviceId}`);
+      await this.eventRepo.save(
+        this.eventRepo.create({
+          deviceId,
+          type: IrrigationEventType.AUTO,
+          status: IrrigationEventStatus.RUNNING,
+          startTime: new Date(),
+          plannedDuration: duration,
+          soilMoistureBefore: soilMoisture,
+          metadata: { autoMode: true, source: 'esp32_auto_trigger' },
+        }),
+      );
+      return;
+    }
+
+    // ✅ NEW: Handle auto-irrigation completion when no pending event exists
+    if (!recentEvent && event === 'irrigation_completed' && autoMode) {
+      // Find the most recent RUNNING auto event to complete it
+      const runningEvent = await this.eventRepo.findOne({
+        where: { 
+          deviceId, 
+          status: IrrigationEventStatus.RUNNING,
+          type: IrrigationEventType.AUTO 
+        },
+        order: { startTime: 'DESC' },
+      });
+
+      if (runningEvent) {
+        this.logger.log(`Completing AUTO irrigation event for ${deviceId}`);
+        runningEvent.status = IrrigationEventStatus.COMPLETED;
+        runningEvent.endTime = new Date();
+        runningEvent.soilMoistureAfter = soilMoisture;
+        runningEvent.actualDuration = duration;
+        await this.eventRepo.save(runningEvent);
+      } else {
+        this.logger.warn(`Received irrigation_completed but no RUNNING AUTO event found for ${deviceId}`);
+      }
+      return;
+    }
 
     if (!recentEvent) {
-      // No pending event, might be auto irrigation
+      // No pending event, might be auto irrigation (legacy event name)
       if (event === 'auto_irrigation_triggered') {
         await this.eventRepo.save(
           this.eventRepo.create({
@@ -321,6 +362,13 @@ export class IrrigationService {
     case 'pump_on':
     case 'irrigation_started':
       recentEvent.status = IrrigationEventStatus.RUNNING;
+      // 🔧 Store autoMode from ESP to determine if this is auto or manual
+      if (status.autoMode !== undefined) {
+        recentEvent.metadata = { 
+          ...recentEvent.metadata, 
+          autoMode: status.autoMode 
+        };
+      }
       break;
 
     case 'pump_off':
@@ -330,6 +378,13 @@ export class IrrigationService {
       recentEvent.soilMoistureAfter = soilMoisture;
       if (status.duration) {
         recentEvent.actualDuration = status.duration;
+      }
+      // 🔧 Store autoMode for completed events too
+      if (status.autoMode !== undefined) {
+        recentEvent.metadata = { 
+          ...recentEvent.metadata, 
+          autoMode: status.autoMode 
+        };
       }
       break;
 

@@ -33,7 +33,7 @@ export function IrrigationHistory({ deviceId, limit = 20, refreshTrigger = 0 }: 
 
     const interval = setInterval(() => {
       fetchHistory();
-    }, 10000); // Poll every 10 seconds
+    }, 5000); // Poll every 10 seconds
 
     return () => clearInterval(interval);
   }, [deviceId, limit, refreshTrigger]);
@@ -72,8 +72,14 @@ export function IrrigationHistory({ deviceId, limit = 20, refreshTrigger = 0 }: 
     }
   };
 
-  const getEventLabel = (type: string) => {
-    switch (type) {
+  const getEventLabel = (event: IrrigationEvent) => {
+    // 🔧 Prioritize autoMode from metadata (from ESP status)
+    if (event.metadata?.autoMode === true) {
+      return 'Tưới tự động';
+    }
+    
+    // Fallback to event type
+    switch (event.type) {
       case 'manual_on':
         return 'Bật thủ công';
       case 'manual_off':
@@ -85,7 +91,7 @@ export function IrrigationHistory({ deviceId, limit = 20, refreshTrigger = 0 }: 
       case 'auto_config_update':
         return 'Cập nhật cấu hình';
       default:
-        return type;
+        return event.type;
     }
   };
 
@@ -173,7 +179,7 @@ export function IrrigationHistory({ deviceId, limit = 20, refreshTrigger = 0 }: 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-medium text-sm">
-                      {getEventLabel(event.type)}
+                      {getEventLabel(event)}
                     </span>
                     {getStatusBadge(event.status)}
                   </div>

@@ -30,7 +30,7 @@ export function LightingHistory({ deviceId, limit = 20, refreshTrigger = 0 }: Li
 
     const interval = setInterval(() => {
       fetchHistory();
-    }, 10000); // Poll every 10 seconds
+    }, 5000); // Poll every 10 seconds
 
     return () => clearInterval(interval);
   }, [deviceId, limit, refreshTrigger]);
