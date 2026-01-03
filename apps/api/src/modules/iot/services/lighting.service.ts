@@ -5,6 +5,7 @@ import { DeviceAutoConfig } from '../entities/device-auto-config.entity';
 import { Device, DeviceStatus } from '../entities/device.entity';
 import { LightingEvent, LightingEventType, LightingEventStatus } from '../entities/lighting-event.entity';
 import { MqttService } from '../mqtt.service';
+import { IotGateway } from '../iot.gateway';
 
 @Injectable()
 export class LightingService {
@@ -19,6 +20,7 @@ export class LightingService {
     private eventRepo: Repository<LightingEvent>,
     @Inject(forwardRef(() => MqttService))
     private mqttService: MqttService,
+    private iotGateway: IotGateway,
   ) {}
 
   async turnOn(deviceId: string, userId: string) {
@@ -149,8 +151,10 @@ export class LightingService {
         break;
     }
 
-    await this.eventRepo.save(recentEvent);
-    this.logger.log(`✅ Lighting event updated: ${deviceId} - ${event} → ${recentEvent.status}`);
+    const savedEvent = await this.eventRepo.save(recentEvent);
+    //Emit WebSocket event
+    this.iotGateway.emitLightingEvent(deviceId, savedEvent);
+    this.logger.log(`Lighting event updated: ${deviceId} - ${event} → ${recentEvent.status}`);
   }
 
   async getAutoConfig(deviceId: string) {

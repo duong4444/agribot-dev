@@ -9,9 +9,12 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { 
   Leaf,
   LogOut,
-  Settings
+  Settings,
+  Phone,
+  Mail
 } from 'lucide-react';
 import { AreaReference } from './AreaReference';
+import { ContactInfo } from './ContactInfo';
 
 interface DashboardHeaderProps {
   userName?: string | null;
@@ -69,6 +72,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName }) =>
           
           <div className="flex items-center gap-2">
             {isFarmer && <AreaReference />}
+            {isFarmer && <ContactInfo phone="0920222027" email="kmact7c@gmail.com" />}
+            
             <Button 
               variant="ghost" 
               size="sm"

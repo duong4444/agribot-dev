@@ -24,6 +24,7 @@ import {
 } from './controllers/device-inventory.controller';
 import { IrrigationController } from './controllers/irrigation.controller';
 import { LightingController } from './controllers/lighting.controller';
+import { IotGateway } from './iot.gateway';
 import { Area } from '../farms/entities/area.entity';
 import { User } from '../users/entities/user.entity';
 import { UsersModule } from '../users/users.module';
@@ -61,6 +62,7 @@ import { AuthModule } from '../auth/auth.module';
     IrrigationService,
     LightingService,
     AckTrackerService,
+    IotGateway,
   ],
   exports: [
     MqttService,

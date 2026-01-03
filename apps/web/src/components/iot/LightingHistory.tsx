@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Lightbulb, Power, Settings, Calendar } from 'lucide-react';
+import { io, Socket } from 'socket.io-client';
 
 interface LightingEvent {
   id: string;
@@ -24,15 +25,51 @@ interface LightingHistoryProps {
 export function LightingHistory({ deviceId, limit = 20, refreshTrigger = 0 }: LightingHistoryProps) {
   const [events, setEvents] = useState<LightingEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    // Initial fetch
     fetchHistory();
 
-    const interval = setInterval(() => {
-      fetchHistory();
-    }, 5000); // Poll every 10 seconds
+    // Connect to WebSocket
+    const newSocket = io('http://localhost:3000/iot', {
+      transports: ['websocket'],
+    });
 
-    return () => clearInterval(interval);
+    newSocket.on('connect', () => {
+      console.log('WebSocket connected (Lighting)');
+      // Clear polling interval if it exists
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+        console.log('Stopped polling (WebSocket reconnected)');
+      }
+    });
+
+    newSocket.on(`lighting:${deviceId}`, (newEvent: LightingEvent) => {
+      console.log('Received lighting event:', newEvent);
+      setEvents(prev => {
+        const updated = [newEvent, ...prev.filter(e => e.id !== newEvent.id)];
+        return updated.slice(0, limit);
+      });
+    });
+
+    newSocket.on('disconnect', () => {
+      console.log('WebSocket disconnected, falling back to polling');
+      // Start polling only if not already polling
+      if (!pollingIntervalRef.current) {
+        pollingIntervalRef.current = setInterval(fetchHistory, 5000);
+        console.log('Started polling');
+      }
+    });
+
+    return () => {
+      newSocket.close();
+      // Clean up polling interval on unmount
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
   }, [deviceId, limit, refreshTrigger]);
 
   const fetchHistory = async () => {

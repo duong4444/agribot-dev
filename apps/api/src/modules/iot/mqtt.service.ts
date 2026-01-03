@@ -14,6 +14,7 @@ import { Device, DeviceStatus } from './entities/device.entity';
 import { IrrigationService } from './services/irrigation.service';
 import { LightingService } from './services/lighting.service';
 import { AckTrackerService } from './services/ack-tracker.service';
+import { IotGateway } from './iot.gateway';
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ export class MqttService implements OnModuleInit {
     @Inject(forwardRef(() => LightingService))
     private lightingService: LightingService,
     private ackTrackerService: AckTrackerService,
+    private iotGateway: IotGateway,
   ) {}
 
   onModuleInit() {
@@ -206,6 +208,9 @@ export class MqttService implements OnModuleInit {
       this.logger.debug(
         `____________________Saved sensor data with ID_________________: ${saved.id}`,
       );
+      
+      //Emit sensor data to WebSocket
+      this.iotGateway.emitSensorData(serialNumber, saved);
       
       // 🆕 Update device heartbeat
       device.lastSeenAt = new Date();

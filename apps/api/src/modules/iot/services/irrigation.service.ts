@@ -11,6 +11,7 @@ import { Device, DeviceStatus } from '../entities/device.entity';
 import { SensorData } from '../entities/sensor-data.entity';
 import { MqttService } from '../mqtt.service';
 import { UpdateAutoConfigDto, IrrigateDurationDto } from '../dto/irrigation.dto';
+import { IotGateway } from '../iot.gateway';
 
 @Injectable()
 export class IrrigationService {
@@ -27,6 +28,7 @@ export class IrrigationService {
     private sensorDataRepo: Repository<SensorData>,
     @Inject(forwardRef(() => MqttService))
     private mqttService: MqttService,
+    private iotGateway: IotGateway,
   ) {}
 
   // ============================================================================
@@ -38,6 +40,29 @@ export class IrrigationService {
     console.log("turnONPump đc gọi______ON");
 
     console.log("_______________________DEVICE_ID________________________: ",deviceId);
+    
+    //Cancel any running AUTO or DURATION events (manual override)
+    const runningEvent = await this.eventRepo.findOne({
+      where: [
+        { deviceId, status: IrrigationEventStatus.RUNNING, type: IrrigationEventType.AUTO },
+        { deviceId, status: IrrigationEventStatus.RUNNING, type: IrrigationEventType.DURATION },
+      ],
+      order: { startTime: 'DESC' },
+    });
+    
+    if (runningEvent) {
+      runningEvent.status = IrrigationEventStatus.CANCELLED;
+      runningEvent.endTime = new Date();
+      runningEvent.metadata = {
+        ...runningEvent.metadata,
+        cancelledBy: 'manual_override',
+        cancelledReason: 'User turned on pump manually',
+      };
+      const cancelledEvent = await this.eventRepo.save(runningEvent);
+      // Emit WebSocket for cancelled event
+      this.iotGateway.emitIrrigationEvent(deviceId, cancelledEvent);
+      this.logger.log(`Cancelled ${runningEvent.type} event for ${deviceId} (manual override)`);
+    }
     
     // Get current soil moisture
     const soilMoisture = await this.getCurrentSoilMoisture(deviceId);
@@ -75,6 +100,37 @@ export class IrrigationService {
     await this.validateDeviceAccess(deviceId, userId);
     console.log("turnOffPump đc gọi_________OFF");
     
+    //Complete any running AUTO, DURATION, or MANUAL_ON events
+    const runningEvent = await this.eventRepo.findOne({
+      where: [
+        { deviceId, status: IrrigationEventStatus.RUNNING, type: IrrigationEventType.AUTO },
+        { deviceId, status: IrrigationEventStatus.RUNNING, type: IrrigationEventType.DURATION },
+        { deviceId, status: IrrigationEventStatus.RUNNING, type: IrrigationEventType.MANUAL_ON },
+      ],
+      order: { startTime: 'DESC' },
+    });
+    
+    if (runningEvent) {
+      runningEvent.status = IrrigationEventStatus.COMPLETED;
+      runningEvent.endTime = new Date();
+      const soilMoisture = await this.getCurrentSoilMoisture(deviceId);
+      if (soilMoisture !== null) {
+        runningEvent.soilMoistureAfter = soilMoisture;
+      }
+      // Calculate actual duration
+      const startTime = new Date(runningEvent.startTime).getTime();
+      const endTime = new Date().getTime();
+      runningEvent.actualDuration = Math.floor((endTime - startTime) / 1000);
+      runningEvent.metadata = {
+        ...runningEvent.metadata,
+        completedBy: 'manual_off',
+      };
+      const completedEvent = await this.eventRepo.save(runningEvent);
+      // Emit WebSocket for completed event
+      this.iotGateway.emitIrrigationEvent(deviceId, completedEvent);
+      this.logger.log(`Completed ${runningEvent.type} event for ${deviceId} (manual off)`);
+    }
+    
     const soilMoisture = await this.getCurrentSoilMoisture(deviceId);
 
     const event = this.eventRepo.create({
@@ -109,6 +165,29 @@ export class IrrigationService {
     userId: string,
   ): Promise<IrrigationEvent> {
     await this.validateDeviceAccess(deviceId, userId);
+
+    //Cancel any running AUTO or MANUAL_ON events
+    const runningEvent = await this.eventRepo.findOne({
+      where: [
+        { deviceId, status: IrrigationEventStatus.RUNNING, type: IrrigationEventType.AUTO },
+        { deviceId, status: IrrigationEventStatus.RUNNING, type: IrrigationEventType.MANUAL_ON },
+      ],
+      order: { startTime: 'DESC' },
+    });
+    
+    if (runningEvent) {
+      runningEvent.status = IrrigationEventStatus.CANCELLED;
+      runningEvent.endTime = new Date();
+      runningEvent.metadata = {
+        ...runningEvent.metadata,
+        cancelledBy: 'duration_override',
+        cancelledReason: 'User started duration-based irrigation',
+      };
+      const cancelledEvent = await this.eventRepo.save(runningEvent);
+      // Emit WebSocket for cancelled event
+      this.iotGateway.emitIrrigationEvent(deviceId, cancelledEvent);
+      this.logger.log(`Cancelled ${runningEvent.type} event for ${deviceId} (duration override)`);
+    }
 
     const soilMoisture = await this.getCurrentSoilMoisture(deviceId);
 
@@ -295,12 +374,12 @@ export class IrrigationService {
       order: { startTime: 'DESC' },
     });
 
-    console.log("recentEvent: ",recentEvent);
+    console.log("recentEvent trong handleStatusUpdate: ",recentEvent);
     
-    // ✅ NEW: Handle auto-irrigation start when no pending event exists
+    //Handle auto-irrigation start when no pending event exists
     if (!recentEvent && event === 'irrigation_started' && autoMode) {
       this.logger.log(`Creating AUTO irrigation event for ${deviceId}`);
-      await this.eventRepo.save(
+      const newEvent = await this.eventRepo.save(
         this.eventRepo.create({
           deviceId,
           type: IrrigationEventType.AUTO,
@@ -311,10 +390,12 @@ export class IrrigationService {
           metadata: { autoMode: true, source: 'esp32_auto_trigger' },
         }),
       );
+      //Emit WebSocket event
+      this.iotGateway.emitIrrigationEvent(deviceId, newEvent);
       return;
     }
 
-    // ✅ NEW: Handle auto-irrigation completion when no pending event exists
+    //Handle auto-irrigation completion when no pending event exists
     if (!recentEvent && event === 'irrigation_completed' && autoMode) {
       // Find the most recent RUNNING auto event to complete it
       const runningEvent = await this.eventRepo.findOne({
@@ -332,7 +413,9 @@ export class IrrigationService {
         runningEvent.endTime = new Date();
         runningEvent.soilMoistureAfter = soilMoisture;
         runningEvent.actualDuration = duration;
-        await this.eventRepo.save(runningEvent);
+        const savedEvent = await this.eventRepo.save(runningEvent);
+        //Emit WebSocket event
+        this.iotGateway.emitIrrigationEvent(deviceId, savedEvent);
       } else {
         this.logger.warn(`Received irrigation_completed but no RUNNING AUTO event found for ${deviceId}`);
       }
@@ -357,12 +440,12 @@ export class IrrigationService {
       return;
     }
 
-    // Update event based on status
+  // Update event based on status
   switch (event) {
     case 'pump_on':
     case 'irrigation_started':
       recentEvent.status = IrrigationEventStatus.RUNNING;
-      // 🔧 Store autoMode from ESP to determine if this is auto or manual
+      //Store autoMode from ESP to determine if this is auto or manual
       if (status.autoMode !== undefined) {
         recentEvent.metadata = { 
           ...recentEvent.metadata, 
@@ -379,12 +462,39 @@ export class IrrigationService {
       if (status.duration) {
         recentEvent.actualDuration = status.duration;
       }
-      // 🔧 Store autoMode for completed events too
+      //Store autoMode for completed events too
       if (status.autoMode !== undefined) {
         recentEvent.metadata = { 
           ...recentEvent.metadata, 
           autoMode: status.autoMode 
         };
+      }
+      
+      //When pump turns off, also complete any running MANUAL_ON event
+      if (event === 'pump_off') {
+        const runningManualOn = await this.eventRepo.findOne({
+          where: {
+            deviceId,
+            type: IrrigationEventType.MANUAL_ON,
+            status: IrrigationEventStatus.RUNNING,
+          },
+          order: { startTime: 'DESC' },
+        });
+        
+        if (runningManualOn) {
+          runningManualOn.status = IrrigationEventStatus.COMPLETED;
+          runningManualOn.endTime = new Date();
+          runningManualOn.soilMoistureAfter = soilMoisture;
+          // Calculate actual duration
+          const startTime = new Date(runningManualOn.startTime).getTime();
+          const endTime = new Date().getTime();
+          runningManualOn.actualDuration = Math.floor((endTime - startTime) / 1000);
+          
+          const savedManualOn = await this.eventRepo.save(runningManualOn);
+          // Emit WebSocket for MANUAL_ON completion
+          this.iotGateway.emitIrrigationEvent(deviceId, savedManualOn);
+          this.logger.log(`Completed running MANUAL_ON event for ${deviceId}`);
+        }
       }
       break;
 
@@ -400,7 +510,9 @@ export class IrrigationService {
       break;
   }
 
-  await this.eventRepo.save(recentEvent);
+  const savedEvent = await this.eventRepo.save(recentEvent);
+  //Emit WebSocket event for manual operations
+  this.iotGateway.emitIrrigationEvent(deviceId, savedEvent);
 }
 
   // ============================================================================

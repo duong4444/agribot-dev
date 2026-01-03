@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Droplets, Power, Settings, Clock, TrendingDown } from 'lucide-react';
+import { io, Socket } from 'socket.io-client';
 
 interface IrrigationEvent {
   id: string;
@@ -27,15 +28,52 @@ interface IrrigationHistoryProps {
 export function IrrigationHistory({ deviceId, limit = 20, refreshTrigger = 0 }: IrrigationHistoryProps) {
   const [events, setEvents] = useState<IrrigationEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
+    // Initial fetch
     fetchHistory();
 
-    const interval = setInterval(() => {
-      fetchHistory();
-    }, 5000); // Poll every 10 seconds
+    // Connect to WebSocket
+    const newSocket = io('http://localhost:3000/iot', {
+      transports: ['websocket'],
+    });
 
-    return () => clearInterval(interval);
+    newSocket.on('connect', () => {
+      console.log('WebSocket connected (Irrigation)');
+      // Clear polling interval if it exists
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+        console.log('Stopped polling (WebSocket reconnected)');
+      }
+    });
+
+    newSocket.on(`irrigation:${deviceId}`, (newEvent: IrrigationEvent) => {
+      console.log('Received irrigation event:', newEvent);
+      setEvents(prev => {
+        // Add new event and keep only latest 'limit' items
+        const updated = [newEvent, ...prev.filter(e => e.id !== newEvent.id)];
+        return updated.slice(0, limit);
+      });
+    });
+
+    newSocket.on('disconnect', () => {
+      console.log('WebSocket disconnected, falling back to polling');
+      // Start polling only if not already polling
+      if (!pollingIntervalRef.current) {
+        pollingIntervalRef.current = setInterval(fetchHistory, 5000);
+        console.log('🔄 Started polling');
+      }
+    });
+
+    return () => {
+      newSocket.close();
+      // Clean up polling interval on unmount
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
   }, [deviceId, limit, refreshTrigger]);
 
   const fetchHistory = async () => {
@@ -73,12 +111,7 @@ export function IrrigationHistory({ deviceId, limit = 20, refreshTrigger = 0 }: 
   };
 
   const getEventLabel = (event: IrrigationEvent) => {
-    // 🔧 Prioritize autoMode from metadata (from ESP status)
-    if (event.metadata?.autoMode === true) {
-      return 'Tưới tự động';
-    }
-    
-    // Fallback to event type
+    // Use event.type as primary source of truth
     switch (event.type) {
       case 'manual_on':
         return 'Bật thủ công';

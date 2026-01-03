@@ -57,7 +57,7 @@ export class DeviceControlHandler {
   // Response templates
   private readonly RESPONSE_TEMPLATES = {
     pump: {
-      on_duration: 'Đã bật tưới {area} trong {duration}',
+      on_duration: 'Đã bật tưới {area} trong {duration}. Bạn có thể theo dõi lịch sử tưới tiêu trong trang điều khiển !',
       on: 'Đã bật tưới {area}',
       off: 'Đã tắt tưới {area}',
     },
@@ -235,7 +235,7 @@ export class DeviceControlHandler {
         
         return {
           success: true,
-          message: `✅ ${response}`,
+          message: `${response}`,
           deviceType,
           area: area.name,
           action,
