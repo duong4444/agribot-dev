@@ -220,10 +220,11 @@ void handleCommand(DynamicJsonDocument &doc){
   if(action == "set_auto_mode"){
     Serial.println("🔧 Processing set_auto_mode...");
     
-    autoWater.enabled = doc["enabled"] | autoWater.enabled;
-    autoWater.threshold = doc["threshold"] | autoWater.threshold;
-    autoWater.duration = doc["duration"] | autoWater.duration;
-    autoWater.cooldown = doc["cooldown"] | autoWater.cooldown;
+    // Use containsKey to properly handle false values
+    if(doc.containsKey("enabled")) autoWater.enabled = doc["enabled"].as<bool>();
+    if(doc.containsKey("threshold")) autoWater.threshold = doc["threshold"].as<float>();
+    if(doc.containsKey("duration")) autoWater.duration = doc["duration"].as<int>();
+    if(doc.containsKey("cooldown")) autoWater.cooldown = doc["cooldown"].as<int>();
     
     Serial.print("  → enabled: "); Serial.println(autoWater.enabled);
     Serial.print("  → threshold: "); Serial.println(autoWater.threshold);
@@ -299,8 +300,9 @@ irrigationDuration = 0;  // Reset duration to prevent conflicts
 
   // --- AUTO LIGHT ---
   if(action=="set_light_auto"){
-    autoLight.enabled = doc["enabled"] | autoLight.enabled;
-    autoLight.threshold = doc["threshold"] | autoLight.threshold;
+    // Use containsKey to properly handle false values
+    if(doc.containsKey("enabled")) autoLight.enabled = doc["enabled"].as<bool>();
+    if(doc.containsKey("threshold")) autoLight.threshold = doc["threshold"].as<int>();
     
     // 🔧 When auto mode is enabled, release manual control
     if(autoLight.enabled) {
@@ -427,6 +429,10 @@ void loop(){
   if(autoWater.enabled && !irrigating && !pumpOn){
     bool cooldownOK = (millis()-autoWater.lastIrrigationTime) >= (autoWater.cooldown * 1000);
     if(soil < autoWater.threshold && cooldownOK){
+      // Publish sensor data BEFORE turning on pump
+      // This ensures backend receives the low soil moisture reading that triggered irrigation
+      publishSensorData();
+      
       irrigating=true;
       irrigationStart=millis();
       irrigationDuration=autoWater.duration;

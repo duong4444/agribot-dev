@@ -294,7 +294,23 @@ export class DeviceControlHandler {
   private parseDuration(durationStr: string): number {
     const normalized = durationStr.toLowerCase().trim();
 
-    // 🔧 Match seconds first (e.g., "5 giây", "10 giây")
+    // 🔧 Match shorthand formats first (e.g., "5s", "10m", "1h")
+    const shorthandSecondMatch = normalized.match(/^(\d+)\s*s$/);
+    if (shorthandSecondMatch) {
+      return parseInt(shorthandSecondMatch[1]);
+    }
+
+    const shorthandMinuteMatch = normalized.match(/^(\d+)\s*m$/);
+    if (shorthandMinuteMatch) {
+      return parseInt(shorthandMinuteMatch[1]) * 60;
+    }
+
+    const shorthandHourMatch = normalized.match(/^(\d+)\s*h$/);
+    if (shorthandHourMatch) {
+      return parseInt(shorthandHourMatch[1]) * 3600;
+    }
+
+    // 🔧 Match Vietnamese text with optional space (e.g., "5 giây", "5giây")
     const secondMatch = normalized.match(/(\d+)\s*giây/);
     if (secondMatch) {
       return parseInt(secondMatch[1]);
@@ -321,10 +337,10 @@ export class DeviceControlHandler {
       return parseInt(hourHalfMatch[1]) * 3600 + 1800;
     }
     
-    // Fallback: try to parse just number as minutes if context implies
+    // Fallback: try to parse just number as seconds (not minutes!)
     const numberMatch = normalized.match(/^(\d+)$/);
     if (numberMatch) {
-        return parseInt(numberMatch[1]) * 60;
+        return parseInt(numberMatch[1]); // Treat bare number as seconds
     }
 
     // If it's a date entity but not a duration string, ignore it (return undefined or 0)
