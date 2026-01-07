@@ -29,11 +29,14 @@ AgriBot is a comprehensive agricultural management platform that integrates AI-p
 
 - **Monorepo:** [Turborepo](https://turbo.build/)
 - **Package Manager:** [pnpm](https://pnpm.io/)
-- **Frontend:** [Next.js](https://nextjs.org/), Tailwind CSS, Shadcn UI
-- **Backend:** [NestJS](https://nestjs.com/), TypeORM
-- **Database:** PostgreSQL
-- **Message Broker:** Eclipse Mosquitto (MQTT)
-- **AI Services:** Python (PhoBERT, PaddleOCR)
+- **Frontend:** [Next.js 15](https://nextjs.org/), TypeScript, Tailwind CSS, Shadcn UI, TanStack Query
+- **Backend:** [NestJS](https://nestjs.com/), TypeORM, PostgreSQL (PgVector extension)
+- **Real-time:** MQTT (Eclipse Mosquitto), WebSocket (Socket.IO)
+- **AI/ML Services:** 
+  - Python NLP Service (PhoBERT for Intent Classification & NER)
+  - Embedding Service (dangvantuan/vietnamese-document-embedding)
+  - PDF Extraction Service (PaddleOCR)
+  - LLM Integration (Google Gemini SDK)
 
 ## 📋 Prerequisites
 
@@ -88,14 +91,16 @@ pnpm dev
 
 ```
 ├── apps
-│   ├── api                 # NestJS Backend Application
-│   ├── web                 # Next.js Frontend Application
-│   ├── python-ai-service   # Python NLP Service (PhoBERT)
-│   └── pdf-extraction      # PDF Processing Service
-├── packages                # Shared libraries and configurations
-├── docker-compose.yml      # Infrastructure configuration
-├── turbo.json              # Turborepo configuration
-└── package.json            # Root package configuration
+│   ├── api                      # NestJS Backend Application
+│   ├── web                      # Next.js Frontend Application
+│   ├── python-ai-service        # Python NLP Service (PhoBERT)
+│   ├── firmware                 # ESP32 IoT Device Firmware (C++)
+│   └── pdf-extraction-service   # PDF Processing Service
+├── embedding-service            # Vector Embedding Service
+├── packages                     # Shared libraries and configurations
+├── docker-compose.yml           # Infrastructure configuration
+├── turbo.json                   # Turborepo configuration
+└── package.json                 # Root package configuration
 ```
 
 ## 👥 Roles & Permissions
