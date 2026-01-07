@@ -1,0 +1,83 @@
+Step 1: Enable pgvector extension
+-- Kiểm tra extension đã có chưa
+SELECT * FROM pg_extension WHERE extname = 'vector';
+-- Nếu chưa có thì enable
+CREATE EXTENSION IF NOT EXISTS vector;
+
+Step 2: ADD COLUMN embedding_vector
+-- Thêm column mới (nullable)
+ALTER TABLE rag_chunks 
+ADD COLUMN embedding_vector vector(768);
+-- Verify
+\d rag_chunks
+
+Step 3: SYNC existing data
+-- Kiểm tra số lượng rows
+SELECT COUNT(*) FROM rag_chunks;
+-- Copy data từ embedding sang embedding_vector
+UPDATE rag_chunks
+SET embedding_vector = embedding::vector
+WHERE embedding IS NOT NULL;
+-- Verify đã sync
+SELECT 
+  COUNT(*) as total,
+  COUNT(embedding_vector) as synced
+FROM rag_chunks;
+
+Step 4: CREATE TRIGGER (auto-sync)
+-- Tạo function
+CREATE OR REPLACE FUNCTION sync_embedding_to_vector()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.embedding IS NOT NULL THEN
+    NEW.embedding_vector := NEW.embedding::vector;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+-- Tạo trigger
+CREATE TRIGGER trigger_sync_embedding_vector
+BEFORE INSERT OR UPDATE OF embedding ON rag_chunks
+FOR EACH ROW
+EXECUTE FUNCTION sync_embedding_to_vector();
+-- Verify trigger
+SELECT tgname FROM pg_trigger WHERE tgrelid = 'rag_chunks'::regclass;
+
+Step 5: CREATE HNSW INDEX
+-- Tạo index (có thể mất vài phút)
+\timing on
+CREATE INDEX idx_rag_chunks_embedding_vector_hnsw 
+ON rag_chunks 
+USING hnsw (embedding_vector vector_cosine_ops)
+WITH (m = 16, ef_construction = 64);
+-- m = 16:  số neighbor tối đa mỗi node trong graph
+-- tức: mỗi vector kết nối vs tối đa 16 vector khác, m cao -> cxac hơn, tốn RAM & tgian build index ,
+--                                                   m thấp -> nhanh hơn, kém cxac hơn
+-- ef_construction = 64: độ "kỹ" khi xây index, số node đc xem xét khi chèn mỗi vector , gtri cao -> graph chất lượng cao hơn, build index chậm hơn, tốn RAM hơn
+-- Verify index
+\di idx_rag_chunks_embedding_vector_hnsw
+
+Step 6: TEST performance
+-- Tắt Seq Scan tạm thời để force dùng index
+SET enable_seqscan = OFF;
+-- Lấy 1 embedding mẫu để test
+SELECT embedding FROM rag_chunks LIMIT 1 \gset
+-- Test query với HNSW index
+EXPLAIN ANALYZE
+SELECT id, content,
+  1 - (embedding_vector <=> :'embedding'::vector) as similarity
+FROM rag_chunks
+WHERE embedding_vector IS NOT NULL
+ORDER BY embedding_vector <=> :'embedding'::vector
+LIMIT 5;
+-- Bật lại Seq Scan
+SET enable_seqscan = ON;
+
+ Rollback (nếu cần)
+-- Xóa trigger
+DROP TRIGGER IF EXISTS trigger_sync_embedding_vector ON rag_chunks;
+DROP FUNCTION IF EXISTS sync_embedding_to_vector();
+-- Xóa index
+DROP INDEX IF EXISTS idx_rag_chunks_embedding_vector_hnsw;
+-- Xóa column
+ALTER TABLE rag_chunks DROP COLUMN embedding_vector;

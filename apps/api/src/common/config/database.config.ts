@@ -12,7 +12,7 @@ export const getDatabaseConfig = (
   database: configService.get('DB_NAME', 'agri_chatbot'),
   entities: [__dirname + '/../../modules/**/*.entity{.ts,.js}'],
   migrations: [__dirname + '/../../database/migrations/*{.ts,.js}'],
-  synchronize: configService.get('NODE_ENV') === 'development',
+  synchronize: false, // CRITICAL: Must be false to preserve manual columns like embedding_vector
   logging: configService.get('DB_LOGGING', 'false') === 'true',
   ssl: configService.get('NODE_ENV') === 'production' ? { rejectUnauthorized: false } : false,
   extra: {

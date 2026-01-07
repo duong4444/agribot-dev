@@ -43,10 +43,11 @@ export class VectorStoreService {
           c.rag_document_id as "documentId",
           c.created_at as "createdAt",
           d.original_name as "documentName",
-          1 - (c.embedding::vector <=> $1::vector) as similarity
+          1 - (c.embedding_vector <=> $1::vector) as similarity
         FROM rag_chunks c
         LEFT JOIN rag_documents d ON c.rag_document_id = d.id
-        WHERE 1 - (c.embedding::vector <=> $1::vector) >= $2
+        WHERE c.embedding_vector IS NOT NULL
+          AND 1 - (c.embedding_vector <=> $1::vector) >= $2
       `;
 
       const params: any[] = [embeddingStr, options.threshold];
@@ -85,10 +86,11 @@ export class VectorStoreService {
             c.rag_document_id as "documentId",
             c.created_at as "createdAt",
             d.original_name as "documentName",
-            1 - (c.embedding::vector <=> $1::vector) as similarity
+            1 - (c.embedding_vector <=> $1::vector) as similarity
           FROM rag_chunks c
           LEFT JOIN rag_documents d ON c.rag_document_id = d.id
-          ORDER BY similarity DESC
+          WHERE c.embedding_vector IS NOT NULL
+          ORDER BY c.embedding_vector <=> $1::vector
           LIMIT 3
         `;
         
