@@ -379,6 +379,11 @@ export class IrrigationService {
     //Handle auto-irrigation start when no pending event exists
     if (!recentEvent && event === 'irrigation_started' && autoMode) {
       this.logger.log(`Creating AUTO irrigation event for ${deviceId}`);
+      
+      // Fetch latest soil moisture from database (sensor_data table)
+      // This ensures we use the same value displayed in SensorDashboard
+      const latestSoilMoisture = await this.getCurrentSoilMoisture(deviceId);
+      
       const newEvent = await this.eventRepo.save(
         this.eventRepo.create({
           deviceId,
@@ -386,7 +391,7 @@ export class IrrigationService {
           status: IrrigationEventStatus.RUNNING,
           startTime: new Date(),
           plannedDuration: duration,
-          soilMoistureBefore: soilMoisture,
+          soilMoistureBefore: latestSoilMoisture ?? soilMoisture, // Use DB value, fallback to status
           metadata: { autoMode: true, source: 'esp32_auto_trigger' },
         }),
       );
@@ -409,9 +414,14 @@ export class IrrigationService {
 
       if (runningEvent) {
         this.logger.log(`Completing AUTO irrigation event for ${deviceId}`);
+        
+        // Fetch latest soil moisture from database (sensor_data table)
+        // Since ESP32 now publishes sensor data before completion, this will be fresh
+        const latestSoilMoisture = await this.getCurrentSoilMoisture(deviceId);
+        
         runningEvent.status = IrrigationEventStatus.COMPLETED;
         runningEvent.endTime = new Date();
-        runningEvent.soilMoistureAfter = soilMoisture;
+        runningEvent.soilMoistureAfter = latestSoilMoisture ?? soilMoisture; // Use DB value, fallback to status
         runningEvent.actualDuration = duration;
         const savedEvent = await this.eventRepo.save(runningEvent);
         //Emit WebSocket event

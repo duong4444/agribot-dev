@@ -45,7 +45,7 @@ PubSubClient client(espClient);
 
 // ================= INTERVALS =================
 unsigned long lastSensorSend = 0;
-#define SEND_INTERVAL 10000
+#define SEND_INTERVAL 5000
 
 bool pumpOn = false;
 bool lightOn = false;
@@ -124,6 +124,8 @@ void publishStatus(String event){
   doc["deviceId"]=DEVICE_ID;
   doc["event"]=event;
   doc["pumpOn"]=pumpOn;
+  doc["lightOn"]=lightOn;
+  doc["manualLightControl"]=manualLightControl;  // ← Add manual flag
   doc["autoMode"]=autoWater.enabled;
   doc["soilMoisture"]=readSoil();
   doc["timestamp"]=millis();
@@ -301,8 +303,21 @@ irrigationDuration = 0;  // Reset duration to prevent conflicts
   // --- AUTO LIGHT ---
   if(action=="set_light_auto"){
     // Use containsKey to properly handle false values
-    if(doc.containsKey("enabled")) autoLight.enabled = doc["enabled"].as<bool>();
-    if(doc.containsKey("threshold")) autoLight.threshold = doc["threshold"].as<int>();
+    if(doc.containsKey("enabled")) {
+      bool newEnabled = doc["enabled"].as<bool>();
+      
+      // If disabling auto and light is on (not manual) → Turn off light
+      if(!newEnabled && lightOn && !manualLightControl) {
+        lightOn = false;
+        digitalWrite(LED_PIN, LOW);
+        Serial.println("  → Auto disabled, turning off light");
+      }
+      
+      autoLight.enabled = newEnabled;
+    }
+    
+    if(doc.containsKey("threshold")) 
+      autoLight.threshold = doc["threshold"].as<int>();
     
     // 🔧 When auto mode is enabled, release manual control
     if(autoLight.enabled) {
@@ -420,6 +435,9 @@ void loop(){
       digitalWrite(PUMP_PIN, LOW);
       autoWater.lastIrrigationTime = millis();
       
+      // Publish sensor data BEFORE status to ensure DB has fresh "After" value
+      publishSensorData();
+      
       // Publish with actual duration
       publishStatusWithDuration("irrigation_completed", completedDuration);
     }
@@ -446,11 +464,13 @@ void loop(){
   if(autoLight.enabled && !manualLightControl){
     float lux = readLightLux();
     if(lux < autoLight.threshold && !lightOn){ 
+      publishSensorData(); // 🆕 Gửi data ngay khi trigger
       lightOn=true; 
       digitalWrite(LED_PIN,HIGH); 
       publishStatus("light_on"); 
     }
     if(lux > autoLight.threshold && lightOn){ 
+      publishSensorData(); // 🆕 Gửi data ngay khi trigger
       lightOn=false; 
       digitalWrite(LED_PIN,LOW); 
       publishStatus("light_off"); 
@@ -465,3 +485,32 @@ void loop(){
 
   delay(30);
 }
+
+// 1. ON/OFF
+// 2. DURATION
+// 3. AUTO: thay đổi thông số, enable, disable
+
+// 4. đang duration -> OFF = 
+// 10. đang duration -> ON = 
+// 13. đang duration + duration , on + on ?
+// 5. đang tưới auto -> OFF =
+// 6. đang tưới auto -> ON = 
+// 12.đang tưới auto -> duration = 
+// 7. đang tưới auto -> disable auto mode = bảo tồn lần sau dùng thông số mới
+// 8. đang tưới auto -> thay đổi thông số trong lúc đang tưới = bảo tồn lần sau dùng thông số mới
+// 9. đang on -> duration = 
+// 11. đang on -> off = off
+
+// 	- đang tự động 	-> off => off
+// 	- đang tự động 	-> duration => duration
+// 	- đang tự động  -> on  => on
+// 	- đang duration -> off => off
+// 	- đang duration -> on  => on
+// 	- đang on 	-> duration => duration
+// 	- đang on 	-> off => off
+// ===================
+// đèn
+// bật tắt
+// đang bật ON(manual) và automode đang disable -> enable automode (lúc này lux<ngưỡng) thì sao
+// ON -> OFF = 
+// đang OFF (manual) 

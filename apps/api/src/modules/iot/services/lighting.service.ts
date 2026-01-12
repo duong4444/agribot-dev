@@ -114,47 +114,66 @@ export class LightingService {
   /**
    * Handle status updates from ESP32
    * Updates event status based on device events
+   * Creates AUTO events when ESP32 triggers light changes via auto mode
    */
   async handleStatusUpdate(deviceId: string, status: any): Promise<void> {
-    const { event } = status;
+    const { event, lightOn, manualLightControl } = status;
 
     this.logger.debug(`Lighting status update from ${deviceId}: ${event}`);
 
-    // Find the most recent pending event
+    // Find the most recent pending event (for manual commands)
     const recentEvent = await this.eventRepo.findOne({
       where: { deviceId, status: LightingEventStatus.PENDING },
       order: { timestamp: 'DESC' },
     });
 
-    if (!recentEvent) {
-      this.logger.debug(`No pending lighting event for ${deviceId}`);
+    // Handle manual command ACKs (update PENDING events)
+    if (recentEvent) {
+      switch (event) {
+        case 'light_on':
+          recentEvent.status = LightingEventStatus.COMPLETED;
+          break;
+
+        case 'light_off':
+          recentEvent.status = LightingEventStatus.COMPLETED;
+          break;
+
+        case 'light_auto_updated':
+          recentEvent.status = LightingEventStatus.COMPLETED;
+          break;
+
+        case 'light_failed':
+          recentEvent.status = LightingEventStatus.FAILED;
+          break;
+      }
+
+      const savedEvent = await this.eventRepo.save(recentEvent);
+      this.iotGateway.emitLightingEvent(deviceId, savedEvent);
+      this.logger.log(`Lighting event updated: ${deviceId} - ${event} → ${recentEvent.status}`);
       return;
     }
 
-    // Update event based on status
-    switch (event) {
-      case 'light_on':
-        recentEvent.status = LightingEventStatus.COMPLETED;
-        break;
+    // No pending event → This might be an AUTO mode trigger
+    // Create new AUTO event if light state changed
+    if ((event === 'light_on' || event === 'light_off') && manualLightControl === false) {
+      this.logger.log(`Auto mode triggered ${event} for ${deviceId}`);
+      
+      const autoEvent = this.eventRepo.create({
+        deviceId,
+        type: LightingEventType.AUTO,
+        status: LightingEventStatus.COMPLETED,
+        timestamp: new Date(),
+        metadata: { 
+          autoTrigger: true,
+          lightOn: lightOn,
+          event: event
+        },
+      });
 
-      case 'light_off':
-        recentEvent.status = LightingEventStatus.COMPLETED;
-        break;
-
-      case 'light_auto_updated':
-        // Mark auto config update as completed
-        recentEvent.status = LightingEventStatus.COMPLETED;
-        break;
-
-      case 'light_failed':
-        recentEvent.status = LightingEventStatus.FAILED;
-        break;
+      const savedAutoEvent = await this.eventRepo.save(autoEvent);
+      this.iotGateway.emitLightingEvent(deviceId, savedAutoEvent);
+      this.logger.log(`Auto lighting event created: ${deviceId} - ${event}`);
     }
-
-    const savedEvent = await this.eventRepo.save(recentEvent);
-    //Emit WebSocket event
-    this.iotGateway.emitLightingEvent(deviceId, savedEvent);
-    this.logger.log(`Lighting event updated: ${deviceId} - ${event} → ${recentEvent.status}`);
   }
 
   async getAutoConfig(deviceId: string) {
