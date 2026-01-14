@@ -68,22 +68,25 @@ export class PaymentService {
     await this.transactionRepository.save(transaction);
 
     // 5. Build VNPAY payment URL
+    // bản chất nó thực hiện thuật toán ký số HMAC-SHA512. Quy tắc quan trọng nhất là phải Sắp xếp tham số theo Alphabet trước khi Ký
+    // , để đảm bảo tính nhất quán (Consistency) của dữ liệu."
     const paymentUrl = this.vnpayService.buildPaymentUrl({
-      vnp_Amount: amount, // Library handles multiplication by 100
-      vnp_IpAddr: ipAddr === '::1' ? '127.0.0.1' : ipAddr,
-      vnp_TxnRef: txnRef,
-      vnp_OrderInfo: `Thanh toan ${plan.name} cho user ${userId}`,
+      vnp_Amount: amount, // Library handles multiplication by 100 ___amount truyền từ gói cước
+      vnp_IpAddr: ipAddr === '::1' ? '127.0.0.1' : ipAddr, // địa chỉ ip của khách hàng thực hiện giao dịch
+      vnp_TxnRef: txnRef, // là payment_transactions.__id, mã tham chiếu của giao dịch tại hệ thống của merchant, mã là duy nhất để phân biệt các đơn hàng gửi sang VNPAY, ko trùng lặp trong ngày
+      vnp_OrderInfo: `Thanh toan ${plan.name} cho user ${userId}`, // ___string mô tả thôi , TV ko dấu
       vnp_OrderType: ProductCode.Other,
-      vnp_ReturnUrl: this.configService.getOrThrow('VNPAY_RETURN_URL'), 
-      vnp_Locale: locale,
+      vnp_ReturnUrl: this.configService.getOrThrow('VNPAY_RETURN_URL'),  // http://localhost:3000/payment/vnpay-return, URL thông báo kết quả giao dịch khi khách hàng kết thúc thanh toán
+      vnp_Locale: locale, // ngôn ngữ giao diện hiển thị
     });
     
-    this.logger.log(`Generated VNPAY URL for plan ${plan.code}: ${paymentUrl}`);
-    
+    this.logger.log(`[VNPAY_createSubscriptionPaymentUrl] Generated VNPAY URL for plan ${plan.code}: ${paymentUrl}`);
+    // url chứa thông tin số tiền, mã đơn hàng, đbiệt là chữ ký bảo mật Checksum(HMAC-SHA512)
     return paymentUrl;
   }
 
   async handleCallback(query: ReturnQueryFromVNPay) {
+    // Phương thức xác thực tính đúng đắn của các tham số trả về từ VNPay
     const isValid = this.vnpayService.verifyReturnUrl(query);
     if (!isValid) {
       throw new BadRequestException('Invalid checksum');

@@ -215,7 +215,6 @@ export class LightingService {
     
     // Simple check: ensure device belongs to a farm owned by user
     if (device.area?.farm?.userId !== userId) {
-      // In a real app, use ForbiddenException, but here we keep it simple or reuse existing logic
       throw new NotFoundException(`Device ${deviceId} not found or access denied`);
     }
   }

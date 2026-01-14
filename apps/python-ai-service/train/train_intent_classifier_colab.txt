@@ -1,0 +1,339 @@
+cell code 1:
+!pip install -q transformers datasets torch scikit-learn pandas numpy seqeval accelerate
+scikit-learn tính metric (accuracy,F1,...)
+pandas: Xử lý data dạng bảng.,seqeval: Đánh giá sequence labeling.,accelerate: Tăng tốc training.
+# Tắt wandb để tránh yêu cầu API key
+import os
+os.environ['WANDB_DISABLED'] = 'true'
+print("✅ Đã tắt Weights & Biases tracking")
+==============================================================================================
+cell code 2:
+from google.colab import files
+import pandas as pd
+
+# Upload file CSV
+print("📤 Vui lòng upload file intent_data_augmented_161225.csv")
+uploaded = files.upload()
+
+# Lấy tên file đầu tiên được upload
+data_file = list(uploaded.keys())[0]
+print(f"✅ Đã upload file: {data_file}")
+
+# Đọc và kiểm tra data
+đọc file csv thành dataframe
+df = pd.read_csv(data_file)
+print(f"\n📊 Tổng số mẫu: {len(df)}")
+print(f"\n📋 Các cột: {df.columns.tolist()}")
+print(f"\n🏷️ Phân bố labels:")
+print(df['label'].value_counts())
+print(f"\n👀 Xem 5 mẫu đầu tiên:")
+df.head()
+==============================================================================================
+
+cell code 3:
+import torch
+from sklearn.model_selection import train_test_split
+from transformers import AutoTokenizer
+import json
+
+# Kiểm tra GPU
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"🖥️ Device: {device}")
+if torch.cuda.is_available():
+    print(f"   GPU: {torch.cuda.get_device_name(0)}")
+
+# Tạo label mapping
+unique_labels = sorted(df['label'].unique())
+label_to_id = {label: idx for idx, label in enumerate(unique_labels)}
+id_to_label = {idx: label for label, idx in label_to_id.items()}
+
+print(f"\n🏷️ Label mapping:")
+for label, idx in label_to_id.items():
+    print(f"   {idx}: {label}")
+
+# Thêm cột label_id
+df['label_id'] = df['label'].map(label_to_id)
+
+# Chia train/val/test (70/15/15)
+train_df, temp_df = train_test_split(df, test_size=0.3, random_state=42, stratify=df['label'])
+val_df, test_df = train_test_split(temp_df, test_size=0.5, random_state=42, stratify=temp_df['label'])
+
+print(f"\n📊 Phân chia dữ liệu:")
+print(f"   Train: {len(train_df)} mẫu")
+print(f"   Val:   {len(val_df)} mẫu")
+print(f"   Test:  {len(test_df)} mẫu")
+
+# Load tokenizer
+model_name = "vinai/phobert-base"
+print(f"\n🔤 Loading tokenizer: {model_name}")
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+print("✅ Tokenizer loaded")
+==============================================================================================
+
+cell code 4:
+from torch.utils.data import Dataset
+
+class IntentDataset(Dataset):
+    def __init__(self, texts, labels, tokenizer, max_length=256):
+        self.texts = texts
+        self.labels = labels
+        self.tokenizer = tokenizer
+        self.max_length = max_length
+    
+    def __len__(self):
+        return len(self.texts)
+    
+    def __getitem__(self, idx):
+        text = str(self.texts[idx])
+        label = self.labels[idx]
+        
+        encoding = self.tokenizer(
+            text,
+            truncation=True,
+            max_length=self.max_length,
+            padding='max_length',
+            return_tensors='pt'
+        )
+        
+        return {
+            'input_ids': encoding['input_ids'].flatten(),
+            'attention_mask': encoding['attention_mask'].flatten(),
+            'labels': torch.tensor(label, dtype=torch.long)
+        }
+
+# Tạo datasets
+train_dataset = IntentDataset(
+    train_df['text'].tolist(),
+    train_df['label_id'].tolist(),
+    tokenizer
+)
+
+val_dataset = IntentDataset(
+    val_df['text'].tolist(),
+    val_df['label_id'].tolist(),
+    tokenizer
+)
+
+test_dataset = IntentDataset(
+    test_df['text'].tolist(),
+    test_df['label_id'].tolist(),
+    tokenizer
+)
+
+print("✅ Datasets created")
+==============================================================================================
+
+cell code 5:
+from transformers import (
+    AutoModelForSequenceClassification,
+    TrainingArguments,
+    Trainer,
+    EarlyStoppingCallback
+)
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support, classification_report
+import numpy as np
+
+# Load model
+print(f"🤖 Loading model: {model_name}")
+model = AutoModelForSequenceClassification.from_pretrained(
+    model_name,
+    num_labels=len(label_to_id)
+)
+model.to(device)
+print("✅ Model loaded")
+
+# Định nghĩa metrics
+def compute_metrics(pred):
+    labels = pred.label_ids
+    preds = pred.predictions.argmax(-1)
+    
+    precision, recall, f1, _ = precision_recall_fscore_support(
+        labels, preds, average='weighted', zero_division=0
+    )
+    acc = accuracy_score(labels, preds)
+    
+    return {
+        'accuracy': acc,
+        'f1': f1,
+        'precision': precision,
+        'recall': recall
+    }
+
+# Training arguments
+training_args = TrainingArguments(
+    output_dir='./intent_classifier_output',
+    num_train_epochs=5,
+    per_device_train_batch_size=16,
+    per_device_eval_batch_size=32,
+    warmup_steps=500,
+    weight_decay=0.01,
+    logging_dir='./logs',
+    logging_steps=50,
+    eval_strategy="epoch",
+    save_strategy="epoch",
+    load_best_model_at_end=True,
+    metric_for_best_model="f1",
+    greater_is_better=True,
+    save_total_limit=2,
+    fp16=torch.cuda.is_available(),  # Mixed precision nếu có GPU
+    report_to="none",  # Tắt wandb/tensorboard
+)
+
+# Trainer
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=train_dataset,
+    eval_dataset=val_dataset,
+    compute_metrics=compute_metrics,
+    callbacks=[EarlyStoppingCallback(early_stopping_patience=2)]
+)
+
+print("\n🏋️ Bắt đầu training...")
+print("=" * 60)
+
+# Train
+trainer.train()
+
+print("\n✅ Training hoàn thành!")
+==============================================================================================
+
+cell code 6:
+# Evaluate trên test set
+print("📊 Đánh giá trên Test Set:")
+print("=" * 60)
+
+test_results = trainer.evaluate(test_dataset)
+print(f"\n📈 Test Results:")
+for key, value in test_results.items():
+    print(f"   {key}: {value:.4f}")
+
+# Detailed classification report
+predictions = trainer.predict(test_dataset)
+preds = predictions.predictions.argmax(-1)
+labels = predictions.label_ids
+
+print(f"\n📋 Classification Report:")
+print("=" * 60)
+print(classification_report(
+    labels,
+    preds,
+    target_names=[id_to_label[i] for i in range(len(id_to_label))],
+    digits=4
+))
+==============================================================================================
+
+cell code 7:
+def predict_intent(text, model, tokenizer, label_mapping):
+    """Dự đoán intent cho một câu"""
+    model.eval()
+    
+    inputs = tokenizer(
+        text,
+        return_tensors="pt",
+        truncation=True,
+        max_length=256,
+        padding=True
+    )
+    
+    inputs = {k: v.to(device) for k, v in inputs.items()}
+    
+    with torch.no_grad():
+        outputs = model(**inputs)
+        logits = outputs.logits
+        probs = torch.softmax(logits, dim=-1)
+    
+    # Top 3 predictions
+    top_probs, top_indices = torch.topk(probs[0], k=3)
+    
+    print(f"\n📝 Text: {text}")
+    print(f"\n🎯 Predictions:")
+    for prob, idx in zip(top_probs.cpu().numpy(), top_indices.cpu().numpy()):
+        intent = label_mapping[idx]
+        print(f"   {intent}: {prob:.4f} ({prob*100:.2f}%)")
+
+# Test với các câu mẫu
+test_sentences = [
+    "Mật độ trồng kinh giới thích hợp?",
+    "Dữ liệu cảm biến 1 giờ trước đi",
+    "Lên lịch máy bơm mỗi 2 tiếng.",
+    "Báo cáo chi phí theo từng hạng mục.",
+    "Bạn là ai?"
+]
+
+print("\n" + "=" * 60)
+print("🧪 TEST VỚI CÁC CÂU MẪU")
+print("=" * 60)
+
+for sentence in test_sentences:
+    predict_intent(sentence, model, tokenizer, id_to_label)
+    print("-" * 60)
+==============================================================================================
+
+cell code 8:
+import os
+import shutil
+
+# Tạo thư mục output
+output_dir = "./intent_classifier_final"
+os.makedirs(output_dir, exist_ok=True)
+
+print(f"💾 Lưu model vào: {output_dir}")
+
+# Lưu model và tokenizer
+model.save_pretrained(output_dir)
+tokenizer.save_pretrained(output_dir)
+
+# Lưu label mapping
+label_mapping = {
+    "label_to_id": label_to_id,
+    "id_to_label": id_to_label
+}
+
+with open(os.path.join(output_dir, "label_mapping.json"), "w", encoding="utf-8") as f:
+    json.dump(label_mapping, f, ensure_ascii=False, indent=2)
+
+print("✅ Model đã được lưu!")
+print(f"\n📁 Các file trong {output_dir}:")
+for file in os.listdir(output_dir):
+    print(f"   - {file}")
+==============================================================================================
+
+cell code 9:
+# Nén thư mục model thành file zip
+print("📦 Đang nén model...")
+shutil.make_archive("intent_classifier_final", 'zip', output_dir)
+print("✅ Đã nén xong!")
+
+# Download file zip
+print("\n📥 Download file zip về máy...")
+files.download("intent_classifier_final.zip")
+
+print("\n" + "=" * 60)
+print("✅ HOÀN THÀNH!")
+print("=" * 60)
+print("\n📝 Hướng dẫn sử dụng:")
+print("   1. Giải nén file intent_classifier_final.zip")
+print("   2. Copy toàn bộ nội dung vào thư mục:")
+print("      apps/python-ai-service/models/intent_classifier/")
+print("   3. Restart Python AI Service")
+print("   4. Test API để kiểm tra model mới")
+print("\n🎉 Chúc mừng! Model đã được train thành công!")
+
+================================================================================
+1. Xử lý dữ liệu
+- Sử dụng train_test_split với tham số stratify
+----> để giữ nguyên tỉ lệ phân bố các nhãn ở cả 3 tập (Train,val,test) 
+tránh train nhiều nhãn A nhưng test lại toàn nhãn B
+2. Dataset & Tokenization
+- Tạo lớp IntentDataset để chuyển văn bản thô thành input_ids và attention_mask.
+max_length = 256 là đủ bao quát các câu hỏi của User
+3. Huấn luyện
+- Sử dụng mô hình AutoModelForSequenceClassification từ PhoBERT, có EarlyStoppingCallback tránh overfitting (học vẹt)
+4. Đánh giá & xuất bản
+- Dùng classification_report để xem chi tiết từng nhãn và đóng gói model thành .zip để triển khai thực tế
+
+Câu 3: Bạn có thể giải thích ý nghĩa của attention_mask mà mô hình sử dụng không?
+Trả lời: Vì chúng ta dùng padding='max_length', các câu ngắn sẽ được thêm các token <pad> để đủ chiều dài 256.
+attention_mask (gồm các số 0 và 1) sẽ báo cho mô hình biết đâu là từ thực (số 1) và 
+đâu là phần đệm (số 0) để mô hình không tính toán trên các phần đệm đó.

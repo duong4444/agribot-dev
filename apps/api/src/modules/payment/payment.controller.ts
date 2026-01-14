@@ -50,7 +50,7 @@ export class PaymentController {
     
     return { url };
   }
-
+  // ipn version localhost - lợi dụng browser redirect
   @Get('vnpay-return')
   @ApiOperation({ summary: 'Handle VNPAY return (browser redirect)' })
   async vnpayReturn(@Query() query: any, @Res() res: Response) {

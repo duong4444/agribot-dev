@@ -40,6 +40,7 @@ export class MqttService implements OnModuleInit {
     this.connectToBroker();
   }
 
+  // MQTT_BROKER_URL=mqtts://b12f446d03134355bd6026903779fbbb.s1.eu.hivemq.cloud:8883
   private connectToBroker() {
     const brokerUrl = process.env.MQTT_BROKER_URL || 'mqtt://localhost:1883';
     const username = process.env.MQTT_USERNAME;
