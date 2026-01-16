@@ -1,0 +1,578 @@
+================================================================================
+NOTEBOOK HUẤN LUYỆN INTENT CLASSIFIER - PHIÊN BẢN CÓ COMMENT CHI TIẾT
+================================================================================
+Mục đích: Giải thích BẢN CHẤT từng dòng code để hiểu sâu về quy trình Fine-tuning
+================================================================================
+
+cell code 1: CÀI ĐẶT THƯ VIỆN
+==============================================================================================
+# Cài đặt các thư viện cần thiết (flag -q = quiet mode, ít log hơn)
+!pip install -q transformers datasets torch scikit-learn pandas numpy seqeval accelerate
+
+# BẢN CHẤT TỪNG THƯ VIỆN:
+# - transformers: Thư viện Hugging Face chứa PhoBERT và các công cụ Fine-tune
+# - datasets: Xử lý dataset (không bắt buộc nhưng tiện lợi)
+# - torch: PyTorch - Framework Deep Learning để train model
+# - scikit-learn: Tính các metric (Accuracy, F1, Precision, Recall)
+# - pandas: Xử lý dữ liệu dạng bảng (CSV)
+# - numpy: Tính toán ma trận, vector
+# - seqeval: Đánh giá sequence labeling (dùng cho NER, ở đây cài sẵn cho đồng bộ)
+# - accelerate: Tăng tốc training trên GPU/TPU, tự động phát hiện hardware
+
+# Tắt Weights & Biases (W&B) - công cụ tracking experiments
+# BẢN CHẤT: W&B yêu cầu API key để log metrics lên cloud. 
+# Vì ta train trên Colab miễn phí nên tắt đi để tránh lỗi.
+import os
+os.environ['WANDB_DISABLED'] = 'true'  # Biến môi trường báo cho Trainer không dùng W&B
+print("✅ Đã tắt Weights & Biases tracking")
+
+==========================================OK====================================================
+
+cell code 2: UPLOAD VÀ KIỂM TRA DỮ LIỆU
+==============================================================================================
+from google.colab import files  # Module để upload/download file trên Colab
+import pandas as pd
+
+# Upload file CSV từ máy local lên Colab
+print("📤 Vui lòng upload file intent_data_augmented_161225.csv")
+uploaded = files.upload()  
+# BẢN CHẤT: Mở cửa sổ chọn file, trả về dictionary {filename: file_content}
+
+# Lấy tên file đầu tiên (vì chỉ upload 1 file)
+data_file = list(uploaded.keys())[0]  # VD: "intent_data_augmented_161225.csv"
+print(f"✅ Đã upload file: {data_file}")
+
+# Đọc file CSV thành DataFrame (bảng dữ liệu)
+df = pd.read_csv(data_file)
+# BẢN CHẤT: DataFrame có 2 cột:
+#   - 'text': Câu hỏi của user (VD: "Bật đèn")
+#   - 'label': Nhãn Intent (VD: "device_control")
+
+# In thống kê cơ bản
+print(f"\n📊 Tổng số mẫu: {len(df)}")  # VD: 7800 mẫu
+print(f"\n📋 Các cột: {df.columns.tolist()}")  # ['text', 'label']
+
+# Đếm số lượng mẫu của từng Intent
+print(f"\n🏷️ Phân bố labels:")
+print(df['label'].value_counts())
+# BẢN CHẤT: Kiểm tra xem dữ liệu có cân bằng không (mỗi Intent có số lượng tương đương)
+# Nếu lệch quá (VD: 5000 Control vs 100 Financial) -> Cần xử lý Imbalanced Data
+
+print(f"\n👀 Xem 5 mẫu đầu tiên:")
+df.head()  # Hiển thị 5 dòng đầu để kiểm tra format
+
+==============================================================================================
+
+cell code 3: CHUẨN BỊ DỮ LIỆU & CHIA TẬP
+==============================================================================================
+import torch
+from sklearn.model_selection import train_test_split
+from transformers import AutoTokenizer
+import json
+
+# Kiểm tra xem có GPU không
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# BẢN CHẤT: GPU nhanh hơn CPU hàng chục lần khi train Deep Learning
+# "cuda" = NVIDIA GPU, "cpu" = CPU thường
+print(f"🖥️ Device: {device}")
+if torch.cuda.is_available():
+    print(f"   GPU: {torch.cuda.get_device_name(0)}")  # VD: "Tesla T4"
+
+# ===== BƯỚC QUAN TRỌNG: TẠO LABEL MAPPING =====
+# BẢN CHẤT: AI chỉ hiểu số (0, 1, 2...), không hiểu chữ ("device_control")
+# Nên ta phải map: "device_control" -> 0, "sensor_query" -> 1, ...
+
+unique_labels = sorted(df['label'].unique())  
+# VD: ['device_control', 'financial_query', 'knowledge_query', 'sensor_query', 'unknown']
+
+# Tạo dictionary: Chữ -> Số
+label_to_id = {label: idx for idx, label in enumerate(unique_labels)}
+# VD: {'device_control': 0, 'financial_query': 1, ...}
+
+# Tạo dictionary ngược: Số -> Chữ (để decode kết quả sau này)
+id_to_label = {idx: label for label, idx in label_to_id.items()}
+# VD: {0: 'device_control', 1: 'financial_query', ...}
+
+print(f"\n🏷️ Label mapping:")
+for label, idx in label_to_id.items():
+    print(f"   {idx}: {label}")
+
+# Thêm cột 'label_id' vào DataFrame (chuyển chữ -> số)
+df['label_id'] = df['label'].map(label_to_id)
+# BẢN CHẤT: Mỗi dòng giờ có thêm cột số (0, 1, 2...) để model học
+
+# ===== CHIA DỮ LIỆU: TRAIN / VALIDATION / TEST =====
+# BẢN CHẤT:
+# - Train (70%): Dữ liệu để model HỌC
+# - Validation (15%): Dữ liệu để CHỌN model tốt nhất (Early Stopping)
+# - Test (15%): Dữ liệu để ĐÁNH GIÁ cuối cùng (hoàn toàn độc lập)
+
+# Bước 1: Tách 70% Train, 30% còn lại
+train_df, temp_df = train_test_split(
+    df, 
+    test_size=0.3,  # 30% cho temp (sẽ chia tiếp thành Val + Test)
+    random_state=42,  # Seed để kết quả lặp lại được
+    stratify=df['label']  # QUAN TRỌNG: Giữ nguyên tỉ lệ các Intent
+)
+# BẢN CHẤT stratify: Nếu Train có 40% Control, thì Val và Test cũng phải có 40% Control
+# Tránh trường hợp Train toàn Control nhưng Test toàn Financial -> Model sẽ fail
+
+# Bước 2: Chia 30% temp thành 15% Val + 15% Test
+val_df, test_df = train_test_split(
+    temp_df, 
+    test_size=0.5,  # 50% của 30% = 15%
+    random_state=42, 
+    stratify=temp_df['label']
+)
+
+print(f"\n📊 Phân chia dữ liệu:")
+print(f"   Train: {len(train_df)} mẫu")  # VD: 5460 mẫu
+print(f"   Val:   {len(val_df)} mẫu")    # VD: 1170 mẫu
+print(f"   Test:  {len(test_df)} mẫu")   # VD: 1170 mẫu
+
+# ===== LOAD TOKENIZER =====
+model_name = "vinai/phobert-base"
+print(f"\n🔤 Loading tokenizer: {model_name}")
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+# BẢN CHẤT: Tokenizer là "từ điển" của PhoBERT
+# Nó biết cách tách từ tiếng Việt và chuyển thành số (Input IDs)
+# VD: "Bật đèn" -> [5, 234, 1890] (mỗi số ứng với 1 từ trong từ điển)
+print("✅ Tokenizer loaded")
+
+==============================================================================================
+
+cell code 4: TẠO DATASET CLASS
+==============================================================================================
+from torch.utils.data import Dataset
+
+# BẢN CHẤT: Dataset là "cái kho" chứa dữ liệu
+# PyTorch yêu cầu ta phải tạo class kế thừa từ Dataset và implement 3 hàm:
+# - __init__: Khởi tạo (lưu dữ liệu vào bộ nhớ)
+# - __len__: Trả về số lượng mẫu
+# - __getitem__: Trả về 1 mẫu cụ thể theo index
+
+class IntentDataset(Dataset):
+    def __init__(self, texts, labels, tokenizer, max_length=256):
+        """
+        Khởi tạo Dataset
+        Args:
+            texts: List các câu văn (VD: ["Bật đèn", "Tắt quạt"])
+            labels: List các nhãn số (VD: [0, 0])
+            tokenizer: PhoBERT tokenizer
+            max_length: Độ dài tối đa của câu (256 tokens)
+        """
+        self.texts = texts
+        self.labels = labels
+        self.tokenizer = tokenizer
+        self.max_length = max_length
+    
+    def __len__(self):
+        """Trả về tổng số mẫu"""
+        return len(self.texts)
+    
+    def __getitem__(self, idx):
+        """
+        Lấy 1 mẫu theo index
+        BẢN CHẤT: Hàm này được gọi mỗi khi model cần 1 mẫu để train
+        """
+        text = str(self.texts[idx])  # Lấy câu thứ idx
+        label = self.labels[idx]     # Lấy nhãn thứ idx
+        
+        # ===== TOKENIZATION (Bước quan trọng nhất) =====
+        encoding = self.tokenizer(
+            text,
+            truncation=True,  # Nếu câu dài hơn 256 -> Cắt bớt
+            max_length=self.max_length,  # Độ dài tối đa
+            padding='max_length',  # Nếu câu ngắn hơn 256 -> Thêm <pad>
+            return_tensors='pt'  # Trả về dạng PyTorch Tensor
+        )
+        # BẢN CHẤT encoding:
+        # - input_ids: [101, 5, 234, 1890, 102, 0, 0, ..., 0] (256 số)
+        #   + 101 = <s> (token bắt đầu)
+        #   + 5, 234, 1890 = "Bật", "đèn" (từ thật)
+        #   + 102 = </s> (token kết thúc)
+        #   + 0, 0, ... = <pad> (padding để đủ 256)
+        # - attention_mask: [1, 1, 1, 1, 1, 0, 0, ..., 0] (256 số)
+        #   + 1 = Từ thật (model cần chú ý)
+        #   + 0 = Padding (model bỏ qua)
+        
+        return {
+            'input_ids': encoding['input_ids'].flatten(),  # Shape: [256]
+            'attention_mask': encoding['attention_mask'].flatten(),  # Shape: [256]
+            'labels': torch.tensor(label, dtype=torch.long)  # Shape: [] (scalar)
+        }
+        # BẢN CHẤT: Mỗi lần gọi __getitem__, ta trả về 1 dictionary
+        # Trainer sẽ tự động gộp nhiều mẫu thành 1 batch (VD: 16 mẫu)
+
+# Tạo 3 Dataset objects
+train_dataset = IntentDataset(
+    train_df['text'].tolist(),     # List câu văn
+    train_df['label_id'].tolist(), # List nhãn số
+    tokenizer
+)
+
+val_dataset = IntentDataset(
+    val_df['text'].tolist(),
+    val_df['label_id'].tolist(),
+    tokenizer
+)
+
+test_dataset = IntentDataset(
+    test_df['text'].tolist(),
+    test_df['label_id'].tolist(),
+    tokenizer
+)
+
+print("✅ Datasets created")
+
+==============================================================================================
+
+cell code 5: TRAINING (Phần cốt lõi nhất)
+==============================================================================================
+from transformers import (
+    AutoModelForSequenceClassification,  # Model cho bài toán phân loại chuỗi
+    TrainingArguments,  # Cấu hình training
+    Trainer,  # Class quản lý toàn bộ quá trình train
+    EarlyStoppingCallback  # Dừng sớm nếu không cải thiện
+)
+from sklearn.metrics import accuracy_score, precision_recall_fscore_support, classification_report
+import numpy as np
+
+# ===== LOAD MODEL =====
+print(f"🤖 Loading model: {model_name}")
+model = AutoModelForSequenceClassification.from_pretrained(
+    model_name,  # "vinai/phobert-base"
+    num_labels=len(label_to_id)  # 5 (số lượng Intent)
+)
+# BẢN CHẤT: Hàm này làm 2 việc:
+# 1. Tải PhoBERT gốc (12 lớp Transformer) từ Hugging Face
+# 2. CẮT BỎ Head cũ (Masked LM) và GẮN Head mới (Linear Layer 768 -> 5)
+#    Head mới có công thức: y = Wx + b (W là ma trận 768x5)
+
+model.to(device)  # Chuyển model lên GPU (nếu có)
+print("✅ Model loaded")
+
+# ===== ĐỊNH NGHĨA HÀM TÍNH METRICS =====
+def compute_metrics(pred):
+    """
+    Hàm tính các chỉ số đánh giá
+    BẢN CHẤT: Trainer sẽ gọi hàm này sau mỗi epoch để tính F1, Accuracy...
+    """
+    labels = pred.label_ids  # Nhãn thật (Ground Truth)
+    preds = pred.predictions.argmax(-1)  # Nhãn dự đoán (lấy max của Softmax)
+    # BẢN CHẤT argmax(-1):
+    # - predictions shape: [Batch, 5] (5 điểm số cho 5 Intent)
+    # - argmax(-1) = Lấy index của điểm cao nhất
+    # VD: [0.1, 0.8, 0.05, 0.03, 0.02] -> argmax = 1 (Intent thứ 1)
+    
+    # Tính Precision, Recall, F1
+    precision, recall, f1, _ = precision_recall_fscore_support(
+        labels, preds, 
+        average='weighted',  # Trung bình có trọng số (quan trọng khi Imbalanced)
+        zero_division=0  # Tránh chia cho 0
+    )
+    # BẢN CHẤT 'weighted':
+    # - Nếu Intent A có 1000 mẫu, Intent B có 100 mẫu
+    # - F1 tổng = (F1_A * 1000 + F1_B * 100) / 1100
+    # -> Ưu tiên Intent có nhiều mẫu hơn
+    
+    acc = accuracy_score(labels, preds)  # Tỉ lệ dự đoán đúng
+    
+    return {
+        'accuracy': acc,
+        'f1': f1,
+        'precision': precision,
+        'recall': recall
+    }
+
+# ===== CẤU HÌNH TRAINING =====
+training_args = TrainingArguments(
+    output_dir='./intent_classifier_output',  # Thư mục lưu checkpoint
+    num_train_epochs=5,  # Số epoch (lần lặp qua toàn bộ Train Set)
+    # BẢN CHẤT: 1 epoch = model nhìn qua hết 5460 mẫu Train 1 lần
+    
+    per_device_train_batch_size=16,  # Batch size khi train
+    # BẢN CHẤT: Mỗi lần cập nhật trọng số, model học từ 16 mẫu cùng lúc
+    # Tại sao không Batch=1? -> Chậm và gradient "giật cục"
+    # Tại sao không Batch=1000? -> Tràn VRAM và gradient "trơ"
+    
+    per_device_eval_batch_size=32,  # Batch size khi đánh giá (có thể lớn hơn vì không cần tính gradient)
+    
+    warmup_steps=500,  # Số bước "khởi động"
+    # BẢN CHẤT: 500 bước đầu, Learning Rate tăng dần từ 0 -> LR_max
+    # Tại sao? Tránh model "sốc" khi mới bắt đầu train
+    
+    weight_decay=0.01,  # L2 Regularization
+    # BẢN CHẤT: Phạt các trọng số quá lớn để tránh Overfitting
+    # Loss_total = Loss_classification + 0.01 * (sum of W^2)
+    
+    logging_dir='./logs',  # Thư mục lưu log
+    logging_steps=50,  # Log mỗi 50 bước
+    
+    eval_strategy="epoch",  # Đánh giá sau mỗi epoch
+    save_strategy="epoch",  # Lưu checkpoint sau mỗi epoch
+    
+    load_best_model_at_end=True,  # QUAN TRỌNG
+    # BẢN CHẤT: Sau khi train xong, load lại checkpoint TỐT NHẤT (F1 cao nhất)
+    # Tại sao? Vì Epoch cuối chưa chắc đã tốt nhất (có thể Overfitting)
+    
+    metric_for_best_model="f1",  # Dùng F1 để chọn model tốt nhất
+    greater_is_better=True,  # F1 càng cao càng tốt
+    
+    save_total_limit=2,  # Chỉ giữ 2 checkpoint gần nhất (tiết kiệm dung lượng)
+    
+    fp16=torch.cuda.is_available(),  # Mixed Precision Training
+    # BẢN CHẤT: Dùng số Float16 (thay vì Float32) để train nhanh hơn
+    # Chỉ hoạt động trên GPU có Tensor Cores (VD: T4, V100, A100)
+    
+    report_to="none",  # Tắt W&B/TensorBoard
+)
+
+# ===== TẠO TRAINER =====
+trainer = Trainer(
+    model=model,  # Model cần train
+    args=training_args,  # Cấu hình training
+    train_dataset=train_dataset,  # Dữ liệu Train
+    eval_dataset=val_dataset,  # Dữ liệu Validation
+    compute_metrics=compute_metrics,  # Hàm tính metrics
+    callbacks=[EarlyStoppingCallback(early_stopping_patience=2)]
+    # BẢN CHẤT EarlyStopping:
+    # - Nếu F1 không cải thiện sau 2 epoch liên tiếp -> Dừng train
+    # - Tại sao? Tránh lãng phí thời gian và Overfitting
+)
+
+print("\n🏋️ Bắt đầu training...")
+print("=" * 60)
+
+# ===== BẮT ĐẦU TRAINING =====
+trainer.train()
+# BẢN CHẤT: Hàm này chạy vòng lặp:
+# for epoch in range(5):
+#     for batch in train_dataset:  # Mỗi batch có 16 mẫu
+#         # 1. Forward Pass: Tính output
+#         outputs = model(batch)
+#         logits = outputs.logits  # Shape: [16, 5]
+#         
+#         # 2. Tính Loss (CrossEntropyLoss)
+#         loss = CrossEntropyLoss(logits, labels)
+#         
+#         # 3. Backward Pass: Tính gradient
+#         loss.backward()
+#         
+#         # 4. Update trọng số
+#         optimizer.step()  # W_new = W_old - LR * gradient
+#         
+#     # 5. Đánh giá trên Validation Set
+#     val_metrics = evaluate(val_dataset)
+#     
+#     # 6. Kiểm tra Early Stopping
+#     if val_metrics['f1'] không cải thiện:
+#         patience_counter += 1
+#         if patience_counter >= 2:
+#             break  # Dừng train
+
+print("\n✅ Training hoàn thành!")
+
+==============================================================================================
+
+cell code 6: ĐÁNH GIÁ TRÊN TEST SET
+==============================================================================================
+# Đánh giá trên Test Set (dữ liệu hoàn toàn độc lập)
+print("📊 Đánh giá trên Test Set:")
+print("=" * 60)
+
+test_results = trainer.evaluate(test_dataset)
+# BẢN CHẤT: Chạy model trên Test Set, tính Loss và Metrics
+# KHÔNG CẬP NHẬT trọng số (chỉ đánh giá)
+
+print(f"\n📈 Test Results:")
+for key, value in test_results.items():
+    print(f"   {key}: {value:.4f}")
+
+# ===== CLASSIFICATION REPORT CHI TIẾT =====
+predictions = trainer.predict(test_dataset)
+# BẢN CHẤT: Dự đoán toàn bộ Test Set, trả về:
+# - predictions: Logits (điểm thô)
+# - label_ids: Nhãn thật
+
+preds = predictions.predictions.argmax(-1)  # Chuyển Logits -> Nhãn dự đoán
+labels = predictions.label_ids  # Nhãn thật
+
+print(f"\n📋 Classification Report:")
+print("=" * 60)
+print(classification_report(
+    labels,
+    preds,
+    target_names=[id_to_label[i] for i in range(len(id_to_label))],
+    digits=4
+))
+# BẢN CHẤT: In ra bảng chi tiết cho TỪNG Intent:
+#                     precision    recall  f1-score   support
+# device_control         0.99      0.99      0.99       234
+# sensor_query           0.98      0.99      0.98       220
+# ...
+# Giúp phát hiện Intent nào model còn yếu
+
+==============================================================================================
+
+cell code 7: TEST VỚI CÂU MẪU
+==============================================================================================
+def predict_intent(text, model, tokenizer, label_mapping):
+    """
+    Dự đoán Intent cho 1 câu
+    BẢN CHẤT: Hàm này mô phỏng cách API sẽ dùng model trong thực tế
+    """
+    model.eval()  # Chuyển model sang chế độ đánh giá (tắt Dropout)
+    
+    # Tokenize câu input
+    inputs = tokenizer(
+        text,
+        return_tensors="pt",  # Trả về PyTorch Tensor
+        truncation=True,
+        max_length=256,
+        padding=True
+    )
+    
+    # Chuyển input lên GPU (nếu có)
+    inputs = {k: v.to(device) for k, v in inputs.items()}
+    
+    # Dự đoán (không tính gradient)
+    with torch.no_grad():  # Tắt gradient để tiết kiệm RAM
+        outputs = model(**inputs)
+        logits = outputs.logits  # Shape: [1, 5] (1 câu, 5 điểm)
+        probs = torch.softmax(logits, dim=-1)  # Chuyển Logits -> Xác suất
+        # BẢN CHẤT Softmax:
+        # - Input: [2.5, -1.0, 0.5, -2.0, 0.1]
+        # - Output: [0.85, 0.05, 0.08, 0.01, 0.01] (tổng = 1)
+    
+    # Lấy Top 3 Intent có xác suất cao nhất
+    top_probs, top_indices = torch.topk(probs[0], k=3)
+    
+    print(f"\n📝 Text: {text}")
+    print(f"\n🎯 Predictions:")
+    for prob, idx in zip(top_probs.cpu().numpy(), top_indices.cpu().numpy()):
+        intent = label_mapping[idx]
+        print(f"   {intent}: {prob:.4f} ({prob*100:.2f}%)")
+
+# Test với các câu mẫu
+test_sentences = [
+    "Mật độ trồng kinh giới thích hợp?",  # -> knowledge_query
+    "Dữ liệu cảm biến 1 giờ trước đi",    # -> sensor_query
+    "Lên lịch máy bơm mỗi 2 tiếng.",      # -> device_control
+    "Báo cáo chi phí theo từng hạng mục.", # -> financial_query
+    "Bạn là ai?"                           # -> unknown
+]
+
+print("\n" + "=" * 60)
+print("🧪 TEST VỚI CÁC CÂU MẪU")
+print("=" * 60)
+
+for sentence in test_sentences:
+    predict_intent(sentence, model, tokenizer, id_to_label)
+    print("-" * 60)
+
+==============================================================================================
+
+cell code 8: LƯU MODEL
+==============================================================================================
+import os
+import shutil
+
+# Tạo thư mục output
+output_dir = "./intent_classifier_final"
+os.makedirs(output_dir, exist_ok=True)  # exist_ok=True: Không lỗi nếu thư mục đã tồn tại
+
+print(f"💾 Lưu model vào: {output_dir}")
+
+# ===== LƯU MODEL VÀ TOKENIZER =====
+model.save_pretrained(output_dir)
+# BẢN CHẤT: Lưu 2 file:
+# - pytorch_model.bin: Trọng số của model (khoảng 400MB)
+# - config.json: Cấu hình model (số lớp, hidden size...)
+
+tokenizer.save_pretrained(output_dir)
+# BẢN CHẤT: Lưu:
+# - vocab.txt: Từ điển (30000 từ)
+# - tokenizer_config.json: Cấu hình tokenizer
+
+# ===== LƯU LABEL MAPPING (QUAN TRỌNG) =====
+label_mapping = {
+    "label_to_id": label_to_id,  # {"device_control": 0, ...}
+    "id_to_label": id_to_label   # {0: "device_control", ...}
+}
+
+with open(os.path.join(output_dir, "label_mapping.json"), "w", encoding="utf-8") as f:
+    json.dump(label_mapping, f, ensure_ascii=False, indent=2)
+# BẢN CHẤT: Backend cần file này để biết số 0 ứng với Intent nào
+# Nếu không có file này, model chỉ trả về số (0, 1, 2...) -> Vô nghĩa
+
+print("✅ Model đã được lưu!")
+print(f"\n📁 Các file trong {output_dir}:")
+for file in os.listdir(output_dir):
+    print(f"   - {file}")
+
+==============================================================================================
+
+cell code 9: NÉN VÀ DOWNLOAD
+==============================================================================================
+# Nén thư mục model thành file .zip
+print("📦 Đang nén model...")
+shutil.make_archive("intent_classifier_final", 'zip', output_dir)
+# BẢN CHẤT: Tạo file intent_classifier_final.zip chứa toàn bộ model
+print("✅ Đã nén xong!")
+
+# Download file .zip về máy local
+print("\n📥 Download file zip về máy...")
+files.download("intent_classifier_final.zip")
+# BẢN CHẤT: Mở cửa sổ download trên trình duyệt
+
+print("\n" + "=" * 60)
+print("✅ HOÀN THÀNH!")
+print("=" * 60)
+print("\n📝 Hướng dẫn sử dụng:")
+print("   1. Giải nén file intent_classifier_final.zip")
+print("   2. Copy toàn bộ nội dung vào thư mục:")
+print("      apps/python-ai-service/models/intent_classifier/")
+print("   3. Restart Python AI Service")
+print("   4. Test API để kiểm tra model mới")
+print("\n🎉 Chúc mừng! Model đã được train thành công!")
+
+================================================================================
+TỔNG KẾT BẢN CHẤT
+================================================================================
+1. TOKENIZATION: Chuyển chữ -> số (input_ids) + tạo attention_mask
+2. LABEL MAPPING: Chuyển nhãn chữ -> số để model học
+3. DATASET: Tổ chức dữ liệu thành format PyTorch yêu cầu
+4. MODEL: Load PhoBERT + Thay Head (Masked LM -> Linear Layer 768->5)
+5. TRAINING: Vòng lặp Forward -> Loss -> Backward -> Update Weights
+6. EARLY STOPPING: Dừng sớm nếu F1 không cải thiện (tránh Overfitting)
+7. EVALUATION: Đánh giá trên Test Set (dữ liệu độc lập)
+8. SAVE: Lưu model + tokenizer + label_mapping để deploy
+
+================================================================================
+CÂU HỎI THƯỜNG GẶP TỪ HỘI ĐỒNG
+================================================================================
+Q1: "Tại sao dùng stratify khi chia dữ liệu?"
+A1: "Để giữ nguyên tỉ lệ các Intent ở cả 3 tập (Train/Val/Test). Tránh Train 
+    toàn Control nhưng Test toàn Financial -> Model sẽ fail."
+
+Q2: "attention_mask là gì?"
+A2: "Vì dùng padding='max_length', câu ngắn được thêm <pad> để đủ 256 tokens.
+    attention_mask (0 và 1) báo cho model biết đâu là từ thật (1) và đâu là 
+    padding (0) để model không tính toán trên padding."
+
+Q3: "Tại sao load_best_model_at_end=True?"
+A3: "Trong quá trình train, model lưu nhiều checkpoint. Cái này đảm bảo cuối 
+    cùng ta giữ checkpoint TỐT NHẤT (F1 cao nhất trên Val), không phải checkpoint 
+    cuối cùng (có thể Overfitting)."
+
+Q4: "Làm sao biết model không Overfitting?"
+A4: "Nhìn vào Validation Loss. Nếu Training Loss giảm nhưng Validation Loss 
+    TĂNG -> Overfitting. Ở đây Validation Loss giảm đều (0.111 -> 0.051) nên 
+    model học tổng quát hóa tốt."
+
+Q5: "F1-score 0.99 có quá cao không?"
+A5: "Không. Bài toán phân loại 5 Intent với dữ liệu augment tốt (7800 mẫu) 
+    và dùng PhoBERT pre-trained nên F1=0.99 là hợp lý. Em cũng có Test Set 
+    riêng (15%) để kiểm chứng."
+================================================================================
