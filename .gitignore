@@ -255,3 +255,6 @@ doc-txt
 # apps/python-ai-service/train/ner_training_colab.txt
 mockESPtesting.js
 old-irrigation-history-UI.txt
+apps/python-ai-service/src/__pycache__/main.cpython-311.pyc
+overview.txt
+SPECS.txt
